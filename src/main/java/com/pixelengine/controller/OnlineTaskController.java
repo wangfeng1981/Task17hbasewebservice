@@ -24,9 +24,31 @@ public class OnlineTaskController {
     @ResponseBody
     @RequestMapping(value="/onlinetask/new",method= RequestMethod.POST)
     @CrossOrigin(origins = "*")
-    public String onlineTaskNew() {
+    public ResponseEntity<byte[]> onlineTaskNew(String script, String userid) {
+        int uid = Integer.parseInt(userid) ;
 
-        return "online task new" ;
+        //run for style
+        HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
+        String errorText = cv8.CheckScriptOk( "com/pixelengine/HBasePixelEngineHelper", script) ;
+        final HttpHeaders headers = new HttpHeaders();
+        if( errorText.compareTo("")!=0 )
+        {
+            System.out.println("Error : CheckScriptOk bad , " + errorText);
+            headers.setContentType(MediaType.TEXT_PLAIN);
+            String outjson = "{\"oltid\":-1,\"message\":\"" + errorText+"\"}" ;
+            return new ResponseEntity<byte[]>( outjson.getBytes(), headers, HttpStatus.OK);
+        }
+
+        String styleresult = cv8.RunToGetStyleFromScript("com/pixelengine/HBasePixelEngineHelper", script ) ;
+        if( styleresult.compareTo("")==0 )
+        {
+            System.out.println("Info : get a emtpy style string.");
+        }
+
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+        int newoltid= rdb.rdbNewRenderTask(script,styleresult,uid) ;
+        String outjson = "{\"oltid\":"+newoltid+",\"message\":\"\"}" ;
+        return new ResponseEntity<byte[]>( outjson.getBytes(), headers, HttpStatus.OK);
     }
 
     //online task id - otid
