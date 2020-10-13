@@ -1,7 +1,7 @@
 {
 "zookeeper":"hp1",
 "sparkmaster":"spark://hp1:7077",
-"connstr":"jdbc:mysql://192.168.10.160:3306/pe" ,
+"connstr":"jdbc:mysql://192.168.10.160:3306/pe?useUnicode=true&characterEncoding=utf-8" ,
 "user":"big",
 "pwd":"wfhbase2021",
 "wmtsxml":"/home/hadoop/IdeaProjects/Task17hbasewebservice/wmts-template.xml"

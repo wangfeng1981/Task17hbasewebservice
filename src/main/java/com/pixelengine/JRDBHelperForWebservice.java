@@ -276,6 +276,25 @@ public class JRDBHelperForWebservice {
         }
     }
 
+    public JUser rdbGetUserByUname(String uname)
+    {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT uid,uname "
+                    +" FROM tbUser WHERE uname='"+uname+"' LIMIT 1") ;
+            if (rs.next()) {
+                JUser user = new JUser();
+                user.uid = rs.getInt("uid");
+                user.uname = rs.getString("uname");
+                return user;
+            }
+            return null;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return null ;
+        }
+    }
+
     public void rdbUpdateUserScript( int sid, String script, String title ){
         if( script != null || title != null )
         {

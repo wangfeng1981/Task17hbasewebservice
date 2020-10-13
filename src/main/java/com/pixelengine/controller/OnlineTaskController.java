@@ -31,10 +31,11 @@ public class OnlineTaskController {
         HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
         String errorText = cv8.CheckScriptOk( "com/pixelengine/HBasePixelEngineHelper", script) ;
         final HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
         if( errorText.compareTo("")!=0 )
         {
             System.out.println("Error : CheckScriptOk bad , " + errorText);
-            headers.setContentType(MediaType.TEXT_PLAIN);
+
             String outjson = "{\"oltid\":-1,\"message\":\"" + errorText+"\"}" ;
             return new ResponseEntity<byte[]>( outjson.getBytes(), headers, HttpStatus.OK);
         }

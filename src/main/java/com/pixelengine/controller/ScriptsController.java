@@ -25,7 +25,7 @@ public class ScriptsController {
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
         int newsid = rdb.rdbNewUserScript(uid2,scriptZero) ;
         final HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.TEXT_PLAIN);
+        headers.setContentType(MediaType.APPLICATION_JSON);
         String outjson = "{\"sid\":" + newsid + "}" ;
         return new ResponseEntity<byte[]>( outjson.getBytes(), headers, HttpStatus.OK);
     }
@@ -42,7 +42,7 @@ public class ScriptsController {
         String outjson = rdb.rdbGetUserScriptListJson(uid2) ;
 
         final HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.TEXT_PLAIN);
+        headers.setContentType(MediaType.APPLICATION_JSON);
         return new ResponseEntity<byte[]>( outjson.getBytes(), headers, HttpStatus.OK);
     }
 
@@ -56,14 +56,14 @@ public class ScriptsController {
         JScript sc = rdb.rdbGetUserScript(Integer.parseInt(sid)) ;
         if( sc==null ){
             final HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.TEXT_PLAIN);
+            headers.setContentType(MediaType.APPLICATION_JSON);
             return new ResponseEntity<byte[]>( "{}".getBytes(), headers, HttpStatus.OK);
         }else
         {
             Gson gson = new Gson();
             String outjson = gson.toJson(sc,JScript.class);
             final HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.TEXT_PLAIN);
+            headers.setContentType(MediaType.APPLICATION_JSON);
             return new ResponseEntity<byte[]>( outjson.getBytes(), headers, HttpStatus.OK);
         }
     }
@@ -90,7 +90,7 @@ public class ScriptsController {
             rdb.rdbUpdateUserScript(sid2,script.get(),null);
         }
         final HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.TEXT_PLAIN);
+        headers.setContentType(MediaType.APPLICATION_JSON);
         return new ResponseEntity<byte[]>( "{\"status\":0}".getBytes(), headers, HttpStatus.OK);
     }
 }
