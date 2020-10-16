@@ -336,4 +336,90 @@ public class JRDBHelperForWebservice {
         }
     }
 
+    public String rdbGetUserPolyList(int uid)
+    {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT polyid,name,uid "
+                    +" FROM tbPolygon WHERE uid="+uid+" LIMIT 200") ;
+            Gson gson = new Gson();
+            String outjson = "{\"results\":[" ;
+            int nrec = 0 ;
+            while (rs.next()) {
+                JPePolygon poly = new JPePolygon();
+                poly.polyid = rs.getInt("polyid");
+                poly.name = rs.getString("name");
+                poly.uid = rs.getInt("uid");
+
+                String onejson = gson.toJson(poly, JPePolygon.class) ;
+                if( nrec>0 ){
+                    outjson+=",";
+                }
+                outjson+=onejson;
+                ++nrec;
+            }
+            outjson +="]}" ;
+            return outjson;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            String outjson = "{\"results\":[]}" ;
+            return outjson ;
+        }
+    }
+
+    public String rdbGetPolyDetail(int polyid)
+    {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT polyid,name,geojson,uid "
+                    +" FROM tbPolygon WHERE polyid="+polyid+" LIMIT 1") ;
+            Gson gson = new Gson();
+            if (rs.next()) {
+                JPePolygon poly = new JPePolygon();
+                poly.polyid = rs.getInt("polyid");
+                poly.name = rs.getString("name");
+                poly.geojson = rs.getString("geojson");
+                poly.uid = rs.getInt("uid");
+
+                String onejson = gson.toJson(poly, JPePolygon.class) ;
+                return onejson;
+            }
+            return "{}";
+        } catch (SQLException e) {
+            return "{}" ;
+        }
+    }
+
+    public int rdbSavePoly(int uid,String geojson)
+    {
+        try
+        {
+            String query = " insert into tbPolygon (geojson,uid)"
+                    + " values (?, ?)";
+            // create the mysql insert preparedstatement
+            PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            preparedStmt.setString (1, geojson);
+            preparedStmt.setInt    (2, uid);
+            // execute the preparedstatement
+            preparedStmt.executeUpdate();
+            ResultSet rs = preparedStmt.getGeneratedKeys();
+            int last_inserted_id = -1 ;
+            if(rs.next())
+            {
+                last_inserted_id = rs.getInt(1);
+                //update name
+                String polyname = "roi-" + last_inserted_id ;
+                String query2 = "update tbPolygon set name = ? where polyid = ?";
+                PreparedStatement preparedStmt2 = JRDBHelperForWebservice.getConnection().prepareStatement(query2);
+                preparedStmt2.setString   (1, polyname);
+                preparedStmt2.setInt      (2, last_inserted_id);
+                preparedStmt2.executeUpdate();
+            }
+            return last_inserted_id;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbNewRenderTask exception , " + ex.getMessage() ) ;
+            return -1 ;
+        }
+    }
 }
