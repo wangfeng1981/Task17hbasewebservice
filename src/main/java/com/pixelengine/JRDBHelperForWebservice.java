@@ -186,18 +186,19 @@ public class JRDBHelperForWebservice {
 
     }
 
-    public int rdbNewUserScript( int uid, String script0){
+    public int rdbNewUserScript( int uid, String script0,int type){
         try
         {
             long dt0 = this.getCurrentDatetime();
-            String query = " insert into tbScript (title, scriptContent, updateTime, uid)"
-                    + " values (?, ?, ?, ?)";
+            String query = " insert into tbScript (title, scriptContent, updateTime, uid, type)"
+                    + " values (?, ?, ?, ?, ?)";
             // create the mysql insert preparedstatement
             PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             preparedStmt.setString (1, "no-title");
             preparedStmt.setString (2, script0);
             preparedStmt.setLong   (3, dt0);
             preparedStmt.setInt    (4, uid);
+            preparedStmt.setInt    (5, type);
             // execute the preparedstatement
             preparedStmt.executeUpdate();
             ResultSet rs = preparedStmt.getGeneratedKeys();
@@ -225,7 +226,7 @@ public class JRDBHelperForWebservice {
     {
         try {
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT sid,title,updateTime,uid "
+            ResultSet rs = stmt.executeQuery("SELECT sid,title,updateTime,uid,type "
                     +" FROM tbScript WHERE uid="+uid+" LIMIT 200") ;
             Gson gson = new Gson();
             String outjson = "{\"scripts\":[" ;
@@ -237,6 +238,7 @@ public class JRDBHelperForWebservice {
                 jscript.title = rs.getString("title");
                 jscript.scriptContent = "...";
                 jscript.updateTime = rs.getLong("updateTime");
+                jscript.type = rs.getInt("type");
 
                 String onejson = gson.toJson(jscript, JScript.class) ;
                 if( nrec>0 ){
@@ -258,7 +260,7 @@ public class JRDBHelperForWebservice {
     {
         try {
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT sid,title,scriptContent,updateTime,uid "
+            ResultSet rs = stmt.executeQuery("SELECT sid,title,scriptContent,updateTime,uid,type "
                     +" FROM tbScript WHERE sid="+sid+" LIMIT 1") ;
             if (rs.next()) {
                 JScript jscript = new JScript();
@@ -267,6 +269,7 @@ public class JRDBHelperForWebservice {
                 jscript.title = rs.getString("title");
                 jscript.scriptContent = rs.getString("scriptContent");
                 jscript.updateTime = rs.getLong("updateTime");
+                jscript.type = rs.getInt("type");
                 return jscript;
             }
             return null;
