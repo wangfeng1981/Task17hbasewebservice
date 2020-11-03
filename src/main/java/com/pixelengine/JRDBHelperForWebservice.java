@@ -29,6 +29,13 @@ public class JRDBHelperForWebservice {
         return Long.parseLong(formattedDate);
     }
 
+    public static long sgetCurrentDatetime(){
+        LocalDateTime myDateObj = LocalDateTime.now();
+        DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        String formattedDate = myDateObj.format(myFormatObj);
+        return Long.parseLong(formattedDate);
+    }
+
     public static void init(WConfig twconfig)
     {
         wconfig = twconfig;
@@ -87,6 +94,53 @@ public class JRDBHelperForWebservice {
             }
         }else{
             return pinfo1 ;
+        }
+    }
+
+    public String rdbGetOffTaskJson(int oftid)   {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery(
+                    "SELECT oftid,scriptContent,extent,zmin,zmax,"
+                    +" outProductId,outDatetime,startTime,endTime,"
+                    +" uid,storage,stype,resultjson,path,htable,hpid,hcol "
+                            + " ,hfami,hpidlen,hxylen,status "
+                    +" FROM tbOfflineTask WHERE oftid="
+                    +String.valueOf(oftid)+" LIMIT 1") ;
+            if (rs.next()) {
+                JOfflineTask offtask = new JOfflineTask();
+                offtask.oftid = rs.getInt(1);
+                offtask.scriptContent = rs.getString(2);
+                offtask.extent = rs.getString(3);
+                offtask.zmin = rs.getInt(4);
+                offtask.zmax = rs.getInt(5);
+                offtask.outProductId = rs.getInt(6);
+                offtask.outDatetime = rs.getLong(7);
+                offtask.startTime = rs.getLong(8);
+                offtask.endTime = rs.getLong(9);
+                offtask.uid = rs.getInt(10);
+                offtask.storage = rs.getInt(11);
+                offtask.stype = rs.getInt(12);
+                offtask.resultjson = rs.getString(13);
+                offtask.path = rs.getString(14);
+                offtask.htable = rs.getString(15);
+                offtask.hpid = rs.getInt(16);
+                offtask.hcol = rs.getLong(17);
+                offtask.hfami = rs.getString(18);
+                offtask.hpidlen = rs.getInt(19);
+                offtask.hxylen = rs.getInt(20);
+                offtask.status = rs.getInt(21);
+
+                Gson gson = new Gson();
+                String jsontext = gson.toJson( offtask, JOfflineTask.class);
+                return jsontext;
+            }else{
+                System.out.println("Error : not find offline task of "+ oftid);
+                return null ;
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return null ;
         }
     }
 
@@ -186,6 +240,49 @@ public class JRDBHelperForWebservice {
 
     }
 
+    public int rdbNewOffTask1( String script, String uid,String path,String dt) {
+        try
+        {
+            String query = " insert into tbOfflineTask (scriptContent, outProductId, outDatetime,"
+                    +" startTime, uid, stype,"
+                    + "path, htable, hpid, "
+                    +" hcol, hfami, hpidlen, hxylen, status )"
+                    + " values (?,?,?, ?,?,?, ?,?,?, ?, ?,?,?,? )";
+            // create the mysql insert preparedstatement
+            PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            preparedStmt.setString (1, script);
+            preparedStmt.setInt (2, 0);
+            preparedStmt.setLong    (3, Long.parseLong(dt));
+            long starttime = this.getCurrentDatetime();
+            preparedStmt.setLong(4,starttime);
+            preparedStmt.setInt(5, Integer.parseInt(uid)) ;
+            preparedStmt.setInt(6,1);//script-type=1
+
+            preparedStmt.setString(7, path);
+            preparedStmt.setString( 8, WConfig.sharedConfig.hbaseuserfiletable) ;//hbase table name
+            preparedStmt.setInt( 9, 1);//hbase pid
+            preparedStmt.setLong( 10 , starttime);// hbase column name.
+
+            preparedStmt.setString(11 , "tiles");
+            preparedStmt.setInt(12,1);
+            preparedStmt.setInt(13,2);
+            preparedStmt.setInt(14,0);
+
+            preparedStmt.executeUpdate();
+            ResultSet rs = preparedStmt.getGeneratedKeys();
+            int last_inserted_id = -1 ;
+            if(rs.next())
+            {
+                last_inserted_id = rs.getInt(1);
+            }
+            return last_inserted_id;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbNewRenderTask exception , " + ex.getMessage() ) ;
+            return -1 ;
+        }
+    }
+
     public int rdbNewUserScript( int uid, String script0,int type){
         try
         {
@@ -255,6 +352,8 @@ public class JRDBHelperForWebservice {
             return outjson ;
         }
     }
+
+
 
     public JScript rdbGetUserScript(int sid)
     {
@@ -370,6 +469,40 @@ public class JRDBHelperForWebservice {
         }
     }
 
+    public String rdbGetUserFileList(int uid)
+    {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT oftid,path,outProductId,hcol,uid,startTime "
+                    +" FROM tbOfflineTask WHERE stype=1 AND uid="+uid+" LIMIT 200") ;
+            Gson gson = new Gson();
+            String outjson = "{\"results\":[" ;
+            int nrec = 0 ;
+            while (rs.next()) {
+                JUserProductInfo res1 = new JUserProductInfo();
+                res1.oftid = rs.getInt("oftid");
+                res1.path = rs.getString("path");
+                res1.outProductId = rs.getInt("outProductId");
+                res1.hcol = rs.getLong("hcol");
+                res1.uid = rs.getInt("uid");
+                res1.startTime = rs.getLong("startTime");
+
+                String onejson = gson.toJson(res1, JUserProductInfo.class) ;
+                if( nrec>0 ){
+                    outjson+=",";
+                }
+                outjson+=onejson;
+                ++nrec;
+            }
+            outjson +="]}" ;
+            return outjson;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            String outjson = "{\"results\":[]}" ;
+            return outjson ;
+        }
+    }
+
     public String rdbGetPolyDetail(int polyid)
     {
         try {
@@ -390,6 +523,49 @@ public class JRDBHelperForWebservice {
             return "{}";
         } catch (SQLException e) {
             return "{}" ;
+        }
+    }
+
+    public String rdbGetOffTask1DetailByPath(String path)
+    {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery(
+                    "SELECT oftid,scriptContent,extent,zmin,zmax,"
+                            +" outProductId,outDatetime,startTime,endTime,"
+                            +" uid,storage,stype,resultjson,path,htable,hpid,hcol "
+                            +" FROM tbOfflineTask WHERE path='"
+                            + path +"' LIMIT 1") ;
+            if (rs.next()) {
+                JOfflineTask offtask = new JOfflineTask();
+                offtask.oftid = rs.getInt(1);
+                offtask.scriptContent = rs.getString(2);
+                offtask.extent = rs.getString(3);
+                offtask.zmin = rs.getInt(4);
+                offtask.zmax = rs.getInt(5);
+                offtask.outProductId = rs.getInt(6);
+                offtask.outDatetime = rs.getLong(7);
+                offtask.startTime = rs.getLong(8);
+                offtask.endTime = rs.getLong(9);
+                offtask.uid = rs.getInt(10);
+                offtask.storage = rs.getInt(11);
+                offtask.stype = rs.getInt(12);
+                offtask.resultjson = rs.getString(13);
+                offtask.path = rs.getString(14);
+                offtask.htable = rs.getString(15);
+                offtask.hpid = rs.getInt(16);
+                offtask.hcol = rs.getLong(17);
+
+                Gson gson = new Gson();
+                String jsontext = gson.toJson( offtask, JOfflineTask.class);
+                return jsontext;
+            }else{
+                System.out.println("Warning : not find offline task by path:"+ path);
+                return null ;
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return null ;
         }
     }
 

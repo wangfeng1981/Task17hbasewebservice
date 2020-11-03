@@ -16,7 +16,8 @@ public class JProductInfo implements Serializable {
     public int hPid;// pid in hbase;
     public int pid ;//pid in mysql
     public int hYXByteNum , noData, tileWid, tileHei ;
-    public String compress ;
+    public String compress ;//none, deflate
+    public long hcol;//new added, only for user file.
     public int getDataTypeByteLen() {
         switch (dataType){
             case 1: return 1;
@@ -29,4 +30,5 @@ public class JProductInfo implements Serializable {
         }
         return 0 ;
     }
+
 }

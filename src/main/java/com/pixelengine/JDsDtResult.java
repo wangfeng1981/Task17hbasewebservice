@@ -1,7 +1,7 @@
 package com.pixelengine;
 
 public class JDsDtResult {
-    JDatasetDatetime[] dsdtarr ;
-    int status;
-    String error ;
+    public JDatasetDatetime[] dsdtarr ;
+    public int status;
+    public String error ;
 }

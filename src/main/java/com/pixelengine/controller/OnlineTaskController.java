@@ -1,6 +1,7 @@
 package com.pixelengine.controller;
 
 
+import com.google.gson.Gson;
 import com.pixelengine.*;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -159,6 +160,104 @@ public class OnlineTaskController {
             final HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.TEXT_PLAIN);
             return new ResponseEntity<byte[]>( "not found render task".getBytes(), headers, HttpStatus.NOT_FOUND);
+        }
+    }
+
+
+    @ResponseBody
+    @RequestMapping(value="/onlinetask/getpixel/",method= RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public ResponseEntity<byte[]> onlineTaskGetPixelValues(
+            String oltid, String longitude,String latitude,String dt )
+    {
+
+        System.out.println("onlinetask getpixel values");
+        System.out.println("onlinetaskid,longitude,latitude,dt:"+oltid+","+longitude+","+latitude+","+dt);
+
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+        JRenderTask renderTask = rdb.rdbGetRenderTask( Integer.parseInt(oltid) ) ;
+
+        double inlon = Double.parseDouble(longitude);
+        double inlat = Double.parseDouble(latitude);
+
+        if( renderTask != null && inlon>=-180.0 && inlon<=180.0 && inlat>=-90.0 && inlat<=90.0 )
+        {
+
+            HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
+
+            //解析脚本，获取一个产品名称，从而计算最大zlevel
+            String dsdtJsonText = cv8.ParseScriptForDsDt(
+                    "com/pixelengine/HBasePixelEngineHelper",
+                    renderTask.scriptContent);
+
+            Gson gson = new Gson();
+            JDsDtResult dsdtResult = gson.fromJson(dsdtJsonText, JDsDtResult.class) ;
+            if( dsdtResult.status==0 )
+            {//good
+
+                //get product info by ds name
+                String dsname1 = dsdtResult.dsdtarr[0].ds;
+                JProductInfo pdtinfo1 = rdb.rdbGetProductInfoByName(dsname1) ;
+                if( pdtinfo1 != null )
+                {
+                    int tilez = pdtinfo1.maxZoom;
+                    JPixelValues pxvalues = JPixelValues.CreateByLongLat(
+                            Double.parseDouble(longitude),
+                            Double.parseDouble(latitude),
+                            tilez,
+                            pdtinfo1.tileWid,
+                            pdtinfo1.tileHei
+                    ) ;
+
+                    System.out.println("maxzoom:" + tilez);
+                    System.out.println("from long,lat -> tilez,y,x:"
+                            +pxvalues.tilez
+                            +","+pxvalues.tiley
+                            +","+pxvalues.tilex) ;
+                    System.out.println("col,row:" + pxvalues.col + "," + pxvalues.row) ;
+                    TileComputeResult res1 = cv8.RunScriptForTileWithoutRender(
+                            "com/pixelengine/HBasePixelEngineHelper",
+                            renderTask.scriptContent, Long.parseLong(dt) ,
+                            tilez,pxvalues.tiley,pxvalues.tilex) ;
+                    if( res1.status==0 )
+                    {//ok
+                        System.out.println("Info : tile compute ok.");
+                        final HttpHeaders headers = new HttpHeaders();
+                        headers.setContentType(MediaType.APPLICATION_JSON);
+                        pxvalues.values = new double[res1.nbands] ;
+
+                        for(int ib = 0; ib < res1.nbands; ++ ib )
+                        {
+                            pxvalues.values[ib] = res1.getValue(pxvalues.col,pxvalues.row,ib) ;
+                        }
+                        String jsontext = gson.toJson(pxvalues, JPixelValues.class);
+                        return new ResponseEntity<byte[]>(jsontext.getBytes(), headers, HttpStatus.OK);
+                    }else
+                    {
+                        System.out.println("Error : bad compute.");
+                        final HttpHeaders headers = new HttpHeaders();
+                        headers.setContentType(MediaType.TEXT_PLAIN);
+                        return new ResponseEntity<byte[]>( "bad compute".getBytes(), headers, HttpStatus.NOT_FOUND);
+                    }
+                }else
+                {
+                    System.out.println("Error : no productinfo, "+ dsname1);
+                    final HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.TEXT_PLAIN);
+                    return new ResponseEntity<byte[]>( "no productinfo".getBytes(), headers, HttpStatus.NOT_FOUND);
+                }
+            }else{
+                System.out.println("Error : ParseScriptForDsDt failed, "+ dsdtResult.error);
+                final HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.TEXT_PLAIN);
+                return new ResponseEntity<byte[]>( "ParseScriptForDsDt failed".getBytes(), headers, HttpStatus.NOT_FOUND);
+            }
+        }else
+        {
+            System.out.println("Error : not find render task or longlat invalid.");
+            final HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.TEXT_PLAIN);
+            return new ResponseEntity<byte[]>( "not found render task or longlat invalid.".getBytes(), headers, HttpStatus.NOT_FOUND);
         }
     }
 

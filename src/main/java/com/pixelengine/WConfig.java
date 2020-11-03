@@ -22,5 +22,5 @@ public class WConfig {
         }
     }
     public String zookeeper,sparkmaster,connstr,user,pwd;
-    public String wmtsxml ;
+    public String wmtsxml ,tempdir , hbaseuserfiletable;
 }

@@ -4,6 +4,7 @@
 "connstr":"jdbc:mysql://192.168.10.160:3306/pe?useUnicode=true&characterEncoding=utf-8" ,
 "user":"big",
 "pwd":"wfhbase2021",
-"wmtsxml":"/home/hadoop/IdeaProjects/Task17hbasewebservice/wmts-template.xml"
-
+"wmtsxml":"/home/hadoop/IdeaProjects/Task17hbasewebservice/wmts-template.xml",
+"tempdir":"/home/hadoop/tempdata/pe-tmpdir/",
+"hbaseuserfiletable":"sparkv8out"
 }
