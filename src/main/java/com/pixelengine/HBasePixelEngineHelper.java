@@ -88,6 +88,7 @@ public class HBasePixelEngineHelper {
                 tiledata.nband = bandindices.length;
                 tiledata.dataType = theinfo.dataType;
                 int pixelLen = theinfo.getDataTypeByteLen();
+                System.out.println("dataType:" + tiledata.dataType + ";; pixelLen:"+pixelLen);
                 tiledata.tiledataArray[0] = new byte[
                         tiledata.width
                                 *tiledata.height
@@ -101,8 +102,8 @@ public class HBasePixelEngineHelper {
                     int bandindex = bandindices[iband] ;
                     if( bandindex>=0 && bandindex < theinfo.bandNum )
                     {
-                        int mysqlpidOfBandindex = theinfo.bandPids[iband] ;
-                        int newbandindex = theinfo.bandBandIndices[iband];
+                        int mysqlpidOfBandindex = theinfo.bandPids[bandindex] ;//bugfixed
+                        int newbandindex = theinfo.bandBandIndices[bandindex];//bugfixed
                         if( mysqlpidOfBandindex == lastmysqlpid && lastCellData!=null ){
                             copyBytes2Bytes(lastCellData, newbandindex , bandbytesize , tiledata.tiledataArray[0], iband );
                         }else{
@@ -173,6 +174,7 @@ public class HBasePixelEngineHelper {
                 tiledata.nband = theinfo.bandNum;//different with dataset
                 tiledata.dataType = theinfo.dataType;
                 int pixelLen = theinfo.getDataTypeByteLen();
+                System.out.println("dataType:" + tiledata.dataType + ";; pixelLen:"+pixelLen);
                 tiledata.tiledataArray[0] = new byte[
                         tiledata.width
                                 *tiledata.height
