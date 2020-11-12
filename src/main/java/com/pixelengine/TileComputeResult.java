@@ -41,13 +41,13 @@ public class TileComputeResult {
                     ByteBuffer bb = ByteBuffer.allocate(4);
                     bb.put(0,(byte)0);
                     bb.put(1,(byte)0);
-                    bb.put(2,binaryData[pos0]) ;
-                    bb.put(3,binaryData[pos0+1]) ;
+                    bb.put(2,binaryData[pos0+1]) ;
+                    bb.put(3,binaryData[pos0+0]) ;
                     return (double)bb.getInt(0);
                 }else if( dataType==3 ){
                     ByteBuffer bb = ByteBuffer.allocate(2);
-                    bb.put(0,binaryData[pos0]) ;
-                    bb.put(1,binaryData[pos0+1]) ;
+                    bb.put(0,binaryData[pos0+1]) ;
+                    bb.put(1,binaryData[pos0+0]) ;
                     return (double)bb.getShort(0);
                 }else if( dataType==4 )
                 {
@@ -56,38 +56,38 @@ public class TileComputeResult {
                     bb.put(1,(byte)0);
                     bb.put(2,(byte)0);
                     bb.put(3,(byte)0);
-                    bb.put(4,binaryData[pos0]) ;
-                    bb.put(5,binaryData[pos0+1]) ;
-                    bb.put(6,binaryData[pos0+2]) ;
-                    bb.put(7,binaryData[pos0+3]) ;
+                    bb.put(4,binaryData[pos0+3]) ;
+                    bb.put(5,binaryData[pos0+2]) ;
+                    bb.put(6,binaryData[pos0+1]) ;
+                    bb.put(7,binaryData[pos0+0]) ;
                     return (double)bb.getLong(0);
                 }else if( dataType==5 )
                 {
                     ByteBuffer bb = ByteBuffer.allocate(4);
-                    bb.put(0,binaryData[pos0]) ;
-                    bb.put(1,binaryData[pos0+1]) ;
-                    bb.put(2,binaryData[pos0+2]) ;
-                    bb.put(3,binaryData[pos0+3]) ;
+                    bb.put(0,binaryData[pos0+3]) ;
+                    bb.put(1,binaryData[pos0+2]) ;
+                    bb.put(2,binaryData[pos0+1]) ;
+                    bb.put(3,binaryData[pos0+0]) ;
                     return (double)bb.getInt(0);
                 }else if( dataType==6 )
                 {
                     ByteBuffer bb = ByteBuffer.allocate(4);
-                    bb.put(0,binaryData[pos0]) ;
-                    bb.put(1,binaryData[pos0+1]) ;
-                    bb.put(2,binaryData[pos0+2]) ;
-                    bb.put(3,binaryData[pos0+3]) ;
+                    bb.put(0,binaryData[pos0+3]) ;//bugfixed
+                    bb.put(1,binaryData[pos0+2]) ;
+                    bb.put(2,binaryData[pos0+1]) ;
+                    bb.put(3,binaryData[pos0+0]) ;
                     return (double)bb.getFloat(0);
                 }else if( dataType==7 )
                 {
                     ByteBuffer bb = ByteBuffer.allocate(8);
-                    bb.put(0,binaryData[pos0]) ;
-                    bb.put(1,binaryData[pos0+1]) ;
-                    bb.put(2,binaryData[pos0+2]) ;
-                    bb.put(3,binaryData[pos0+3]) ;
-                    bb.put(4,binaryData[pos0+4]) ;
-                    bb.put(5,binaryData[pos0+5]) ;
-                    bb.put(6,binaryData[pos0+6]) ;
-                    bb.put(7,binaryData[pos0+7]) ;
+                    bb.put(0,binaryData[pos0+7]) ;
+                    bb.put(1,binaryData[pos0+6]) ;
+                    bb.put(2,binaryData[pos0+5]) ;
+                    bb.put(3,binaryData[pos0+4]) ;
+                    bb.put(4,binaryData[pos0+3]) ;
+                    bb.put(5,binaryData[pos0+2]) ;
+                    bb.put(6,binaryData[pos0+1]) ;
+                    bb.put(7,binaryData[pos0+0]) ;
                     return bb.getDouble(0);
                 }
                 return 0;
