@@ -63,6 +63,48 @@ public class WHBaseUtil {
 
     }
 
+    /// 不适用自动计算的bucket编号，采用制定bucket编号
+    /// pdtByteLen = 1,4
+    /// pdtid = byte/int
+    /// xyByteLen = 2,4
+    /// x,y = short/int
+    public static byte[] GenerateRowkey2(
+        int ibuck,
+        int pdtByteLen,
+        int pdtid ,
+        int xyByteLen ,
+        int z ,
+        int y ,
+        int x
+    )   {
+        try{
+            byte bucketid = (byte)ibuck ;
+            ByteArrayOutputStream bos = new ByteArrayOutputStream() ;
+            DataOutputStream dos = new DataOutputStream(bos);
+            dos.writeByte(bucketid);
+            if( pdtByteLen == 1){
+                dos.writeByte( (byte)pdtid) ;
+            }else{
+                //int32
+                dos.writeInt(pdtid); ;
+            }
+            dos.writeByte((byte)z);
+            if( xyByteLen == 2){
+                dos.writeShort( (short)y);
+                dos.writeShort( (short)x);
+            }else{
+                dos.writeInt(  y);
+                dos.writeInt(  x);
+            }
+            dos.flush();
+            return bos.toByteArray();
+        }catch(Exception e)
+        {
+            return null ;
+        }
+
+    }
+
     public static TileId ConvertTileIdByRowkey(byte[] rowkey, int pdtByteLen, int xyByteLen )
             throws IOException
     {

@@ -24,8 +24,8 @@ import java.util.Comparator;
 
 public class HBasePixelEngineHelper {
     public String errorMessage;
-    private int MaxDatetimeRecords = 30 ;
-    private int PEIgnore = -1 ;
+//    private static int MaxDatetimeRecords = 30 ;//这个地方必须是static，否则c++调用的时候不会初始化这个值。static出现新的bug了
+//    private static int PEIgnore = -1 ;//这个地方必须是static，否则c++调用的时候不会初始化这个值。
 
     //返回最近一次调用的错误信息
     public String getErrorMessage() {
@@ -275,6 +275,8 @@ public class HBasePixelEngineHelper {
             int z,
             int y,
             int x) throws IOException {
+        final int MaxDatetimeRecords = 30 ;
+
         ArrayList<DatetimeCellData> dtdatalist = new ArrayList<DatetimeCellData>() ;
 
         byte[] rowkey1 = WHBaseUtil.GenerateRowkey(pidlen,hpid,yxlen,z,y,x) ;
@@ -348,6 +350,7 @@ public class HBasePixelEngineHelper {
 
     private boolean isPassAllDatetimeFilter(long dtx, int monf, int dayf, int hourf, int minuf, int secf)
     {
+        final int PEIgnore = -1 ;
         if( monf!=PEIgnore )
         {
             int monx = (int) ((dtx / 100000000L)%100) ;
@@ -485,9 +488,15 @@ public class HBasePixelEngineHelper {
                             resultTileData.x = x;
                             resultTileData.y = y;
                             resultTileData.z = z ;
+                            int pixelLen = theinfo.getDataTypeByteLen() ;
                             for(int ids=0;ids<resultTileData.numds;++ids )
                             {
                                 resultTileData.datetimeArray[ids] = lastCellDataList.get(ids).dt;
+                                resultTileData.tiledataArray[ids] = new byte[
+                                                theinfo.tileWid
+                                                *theinfo.tileHei
+                                                *bandindices.length
+                                                *pixelLen] ;
                             }
                         }
 
