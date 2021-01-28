@@ -438,6 +438,7 @@ public class JRDBHelperForWebservice {
         }
     }
 
+
     public String rdbGetUserPolyList(int uid)
     {
         try {
@@ -599,6 +600,46 @@ public class JRDBHelperForWebservice {
         {
             System.out.println("Error : rdbNewRenderTask exception , " + ex.getMessage() ) ;
             return -1 ;
+        }
+    }
+
+
+    //2021-1-28
+    public JPeStyle rdbGetStyle(int sid)
+    {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT styleContent "
+                    +" FROM tbStyle WHERE styleid="+sid+" LIMIT 1") ;
+            if (rs.next()) {
+                String styleContent = rs.getString("styleContent") ;
+
+                Gson g = new Gson() ;
+                JPeStyle styleObj =  new Gson().fromJson(styleContent, JPeStyle.class) ;
+                return styleObj;
+            }
+            return null;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return null ;
+        }
+    }
+
+    //2021-1-28
+    public String rdbGetStyleText(int sid)
+    {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT styleContent "
+                    +" FROM tbStyle WHERE styleid="+sid+" LIMIT 1") ;
+            if (rs.next()) {
+                String styleContent = rs.getString("styleContent")  ;
+                return styleContent;
+            }
+            return null;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return null ;
         }
     }
 }

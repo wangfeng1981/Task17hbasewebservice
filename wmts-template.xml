@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Capabilities>
+<Capabilities xmlns="http://www.opengis.net/wmts/1.0"
+    xmlns:ows="http://www.opengis.net/ows/1.1"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:gml="http://www.opengis.net/gml"
+    xsi:schemaLocation="http://www.opengis.net/wmts/1.0
+    http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd"
+    version="1.0.0">
     <ows:ServiceIdentification>
         <ows:Title xml:lang="en">PixelEngine</ows:Title>
         <ows:ServiceType>OGC WMTS</ows:ServiceType>
@@ -12,14 +19,14 @@
         <ows:Operation name="GetCapabilities">
             <ows:DCP>
                 <ows:HTTP>
-                    <ows:Get xlink:href="http://192.168.10.178:15900/pe/onlinetask/wmts/{oltid}/WMTSCapabilities.xml"></ows:Get>
+                    <ows:Get xlink:href="http://10.1.7.96:15900/pe/onlinetask/wmts/{oltid}/WMTSCapabilities.xml"></ows:Get>
                 </ows:HTTP>
             </ows:DCP>
         </ows:Operation>
         <ows:Operation name="GetTile">
             <ows:DCP>
                 <ows:HTTP>
-                    <ows:Get xlink:href="http://192.168.10.178:15900/pe/onlinetask/wmts/{oltid}/"></ows:Get>
+                    <ows:Get xlink:href="http://10.1.7.96:15900/pe/onlinetask/wmts/{oltid}/"></ows:Get>
                 </ows:HTTP>
             </ows:DCP>
         </ows:Operation>

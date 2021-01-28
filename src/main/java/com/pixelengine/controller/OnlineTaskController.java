@@ -54,6 +54,7 @@ public class OnlineTaskController {
     }
 
     //online task id - otid
+    //这个是老接口，后面不再更新，请使用新的接口 /rendertask/wmts/{otid}/WMTSCapabilities.xml 2021-1-28
     @ResponseBody
     @RequestMapping(value="/onlinetask/wmts/{otid}/WMTSCapabilities.xml",method= RequestMethod.GET)
     @CrossOrigin(origins = "*")
@@ -82,6 +83,7 @@ public class OnlineTaskController {
         return new ResponseEntity<byte[]>(xmlContent2.getBytes(), headers, HttpStatus.OK);
     }
 
+    //这个是老的版本，使用currenttime的，新的使用extraData对象,请使用新的接口 /rendertak/wmts/{otid}/ 2021-1-28
     @ResponseBody
     @RequestMapping(value="/onlinetask/wmts/{otid}/",method= RequestMethod.GET)
     @CrossOrigin(origins = "*")
@@ -261,6 +263,140 @@ public class OnlineTaskController {
         }
     }
 
+
+    //online task id - otid
+    //新的接口 /rendertask/wmts/{otid}/WMTSCapabilities.xml 2021-1-28
+    @ResponseBody
+    @RequestMapping(value="/rendertask/wmts/{otid}/WMTSCapabilities.xml",method= RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public ResponseEntity<byte[]> wmtsGetCap2(@PathVariable String otid) throws IOException {
+        System.out.println("/rendertask/wmts/{otid}/WMTSCapabilities.xml");
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.TEXT_XML);
+
+        //从数据库查询zlevel数值
+        String zlevel = "9" ;
+
+        //read template
+        String xmlfile = WConfig.sharedConfig.wmtsxml2;
+
+        //Resource resource = new ClassPathResource("resources:wmts-template2.xml");
+        java.io.InputStream instream0 = new FileInputStream(xmlfile);
+        InputStreamReader  reader0 = new InputStreamReader(instream0, "UTF-8");
+        BufferedReader bf = new BufferedReader(reader0);
+        String xmlContent = "";
+        String newLine = "";
+        while((newLine = bf.readLine()) != null){
+            xmlContent += newLine ;
+        }
+
+        //replace {oltid} with real online task id.
+        String xmlContent2 = xmlContent.replace("{oltid}",otid);
+
+        //replace ms_{zlevel} with real zlevel.
+        xmlContent2 = xmlContent2.replace("{zlevel}",zlevel);
+
+        //return xml
+        return new ResponseEntity<byte[]>(xmlContent2.getBytes(), headers, HttpStatus.OK);
+    }
+
+    //新接口 /rendertak/wmts/{otid}/ 2021-1-28
+    @ResponseBody
+    @RequestMapping(value="/rendertask/wmts/{otid}/",method= RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public ResponseEntity<byte[]> wmtsGetTiles2(@PathVariable String otid, HttpServletRequest request, ModelMap model) {
+
+        System.out.println("wmtsGetTiles2");
+        System.out.println("onlinetaskid:"+otid);
+
+        StringBuilder requestURL = new StringBuilder(request.getRequestURL().toString());
+        String queryString = request.getQueryString();
+
+        if (queryString == null) {
+            System.out.println( requestURL.toString() );
+        } else {
+            System.out.println( requestURL.append('?').append(queryString).toString());
+        }
+
+
+        Enumeration<String> params = request.getParameterNames();
+        HashMap<String,String> lowerParams = new HashMap<String,String>();
+        while (params.hasMoreElements())
+        {
+            String name1 = params.nextElement();
+            String value1 = request.getParameter(name1) ;
+            System.out.println( name1 + ":" + value1    );
+            lowerParams.put( name1.toLowerCase() , value1) ;
+        }
+
+        String requeststr = lowerParams.get("request") ;//
+        String servicestr = lowerParams.get("service")  ;//req.get_param_value("SERVICE");
+        String zstr = lowerParams.get("tilematrix")  ;//req.get_param_value("TILEMATRIX");
+        String ystr = lowerParams.get("tilerow")  ;// req.get_param_value("TILEROW");
+        String xstr = lowerParams.get("tilecol")  ;// req.get_param_value("TILECOL");
+        String dtstr = lowerParams.get("dt")  ;//req.get_param_value("dt");
+        String styleId = lowerParams.get("style") ;
+
+        System.out.println("request:"+request) ;
+        System.out.println("service:" + servicestr ) ;
+        System.out.println("tilematrix:" + zstr) ;
+        System.out.println("tilerow:" + ystr) ;
+        System.out.println("tilecol:" + xstr) ;
+        System.out.println("dt:" + dtstr ) ;
+        System.out.println("style:" + styleId) ;
+
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+        JRenderTask renderTask = rdb.rdbGetRenderTask( Integer.parseInt(otid) ) ;
+        if( renderTask != null )
+        {
+            HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
+
+            //渲染方案
+            String stylejsonText = null ;
+
+            if( styleId.compareTo("default")==0 ){
+                //get style from table of tbRenderTask
+                stylejsonText = renderTask.renderStyle ;
+            }else{
+                int getStyleId = Integer.parseInt(styleId) ;
+                stylejsonText = rdb.rdbGetStyleText(getStyleId) ;
+            }
+            if( stylejsonText==null ){
+                stylejsonText="";
+            }
+
+            String extraText = "{\"datetime\":" + dtstr + "}" ;
+
+            TileComputeResult res1 = cv8.RunScriptForTileWithRenderWithExtra(
+                    "com/pixelengine/HBasePixelEngineHelper",
+                    renderTask.scriptContent,
+                    stylejsonText,
+                    extraText,
+                    Integer.parseInt(zstr),
+                    Integer.parseInt(ystr),
+                    Integer.parseInt(xstr)) ;
+            if( res1.status==0 )
+            {//ok
+                System.out.println("Info : tile compute ok.");
+                final HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.IMAGE_PNG);
+                //return new ResponseEntity<byte[]>(retpng, headers, HttpStatus.OK);
+                return new ResponseEntity<byte[]>(res1.binaryData, headers, HttpStatus.OK);
+            }else
+            {
+                System.out.println("Error : bad compute.");
+                final HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.TEXT_PLAIN);
+                return new ResponseEntity<byte[]>( "bad compute".getBytes(), headers, HttpStatus.NOT_FOUND);
+            }
+        }else
+        {
+            System.out.println("Error : not find render task.");
+            final HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.TEXT_PLAIN);
+            return new ResponseEntity<byte[]>( "not found render task".getBytes(), headers, HttpStatus.NOT_FOUND);
+        }
+    }
 
 
 //    svr.Get(R"(/pe/onlinetask/wmts/(\d+)/WMTSCapabilities.xml)", handle_onlinetask_wmts_capabilities);
