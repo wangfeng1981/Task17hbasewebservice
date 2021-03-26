@@ -1,5 +1,5 @@
 package com.pixelengine.controller;
-
+// 这个可能不用了，采用RegionController（感兴趣去相关api）
 import com.pixelengine.JRDBHelperForWebservice;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;

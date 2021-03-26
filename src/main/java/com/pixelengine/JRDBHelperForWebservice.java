@@ -1,6 +1,10 @@
 package com.pixelengine;
 
 import com.google.gson.Gson;
+import com.pixelengine.DataModel.Area;
+import com.pixelengine.DataModel.JProduct;
+import com.pixelengine.DataModel.JProductBand;
+import com.pixelengine.DataModel.JProductDataItem;
 
 
 import java.io.FileInputStream;
@@ -10,6 +14,7 @@ import java.io.UnsupportedEncodingException;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Map;
@@ -66,7 +71,7 @@ public class JRDBHelperForWebservice {
         {
             try {
                 Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT * FROM tbProduct WHERE productName='"+dsname+"' LIMIT 1") ;
+                ResultSet rs = stmt.executeQuery("SELECT * FROM tbproduct WHERE productname='"+dsname+"' LIMIT 1") ;
                 if (rs.next()) {
                     int pid = rs.getInt("pid");
                     int uid = rs.getInt("uid");
@@ -156,7 +161,7 @@ public class JRDBHelperForWebservice {
         {
             try {
                 Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT * FROM tbProduct WHERE pid="+mysqlPid+" LIMIT 1") ;
+                ResultSet rs = stmt.executeQuery("SELECT * FROM tbproduct WHERE pid="+mysqlPid+" LIMIT 1") ;
                 if (rs.next()) {
                     int pid = rs.getInt("pid");
                     int uid = rs.getInt("uid");
@@ -287,7 +292,7 @@ public class JRDBHelperForWebservice {
         try
         {
             long dt0 = this.getCurrentDatetime();
-            String query = " insert into tbScript (title, scriptContent, updateTime, uid, type)"
+            String query = " insert into tbscript (title, scriptcontent, updatetime, uid, type)"
                     + " values (?, ?, ?, ?, ?)";
             // create the mysql insert preparedstatement
             PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
@@ -305,7 +310,7 @@ public class JRDBHelperForWebservice {
                 last_inserted_id = rs.getInt(1);
                 //update title
                 String newtitle = "script-" + last_inserted_id;
-                String query2 = "update tbScript set title = ? where sid = ?";
+                String query2 = "update tbscript set title = ? where sid = ?";
                 PreparedStatement preparedStmt2 = JRDBHelperForWebservice.getConnection().prepareStatement(query2);
                 preparedStmt2.setString   (1, newtitle);
                 preparedStmt2.setInt      (2, last_inserted_id);
@@ -323,8 +328,8 @@ public class JRDBHelperForWebservice {
     {
         try {
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT sid,title,updateTime,uid,type "
-                    +" FROM tbScript WHERE uid="+uid+" LIMIT 200") ;
+            ResultSet rs = stmt.executeQuery("SELECT sid,title,updatetime,uid,type "
+                    +" FROM tbscript WHERE uid="+uid+" LIMIT 200") ;
             Gson gson = new Gson();
             String outjson = "{\"scripts\":[" ;
             int nrec = 0 ;
@@ -359,8 +364,8 @@ public class JRDBHelperForWebservice {
     {
         try {
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT sid,title,scriptContent,updateTime,uid,type "
-                    +" FROM tbScript WHERE sid="+sid+" LIMIT 1") ;
+            ResultSet rs = stmt.executeQuery("SELECT sid,title,scriptcontent,updatetime,uid,type "
+                    +" FROM tbscript WHERE sid="+sid+" LIMIT 1") ;
             if (rs.next()) {
                 JScript jscript = new JScript();
                 jscript.sid = rs.getInt("sid");
@@ -406,7 +411,7 @@ public class JRDBHelperForWebservice {
 
                 if( script!=null && title != null )
                 {
-                    String query2 = "update tbScript set title = ?, scriptContent = ? , updateTime = ?  where sid = ?";
+                    String query2 = "update tbscript set title = ?, scriptcontent = ? , updatetime = ?  where sid = ?";
                     PreparedStatement preparedStmt2 = JRDBHelperForWebservice.getConnection().prepareStatement(query2);
                     preparedStmt2.setString   (1, title);
                     preparedStmt2.setString   (2, script);
@@ -416,7 +421,7 @@ public class JRDBHelperForWebservice {
                 }
                 else if( script!=null )
                 {
-                    String query2 = "update tbScript set scriptContent = ? , updateTime = ?  where sid = ?";
+                    String query2 = "update tbscript set scriptcontent = ? , updatetime = ?  where sid = ?";
                     PreparedStatement preparedStmt2 = JRDBHelperForWebservice.getConnection().prepareStatement(query2);
                     preparedStmt2.setString   (1, script);
                     preparedStmt2.setLong     (2, dt0);
@@ -424,7 +429,7 @@ public class JRDBHelperForWebservice {
                     preparedStmt2.executeUpdate();
                 }else
                 {
-                    String query2 = "update tbScript set title = ? , updateTime = ?  where sid = ?";
+                    String query2 = "update tbscript set title = ? , updatetime = ?  where sid = ?";
                     PreparedStatement preparedStmt2 = JRDBHelperForWebservice.getConnection().prepareStatement(query2);
                     preparedStmt2.setString   (1, title);
                     preparedStmt2.setLong     (2, dt0);
@@ -641,5 +646,139 @@ public class JRDBHelperForWebservice {
             System.out.println(e.getMessage()) ;
             return null ;
         }
+    }
+
+    //2021-3-23 获取一个简短的产品信息
+    public JProduct rdbGetProductForAPI(int pid) throws SQLException {
+        JProduct result = new JProduct();
+        Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT * FROM tbproduct WHERE pid="+pid+" limit 1");
+        if (rs.next()) {
+            int uid = rs.getInt("userid");
+            String name = rs.getString("name") ;
+            String info = rs.getString("info");
+            JProduct pdt = new Gson().fromJson(info, JProduct.class) ;
+            pdt.pid = pid ;
+            pdt.userid = uid ;
+            pdt.name = name ;
+            result = pdt ;
+        }
+        return result ;
+    }
+    //2021-3-23
+    public ArrayList<JProduct> rdbGetProducts() throws SQLException {
+        ArrayList<JProduct> result = new ArrayList<>() ;
+        Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT * FROM tbproduct WHERE userid=0 ") ;
+        while (rs.next()) {
+            int pid = rs.getInt("pid");
+            int uid = rs.getInt("userid");
+            String name = rs.getString("name") ;
+            String info = rs.getString("info");
+            JProduct pdt = new Gson().fromJson(info, JProduct.class) ;
+            pdt.pid = pid ;
+            pdt.userid = uid ;
+            pdt.name = name ;
+
+            {//bandlist
+                Statement stmtb = JRDBHelperForWebservice.getConnection().createStatement();
+                ResultSet rsb = stmtb.executeQuery("SELECT * FROM tbproductband WHERE pid="+String.valueOf(pid)
+                        +" Order by bindex ASC") ;
+                while(rsb.next()){
+                    int pidb = rsb.getInt("pid" );
+                    int bindex = rsb.getInt("bIndex") ;
+                    String infob = rsb.getString("info") ;
+                    JProductBand band1 = new Gson().fromJson(infob, JProductBand.class) ;
+                    band1.pid = pidb ;
+                    band1.bIndex = bindex ;
+                    pdt.bandList.add(band1) ;
+                }
+            }
+
+            {//HBase table
+                Statement stmth = JRDBHelperForWebservice.getConnection().createStatement();
+                ResultSet rsh = stmth.executeQuery("SELECT * FROM tbhbasetable WHERE htablename='"+
+                        pdt.hTableName + "' LIMIT 1 ") ;
+                if( rsh.next() ){
+                    pdt.hbaseTable.hTableName = rsh.getString("hTableName") ;
+                    pdt.hbaseTable.hFamily = rsh.getString("hFamily") ;
+                    pdt.hbaseTable.hPidByteNum = rsh.getInt("hPidByteNum") ;
+                    pdt.hbaseTable.hYXByteNum = rsh.getInt("hYXByteNum") ;
+                }
+
+            }
+
+            {//product display info
+                Statement stmtpd = JRDBHelperForWebservice.getConnection().createStatement();
+                ResultSet rspd= stmtpd.executeQuery("SELECT * FROM tbproductdisplay WHERE pid='"+
+                        pdt.pid + "' LIMIT 1 ") ;
+                if( rspd.next() ){
+                    pdt.productDisplay.dpid = rspd.getInt("dpid") ;
+                    pdt.productDisplay.pid = rspd.getInt("pid") ;
+
+                    pdt.productDisplay.satellite = rspd.getString("satellite") ;
+                    pdt.productDisplay.sensor = rspd.getString("sensor") ;
+                    pdt.productDisplay.productname = rspd.getString("productname") ;
+                    pdt.productDisplay.productdescription = rspd.getString("productdescription") ;
+                    pdt.productDisplay.thumb = rspd.getString("thumb") ;
+
+                    pdt.productDisplay.visible = rspd.getInt("visible") ;
+                }
+            }
+
+            {//latest datetime
+                Statement stmtdt = JRDBHelperForWebservice.getConnection().createStatement();
+                ResultSet rsdt= stmtdt.executeQuery("SELECT * FROM tbproductdataitem WHERE pid='"+
+                        pdt.pid + "' Order by hcol DESC LIMIT 1 ") ;
+                if( rsdt.next() ){
+                    pdt.latestDataItem.fid = rsdt.getInt("fid") ;
+                    pdt.latestDataItem.pid = rsdt.getInt("pid") ;
+                    pdt.latestDataItem.hcol = rsdt.getLong("hcol") ;
+                    pdt.latestDataItem.convertShowValRealVal(pdt.timeType);
+                }
+            }
+            result.add(pdt) ;
+        }
+        return result ;
+    }
+
+
+    public ArrayList<JProductDataItem> rdbGetProductDataItemList(int pid,
+                                                                 int ipage,
+                                                                 int pagesize,
+                                                                 String orderstr ) throws SQLException {
+        JProduct pdt = rdbGetProductForAPI(pid) ;
+
+        ArrayList<JProductDataItem> result = new ArrayList<>();
+        Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+        String sqlstr = String.format("SELECT * FROM tbproductdataitem WHERE pid=%d Order by hcol %s LIMIT %d,%d ",
+                pid,orderstr,ipage*pagesize,pagesize) ;
+        ResultSet rs = stmt.executeQuery(sqlstr );
+        while (rs.next()) {
+            JProductDataItem di = new JProductDataItem() ;
+            di.fid = rs.getInt("fid");
+            di.hcol = rs.getLong("hcol") ;
+            di.convertShowValRealVal(pdt.timeType);
+            result.add(di) ;
+        }
+        return result ;
+    }
+
+    //通过父节点编码查找子节点的数组
+    public ArrayList<Area> rdbGetAreaList(String parentCode) throws SQLException {
+        ArrayList<Area> result = new ArrayList<>();
+        Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+        String sqlstr = String.format("SELECT * FROM area WHERE parent_code='%s' ",parentCode) ;
+        ResultSet rs = stmt.executeQuery(sqlstr );
+        while (rs.next()) {
+            Area aa = new Area() ;
+            aa.id = rs.getInt("id") ;
+            aa.code = rs.getString("code") ;
+            aa.name = rs.getString("name") ;
+            aa.parentCode = rs.getString("parent_code") ;
+            aa.path = rs.getString("path") ;
+            result.add(aa) ;
+        }
+        return result ;
     }
 }

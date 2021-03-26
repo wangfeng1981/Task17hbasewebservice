@@ -1,7 +1,11 @@
 package com.pixelengine;
 
+import com.pixelengine.DataModel.JProduct;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
 
 @SpringBootApplication
 public class Task17HbaseWebserviceApplication {
@@ -10,9 +14,11 @@ public class Task17HbaseWebserviceApplication {
 
 
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws SQLException {
 		System.out.println("params: config.json");
 		System.out.println("v1.0 2020-10-10");
+		System.out.println("v2.0 2021-3-24");
+		System.out.println("v2.1 2021-3-26");
 		if( args.length != 1 )
 		{
 			System.out.println("Error : args.length not 1.");
@@ -27,6 +33,10 @@ public class Task17HbaseWebserviceApplication {
 		//show pixelengine core version
 		HBasePeHelperCppConnector cc = new HBasePeHelperCppConnector();
 		System.out.println("pe core version: " + cc.GetVersion() );
+
+
+		//test debug
+		ArrayList<JProduct> productlist = JProduct.getSharedList() ;
 
 		SpringApplication.run(Task17HbaseWebserviceApplication.class, args);
 	}

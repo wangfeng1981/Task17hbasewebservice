@@ -1,5 +1,8 @@
 package com.pixelengine;
 
+import com.pixelengine.DataModel.JHBaseTable;
+import com.pixelengine.DataModel.JProduct;
+import com.pixelengine.DataModel.JProductBand;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
@@ -11,9 +14,7 @@ import org.apache.hadoop.hbase.filter.FilterList;
 import org.apache.hadoop.hbase.filter.KeyOnlyFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -72,85 +73,99 @@ public class HBasePixelEngineHelper {
             useFilekey = true;
         }
 
+        //get product by name
+        JProduct pdt = new JProduct() ;
+        {//debug
+            pdt.pid=1 ;
+            pdt.name = dsName ;
+            pdt.tileWid=256;
+            pdt.tileHei=256;
+            pdt.dataType=1;
+            pdt.hTableName = "geewater";
+        }
+
+        //get Hbase tabel by pid
+        JHBaseTable hbaseinfo = new JHBaseTable() ;
+        {//debug
+            hbaseinfo.hTableName="geewater";
+            hbaseinfo.hFamily="tiles";
+            hbaseinfo.hPidByteNum=1;
+            hbaseinfo.hYXByteNum=2;
+        }
+
+        if( pdt==null ){
+            errorMessage="Error : not find info of "+dsName ;
+            return null ;
+        }
+
+        //get band list by pid
+        ArrayList<JProductBand> bandlist = new ArrayList<JProductBand>() ;
+        {
+            JProductBand band0 = new JProductBand();
+            band0.bIndex = 0 ;
+            band0.bsqIndex = 0 ;
+            band0.hPid = 1 ;
+            bandlist.add(band0) ;
+        }
+
+        //build usebandlist by input bandindices
+        ArrayList<JProductBand> usebandlist = new ArrayList<>() ;
+        if( bandindices.length == 0 ){
+            usebandlist = bandlist ;
+        }else{
+            //debug , i will finish this later.
+            //get band list by bandindices
+            for(int i = 0 ; i < bandindices.length; ++ i ){
+                //get the JProductBand by bandindices and pid
+                //debug
+
+            }
+        }
+
 
         if( useFilekey==false ){
             //this is Dataset
             try {
-                JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
-                JProductInfo theinfo = rdb.rdbGetProductInfoByName(dsName) ;
-                if( theinfo==null ){
-                    errorMessage="Error : not find info of "+dsName ;
-                    return null ;
-                }
-
-                tiledata.width = theinfo.tileWid;
-                tiledata.height = theinfo.tileHei ;
-                tiledata.nband = bandindices.length;
-                tiledata.dataType = theinfo.dataType;
-                int pixelLen = theinfo.getDataTypeByteLen();
-                System.out.println("dataType:" + tiledata.dataType + ";; pixelLen:"+pixelLen);
+                //JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+                //JProductInfo theinfo = rdb.rdbGetProductInfoByName(dsName) ;
+                tiledata.width = pdt.tileWid;
+                tiledata.height = pdt.tileHei ;
+                tiledata.nband = usebandlist.size() ;//
+                tiledata.dataType = pdt.dataType ;
+                int pixelLen = JProduct.getDataByteLenByDataType( pdt.dataType) ;
+                System.out.println("dataType:" + tiledata.dataType + "; pixelLen:"+pixelLen);
                 tiledata.tiledataArray[0] = new byte[
                         tiledata.width
                                 *tiledata.height
                                 *tiledata.nband
-                                *pixelLen] ;
+                                *pixelLen]  ;
                 int bandbytesize = tiledata.width*tiledata.height * pixelLen ;
-                int lastmysqlpid = -1;
+                int lasthpid = -1;
                 byte[] lastCellData = null ;
-                for(int iband = 0 ; iband < bandindices.length; ++ iband )
+                for(int iband = 0 ; iband < usebandlist.size() ; ++ iband )
                 {
-                    int bandindex = bandindices[iband] ;
-                    if( bandindex>=0 && bandindex < theinfo.bandNum )
-                    {
-                        int mysqlpidOfBandindex = theinfo.bandPids[bandindex] ;//bugfixed
-                        int newbandindex = theinfo.bandBandIndices[bandindex];//bugfixed
-                        if( mysqlpidOfBandindex == lastmysqlpid && lastCellData!=null ){
-                            copyBytes2Bytes(lastCellData, newbandindex , bandbytesize , tiledata.tiledataArray[0], iband );
-                        }else{
-                            if( mysqlpidOfBandindex == theinfo.pid )
-                            {
-                                lastCellData = hbaseGetCellData(
-                                        theinfo.hTableName,
-                                        theinfo.hFamily,
-                                        dt,
-                                        theinfo.hPidByteNum,
-                                        theinfo.hPid,
-                                        theinfo.hYXByteNum ,
-                                        z,y,x) ;
-                                if( lastCellData==null ){
-                                    errorMessage = "get emtpty cell data.";
-                                    return null ;
-                                }
-                            }else{
-                                JProductInfo newinfo = rdb.rdbGetProductInfoByMysqlPid(mysqlpidOfBandindex) ;
-                                if( newinfo != null )
-                                {
-                                    lastCellData = hbaseGetCellData(
-                                            newinfo.hTableName,
-                                            newinfo.hFamily,
-                                            dt,
-                                            newinfo.hPidByteNum,
-                                            newinfo.hPid,
-                                            newinfo.hYXByteNum ,
-                                            z,y,x) ;
-                                    if( lastCellData==null ){
-                                        errorMessage = "get emtpty cell data.";
-                                        return null ;
-                                    }
-                                }else{
-                                    errorMessage = "failed to get band product info by pid of "+mysqlpidOfBandindex ;
-                                    return null ;
-                                }
-                            }
-
-                            lastmysqlpid = mysqlpidOfBandindex ;
-                            copyBytes2Bytes(lastCellData, newbandindex , bandbytesize , tiledata.tiledataArray[0], iband );
-                        }
+                    int newhpid = usebandlist.get(iband).hPid ;
+                    if( newhpid == lasthpid && lastCellData!=null ){
+                        copyBytes2Bytes(lastCellData, usebandlist.get(iband).bsqIndex ,
+                                bandbytesize , tiledata.tiledataArray[0], iband );
                     }else{
-                        //no this bandindex
-                        errorMessage = "no bandindex of " + bandindex ;
-                        return null ;
+                        lastCellData = hbaseGetCellData(
+                                hbaseinfo.hTableName,
+                                hbaseinfo.hFamily,
+                                dt,
+                                hbaseinfo.hPidByteNum,
+                                newhpid,
+                                hbaseinfo.hYXByteNum ,
+                                z,y,x) ;
+                        if( lastCellData==null ){
+                            errorMessage = "get emtpty cell data.";
+                            return null ;
+                        }
+                        lasthpid = newhpid ;
+                        copyBytes2Bytes(lastCellData, usebandlist.get(iband).bsqIndex ,
+                                bandbytesize , tiledata.tiledataArray[0], iband );
                     }
+
                 }
                 return tiledata;
             } catch (Exception e) {
@@ -158,8 +173,6 @@ public class HBasePixelEngineHelper {
                 errorMessage = "Error : getTileData exception of " + e.getMessage() ;
                 return null ;
             }
-
-
         }else{
             //use filekey or filepath
             try {
