@@ -3,6 +3,7 @@ package com.pixelengine.controller;
 
 import com.google.gson.Gson;
 import com.pixelengine.*;
+import com.pixelengine.DataModel.JProduct;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -199,16 +200,16 @@ public class OnlineTaskController {
 
                 //get product info by ds name
                 String dsname1 = dsdtResult.dsdtarr[0].ds;
-                JProductInfo pdtinfo1 = rdb.rdbGetProductInfoByName(dsname1) ;
-                if( pdtinfo1 != null )
+                JProduct pdt = rdb.rdbGetProductInfoByName(dsname1) ;
+                if( pdt != null )
                 {
-                    int tilez = pdtinfo1.maxZoom;
+                    int tilez = pdt.maxZoom;
                     JPixelValues pxvalues = JPixelValues.CreateByLongLat(
                             Double.parseDouble(longitude),
                             Double.parseDouble(latitude),
                             tilez,
-                            pdtinfo1.tileWid,
-                            pdtinfo1.tileHei
+                            pdt.tileWid,
+                            pdt.tileHei
                     ) ;
 
                     System.out.println("maxzoom:" + tilez);

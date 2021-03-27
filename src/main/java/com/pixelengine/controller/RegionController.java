@@ -76,6 +76,23 @@ public class RegionController {
     @RequestMapping("/remove")
     @ResponseBody
     public RestResult remove(String rid) {
+        RegionDTO tregion = dao.getOne( Long.parseLong(rid)) ;
+        if( tregion.getShp() != null && tregion.getShp().equals("")==false ){
+            File shpfile = new File(tregion.getShp()) ;
+            shpfile.delete() ;
+            String dbfname = tregion.getShp().replace(".shp",".dbf") ;
+            String prjname = tregion.getShp().replace(".shp",".prj") ;
+            String shxname = tregion.getShp().replace(".shp",".shx") ;
+            new File(dbfname).delete() ;
+            new File(prjname).delete() ;
+            new File(shxname).delete() ;
+        }
+
+        if( tregion.getGeojson() != null && tregion.getGeojson().equals("")==false){
+            new File(tregion.getGeojson()).delete() ;
+        }
+
+
         dao.deleteById( Long.parseLong(rid));
         RestResult returnT = new RestResult();
         returnT.setState(0);
@@ -102,7 +119,7 @@ public class RegionController {
         returnT.setMessage("");
 
         Date date = new Date();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmm");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         String da = sdf.format(date);
         String uploadPath = WConfig.sharedConfig.uploadRegionPath + "/" +da +"/";
         String shp = "";
@@ -176,7 +193,7 @@ public class RegionController {
         }
         return returnT;
     }
-
+    //write file into file system.
     public static String uploadFile(MultipartFile file,String filePath){
         String fileName = file.getOriginalFilename();
         File targetFile = new File(filePath);
@@ -205,6 +222,40 @@ public class RegionController {
         return fileName;
     }
 
+    //write String into file system.
+    public static boolean writeFile(String content,String filePath){
+        //第一步：判断文件是否为空
+        if(!filePath.isEmpty()){
+            File targetFile = new File(filePath) ;
+            File targetdir = new File(targetFile.getParent()) ;
+            //第二步：判断目录是否存在   不存在：创建目录
+            if(!targetdir.exists()){
+                targetdir.mkdirs();
+            }
+            //第三部：通过输出流将文件写入硬盘文件夹并关闭流
+            BufferedOutputStream stream = null;
+            try {
+                stream = new BufferedOutputStream(new FileOutputStream(filePath));
+                stream.write(content.getBytes());
+                stream.flush();
+            }catch (IOException e){
+                e.printStackTrace();
+                return false ;
+            }finally {
+                try {
+                    if (stream != null) stream.close();
+                    return true;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return false ;
+                }
+            }
+        }else{
+            return false ;
+        }
+    }
+
+
     private boolean convertShp2Geojson(String shpfile,String geojsonfile){
         System.out.println("try to convert "+shpfile+" --> "+geojsonfile);
         try
@@ -231,6 +282,49 @@ public class RegionController {
         }
     }
 
+
+
+    //保存geojson，并入库
+    /**wf
+     **/
+    @CrossOrigin
+    @PostMapping("/savegeojson")
+    @ResponseBody
+    public RestResult saveGeoJson(String userid,String content,String name){
+        System.out.println("saving geojson ...");
+        RestResult returnT = new RestResult();
+        returnT.setState(0);
+        returnT.setMessage("");
+
+        Date date = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        String da = sdf.format(date);
+        SimpleDateFormat sdf1 = new SimpleDateFormat("yyyyMMddhhmmss");
+        String da1 = sdf1.format(date);
+        String uploadPath = WConfig.sharedConfig.uploadRegionPath + "/" +da +"/";
+
+        String gjFileNameWithoutExtName = (new String()).format("u%s-%s",userid , da1);
+        String geojsonFilePath = uploadPath + gjFileNameWithoutExtName +".geojson" ;
+        int itry = 1;
+        while( (new File(geojsonFilePath)).exists()==true ){
+            geojsonFilePath = uploadPath + gjFileNameWithoutExtName +"-" +itry  +".geojson" ;
+            ++itry ;
+        }
+        System.out.println("used geojson file:" + geojsonFilePath);
+        writeFile( content , geojsonFilePath) ;
+
+        //数据入库
+        RegionDTO region1 = new RegionDTO() ;
+        region1.setGeojson(geojsonFilePath);
+        region1.setShp("");
+        region1.setName(name);
+        region1.setUid( Integer.parseInt(userid));//
+
+        RegionDTO newregion = dao.save(region1) ;
+        returnT.setData(newregion);
+
+        return returnT;
+    }
 
 
 

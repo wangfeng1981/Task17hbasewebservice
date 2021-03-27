@@ -24,7 +24,7 @@ import java.util.Map;
 public class JRDBHelperForWebservice {
     public static WConfig wconfig =null ;
     public static Connection connection = null ;
-    private static Hashtable<String,JProductInfo> productInfoPool =new Hashtable<String,JProductInfo>() ;
+    private static Hashtable<String,JProduct> productInfoPool =new Hashtable<String,JProduct>() ;
     private static Hashtable<Integer,String> productPidNamePool =new Hashtable<Integer,String>() ;
 
     private long getCurrentDatetime(){
@@ -65,19 +65,17 @@ public class JRDBHelperForWebservice {
         }
     }
 
-    public JProductInfo rdbGetProductInfoByName(String dsname)   {
-        JProductInfo pinfo1 = productInfoPool.get(dsname) ;
+    public JProduct rdbGetProductInfoByName(String dsname)   {
+        JProduct pinfo1 = productInfoPool.get(dsname) ;
         if( pinfo1==null  )
         {
             try {
                 Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT * FROM tbproduct WHERE productname='"+dsname+"' LIMIT 1") ;
+                ResultSet rs = stmt.executeQuery("SELECT pid FROM tbproduct WHERE name='"+dsname+"' LIMIT 1") ;
                 if (rs.next()) {
                     int pid = rs.getInt("pid");
-                    int uid = rs.getInt("uid");
-                    String info = rs.getString("productInfo");
-                    System.out.println("=== find dsname,pid : "+dsname+","+pid);
-                    JProductInfo pinfo = new Gson().fromJson(info, JProductInfo.class) ;
+                    JProduct newpdt = this.rdbGetProductForAPI(pid) ;
+                    System.out.println("=== find dsname,pid : "+dsname+","+newpdt.name);
                     synchronized(this){
                         if( productInfoPool.size() > 1000 ){
                             Integer somepid = productPidNamePool.keys().nextElement();
@@ -85,10 +83,10 @@ public class JRDBHelperForWebservice {
                             productPidNamePool.remove(somepid) ;
                             productInfoPool.remove(somePname) ;//remove a random one.
                         }
-                        productInfoPool.put(dsname,pinfo) ;
-                        productPidNamePool.put( pinfo.pid , dsname) ;
+                        productInfoPool.put(dsname,newpdt) ;
+                        productPidNamePool.put( newpdt.pid , dsname) ;
                     }
-                    return pinfo;
+                    return newpdt;
                 }else{
                     System.out.println("Error : not find productInfo of "+ dsname);
                     return null ;
@@ -149,48 +147,9 @@ public class JRDBHelperForWebservice {
         }
     }
 
-    public JProductInfo rdbGetProductInfoByMysqlPid(int mysqlPid)   {
-        String pname = productPidNamePool.get(mysqlPid) ;
-        JProductInfo pinfo1 = null;
-        if( pname !=null )
-        {
-            pinfo1 = productInfoPool.get(pname) ;
-        }
+    //deprecated 2021-3-27
+    //public JProductInfo rdbGetProductInfoByMysqlPid(int mysqlPid)   {}
 
-        if( pinfo1 == null )
-        {
-            try {
-                Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT * FROM tbproduct WHERE pid="+mysqlPid+" LIMIT 1") ;
-                if (rs.next()) {
-                    int pid = rs.getInt("pid");
-                    int uid = rs.getInt("uid");
-                    String info = rs.getString("productInfo");
-                    System.out.println("=== find product by mysql-pid : "+pid);
-                    JProductInfo pinfo = new Gson().fromJson(info, JProductInfo.class) ;
-                    synchronized(this){
-                        if( productInfoPool.size() > 1000 ){
-                            Integer somepid = productPidNamePool.keys().nextElement();
-                            String somePname = productPidNamePool.get(somepid) ;
-                            productPidNamePool.remove(somepid) ;
-                            productInfoPool.remove(somePname) ;//remove a random one.
-                        }
-                        productInfoPool.put(pinfo.productName,pinfo) ;
-                        productPidNamePool.put( pinfo.pid , pinfo.productName) ;
-                    }
-                    return pinfo;
-                }else{
-                    System.out.println("Error : not find productInfo by mysql-pid of "+ mysqlPid);
-                    return null ;
-                }
-            } catch (SQLException e) {
-                System.out.println(e.getMessage()) ;
-                return null ;
-            }
-        }else{
-            return pinfo1;
-        }
-    }
 
 
     public JRenderTask rdbGetRenderTask( int rid)
@@ -648,7 +607,7 @@ public class JRDBHelperForWebservice {
         }
     }
 
-    //2021-3-23 获取一个简短的产品信息
+    //2021-3-23 获取一个简短的产品信息，包含HBase信息和波段信息
     public JProduct rdbGetProductForAPI(int pid) throws SQLException {
         JProduct result = new JProduct();
         Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
@@ -661,6 +620,35 @@ public class JRDBHelperForWebservice {
             pdt.pid = pid ;
             pdt.userid = uid ;
             pdt.name = name ;
+
+            {//bandlist
+                Statement stmtb = JRDBHelperForWebservice.getConnection().createStatement();
+                ResultSet rsb = stmtb.executeQuery("SELECT * FROM tbproductband WHERE pid="+String.valueOf(pid)
+                        +" Order by bindex ASC") ;
+                while(rsb.next()){
+                    int pidb = rsb.getInt("pid" );
+                    int bindex = rsb.getInt("bIndex") ;
+                    String infob = rsb.getString("info") ;
+                    JProductBand band1 = new Gson().fromJson(infob, JProductBand.class) ;
+                    band1.pid = pidb ;
+                    band1.bIndex = bindex ;
+                    pdt.bandList.add(band1) ;
+                }
+            }
+
+            {//HBase table
+                Statement stmth = JRDBHelperForWebservice.getConnection().createStatement();
+                ResultSet rsh = stmth.executeQuery("SELECT * FROM tbhbasetable WHERE htablename='"+
+                        pdt.hTableName + "' LIMIT 1 ") ;
+                if( rsh.next() ){
+                    pdt.hbaseTable.hTableName = rsh.getString("hTableName") ;
+                    pdt.hbaseTable.hFamily = rsh.getString("hFamily") ;
+                    pdt.hbaseTable.hPidByteNum = rsh.getInt("hPidByteNum") ;
+                    pdt.hbaseTable.hYXByteNum = rsh.getInt("hYXByteNum") ;
+                }
+
+            }
+
             result = pdt ;
         }
         return result ;
@@ -753,6 +741,64 @@ public class JRDBHelperForWebservice {
         Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
         String sqlstr = String.format("SELECT * FROM tbproductdataitem WHERE pid=%d Order by hcol %s LIMIT %d,%d ",
                 pid,orderstr,ipage*pagesize,pagesize) ;
+        ResultSet rs = stmt.executeQuery(sqlstr );
+        while (rs.next()) {
+            JProductDataItem di = new JProductDataItem() ;
+            di.fid = rs.getInt("fid");
+            di.hcol = rs.getLong("hcol") ;
+            di.convertShowValRealVal(pdt.timeType);
+            result.add(di) ;
+        }
+        return result ;
+    }
+
+    public ArrayList<Integer> rdbGetProductYearList(int pid)
+            throws SQLException {
+        JProduct pdt = rdbGetProductForAPI(pid) ;
+        ArrayList<Integer> result = new ArrayList<>();
+        Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+        String sqlstr = String.format("SELECT DISTINCT FLOOR(hcol/10000000000) as year FROM tbproductdataitem "
+                +"WHERE pid=%d Order by year ASC",
+                pid) ;
+        ResultSet rs = stmt.executeQuery(sqlstr );
+        while (rs.next()) {
+            Integer year1 = rs.getInt("year");
+            result.add(year1) ;
+        }
+        return result ;
+    }
+
+    public ArrayList<Integer> rdbGetProductMonthList(int pid,
+                                                     int year) throws SQLException {
+        JProduct pdt = rdbGetProductForAPI(pid) ;
+        ArrayList<Integer> result = new ArrayList<>();
+        Long ymd0 = year*10000000000L ;
+        Long ymd1 = (year+1)*10000000000L ;
+        Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+        String sqlstr = String.format("SELECT DISTINCT FLOOR(hcol/100000000) as yearmon FROM tbproductdataitem "
+                        +"WHERE pid=%d AND hcol>=%d AND hcol<%d Order by yearmon ASC",
+                pid,ymd0,ymd1 ) ;
+        ResultSet rs = stmt.executeQuery(sqlstr );
+        while (rs.next()) {
+            Integer tmon = rs.getInt("yearmon") % 100 ;
+            result.add(tmon) ;
+        }
+        return result ;
+    }
+
+    public ArrayList<JProductDataItem> rdbGetProductMonthDataItemList(
+            int pid,
+            int year,
+            int mon
+            ) throws SQLException {
+        JProduct pdt = rdbGetProductForAPI(pid) ;
+        ArrayList<JProductDataItem> result = new ArrayList<>();
+        Long ymd0 = (year*10000L+mon*100L    )*1000000L ;
+        Long ymd1 = (year*10000L+(mon+1)*100L)*1000000L ;
+        Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+        String sqlstr = String.format("SELECT * FROM tbproductdataitem "
+                        +"WHERE pid=%d AND hcol>=%d AND hcol<%d Order by hcol ASC",
+                pid,ymd0,ymd1 ) ;
         ResultSet rs = stmt.executeQuery(sqlstr );
         while (rs.next()) {
             JProductDataItem di = new JProductDataItem() ;

@@ -66,7 +66,79 @@ public class ProductController {
             rr.setState(1);
             rr.setMessage("exception");
         }
+        return rr;
+    }
 
+    @ResponseBody
+    @RequestMapping(value="/product/yearlist",method=RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public RestResult getYearList(String pid
+    ) throws IOException {
+        RestResult rr = new RestResult() ;
+        rr.setState(0);
+        rr.setMessage("");
+
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+        int pidval = Integer.parseInt(pid) ;
+        try{
+            ArrayList<Integer> datalist = rdb.rdbGetProductYearList(
+                    pidval) ;
+            rr.setData(datalist);
+        }catch (Exception ex){
+            rr.setState(1);
+            rr.setMessage("exception");
+        }
+        return rr;
+    }
+
+    @ResponseBody
+    @RequestMapping(value="/product/monthlist",method=RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public RestResult getMonthList(String pid,
+                                  String year
+    ) throws IOException {
+        RestResult rr = new RestResult() ;
+        rr.setState(0);
+        rr.setMessage("");
+
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+        int pidval = Integer.parseInt(pid) ;
+        int yearval = Integer.parseInt(year) ;
+        try{
+            ArrayList<Integer> datalist = rdb.rdbGetProductMonthList(
+                    pidval,yearval) ;
+            rr.setData(datalist);
+        }catch (Exception ex){
+            rr.setState(1);
+            rr.setMessage("exception");
+        }
+        return rr;
+    }
+
+    @ResponseBody
+    @RequestMapping(value="/product/monthdataitemlist",method=RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public RestResult getMonthDataItemList(
+            String pid,
+            String year,
+            String month
+    ) throws IOException {
+        RestResult rr = new RestResult() ;
+        rr.setState(0);
+        rr.setMessage("");
+
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+        int pidval = Integer.parseInt(pid) ;
+        int yearval = Integer.parseInt(year) ;
+        int monval = Integer.parseInt(month) ;
+        try{
+            ArrayList<JProductDataItem> datalist = rdb.rdbGetProductMonthDataItemList(
+                    pidval,yearval,monval) ;
+            rr.setData(datalist);
+        }catch (Exception ex){
+            rr.setState(1);
+            rr.setMessage("exception");
+        }
         return rr;
     }
 

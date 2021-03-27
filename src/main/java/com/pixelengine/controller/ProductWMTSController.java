@@ -1,7 +1,9 @@
 package com.pixelengine.controller;
 //实现系统预定义产品的wmts服务
+import com.google.gson.Gson;
 import com.pixelengine.*;
 import com.pixelengine.DataModel.JProduct;
+import com.pixelengine.DataModel.RestResult;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -16,6 +18,11 @@ import java.util.HashMap;
 
 @RestController
 public class ProductWMTSController {
+    //系统产品标准渲染Script Template
+    private String scriptContentTemplate = "function main(){"
+            +"var ds=pe.Dataset('{{{name}}}', {{{dt}}} );"
+            +"return ds; } " ;
+
     @ResponseBody
     @RequestMapping(value="/product/{pid}/wmts/WMTSCapabilities.xml",method= RequestMethod.GET)
     @CrossOrigin(origins = "*")
@@ -99,50 +106,122 @@ public class ProductWMTSController {
         System.out.println("style:" + styleId) ;
 
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
-//        JRenderTask renderTask = rdb.rdbGetRenderTask( Integer.parseInt(otid) ) ;
-
-
         //从数据库通过pid获取产品信息
-        JProduct pdt = new JProduct() ; pdt.name = "geewater" ; pdt.styleid=2 ;
+        try{
+            JProduct pdt = rdb.rdbGetProductForAPI( Integer.parseInt(pid)) ;
 
-        //get render style content
-        String pdtStyle = rdb.rdbGetStyleText( pdt.styleid) ;
+            //get render style content
+            String pdtStyle = rdb.rdbGetStyleText( pdt.styleid) ;
 
-
-        if( pdt.name.compareTo("") != 0 )
-        {
-            HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
-            String scriptContent = "function main(){"
-                    +"var ds=pe.Dataset('"+pdt.name+"', "+dtstr+" );" //this need change v8 interface, if no bands pass in then return all bands data.
-                    +"return ds; } " ;
-            TileComputeResult res1 = cv8.RunScriptForTileWithRenderWithExtra(
-                    "com/pixelengine/HBasePixelEngineHelper",
-                    scriptContent,
-                    pdtStyle,
-                    "{}",
-                    Integer.parseInt(zstr),
-                    Integer.parseInt(ystr),
-                    Integer.parseInt(xstr)) ;
-            if( res1.status==0 )
-            {//ok
-                System.out.println("Info : tile compute ok.");
-                final HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.IMAGE_PNG);
-                //return new ResponseEntity<byte[]>(retpng, headers, HttpStatus.OK);
-                return new ResponseEntity<byte[]>(res1.binaryData, headers, HttpStatus.OK);
+            if( pdt.name.equals("") == false )
+            {
+                HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
+                String scriptContent = scriptContentTemplate.replace("{{{name}}}", pdt.name) ;
+                scriptContent.replace("{{{dt}}}" , dtstr) ;
+                TileComputeResult res1 = cv8.RunScriptForTileWithRenderWithExtra(
+                        "com/pixelengine/HBasePixelEngineHelper",
+                        scriptContent,
+                        pdtStyle,
+                        "{}",
+                        Integer.parseInt(zstr),
+                        Integer.parseInt(ystr),
+                        Integer.parseInt(xstr)) ;
+                if( res1.status==0 )
+                {//ok
+                    System.out.println("Info : tile compute ok.");
+                    final HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.IMAGE_PNG);
+                    //return new ResponseEntity<byte[]>(retpng, headers, HttpStatus.OK);
+                    return new ResponseEntity<byte[]>(res1.binaryData, headers, HttpStatus.OK);
+                }else
+                {
+                    System.out.println("Error : bad compute.");
+                    final HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.TEXT_PLAIN);
+                    return new ResponseEntity<byte[]>( "bad compute".getBytes(), headers, HttpStatus.NOT_FOUND);
+                }
             }else
             {
-                System.out.println("Error : bad compute.");
+                System.out.println("Error : not find product .");
                 final HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.TEXT_PLAIN);
-                return new ResponseEntity<byte[]>( "bad compute".getBytes(), headers, HttpStatus.NOT_FOUND);
+                return new ResponseEntity<byte[]>( "not find product".getBytes(), headers, HttpStatus.NOT_FOUND);
             }
-        }else
-        {
-            System.out.println("Error : not find render task.");
+        }catch (Exception ex){
+            System.out.println("Error : not find product .");
             final HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.TEXT_PLAIN);
-            return new ResponseEntity<byte[]>( "not found render task".getBytes(), headers, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<byte[]>( "not find product".getBytes(), headers, HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @ResponseBody
+    @RequestMapping(value="/product/{pid}/pixvals/",method= RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public RestResult getPixelValues(
+            @PathVariable String pid, String lon,String lat,String datetime )
+    {
+        System.out.println(String.format("getPixelValues lon %s, lat %s, dt %s",lon,lat,datetime));
+        RestResult result = new RestResult() ;
+        result.setMessage("");
+        result.setState(0);
+
+        double inlon = Double.parseDouble(lon);
+        double inlat = Double.parseDouble(lat);
+
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+        try{
+            JProduct pdt = rdb.rdbGetProductForAPI( Integer.parseInt(pid)) ;
+            if( pdt!=null && pdt.name.equals("")==false &&
+                    inlon>=-180.0 && inlon<=180.0 && inlat>=-90.0 && inlat<=90.0)
+            {
+                int tilez = pdt.maxZoom;
+                JPixelValues pxvalues = JPixelValues.CreateByLongLat(
+                        inlon,
+                        inlat,
+                        tilez,
+                        pdt.tileWid,
+                        pdt.tileHei
+                ) ;
+                System.out.println("from long,lat -> tile(z,y,x),col,row:"
+                        +"(" +pxvalues.tilez
+                        +"," +pxvalues.tiley
+                        +"," +pxvalues.tilex
+                        +"),"+pxvalues.col
+                        + "," + pxvalues.row
+                ) ;
+                String scriptContent = scriptContentTemplate.replace("{{{name}}}",pdt.name)
+                        .replace("{{{dt}}}" , datetime) ;
+                HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
+                TileComputeResult res1 = cv8.RunScriptForTileWithoutRender(
+                        "com/pixelengine/HBasePixelEngineHelper",
+                        scriptContent, Long.parseLong(datetime) ,
+                        tilez,pxvalues.tiley,pxvalues.tilex) ;
+                if( res1.status==0 )
+                {//ok
+                    System.out.println("Info : tile compute ok.");
+                    pxvalues.values = new double[res1.nbands] ;
+                    for(int ib = 0; ib < res1.nbands; ++ ib )
+                    {
+                        pxvalues.values[ib] = res1.getValue(pxvalues.col,pxvalues.row,ib) ;
+                    }
+                    result.setData(pxvalues);
+                    return result;
+                }else
+                {
+                    result.setState(3);
+                    result.setMessage("bad compute in v8.");
+                    return result ;
+                }
+            }else{
+                result.setState(2);
+                result.setMessage("no product or invalid longitude/latitude.");
+                return result ;
+            }
+        }catch (Exception ex){
+            result.setState(1);
+            result.setMessage("mysql query or some other exception:"+ex.getMessage());
+            return result ;
         }
     }
 

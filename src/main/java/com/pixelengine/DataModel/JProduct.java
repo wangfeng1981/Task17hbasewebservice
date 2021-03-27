@@ -35,6 +35,9 @@ public class JProduct {
             return 0 ;
         }
     }
+    public int getDataByteLen(){
+        return JProduct.getDataByteLenByDataType(this.dataType) ;
+    }
 
     private static ArrayList<JProduct> s_sharedlist ;
     public static ArrayList<JProduct> getSharedList() throws SQLException {

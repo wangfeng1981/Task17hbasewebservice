@@ -1,5 +1,5 @@
 package com.pixelengine;
-
+//this class is deprecated on 2021-3-27, use JProduct
 import java.io.Serializable;
 
 public class JProductInfo implements Serializable {
