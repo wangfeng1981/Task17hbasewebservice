@@ -20,6 +20,7 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.0 2021-3-24");
 		System.out.println("v2.1 2021-3-26");
 		System.out.println("v2.2 region api, zonalstat api. 2021-3-27");
+		System.out.println("v2.2.1 extra params for zonalstat task. 2021-3-27");
 		if( args.length != 1 )
 		{
 			System.out.println("Error : args.length not 1.");

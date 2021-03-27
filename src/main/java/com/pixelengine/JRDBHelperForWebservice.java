@@ -608,50 +608,56 @@ public class JRDBHelperForWebservice {
     }
 
     //2021-3-23 获取一个简短的产品信息，包含HBase信息和波段信息
-    public JProduct rdbGetProductForAPI(int pid) throws SQLException {
-        JProduct result = new JProduct();
-        Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
-        ResultSet rs = stmt.executeQuery("SELECT * FROM tbproduct WHERE pid="+pid+" limit 1");
-        if (rs.next()) {
-            int uid = rs.getInt("userid");
-            String name = rs.getString("name") ;
-            String info = rs.getString("info");
-            JProduct pdt = new Gson().fromJson(info, JProduct.class) ;
-            pdt.pid = pid ;
-            pdt.userid = uid ;
-            pdt.name = name ;
+    public JProduct rdbGetProductForAPI(int pid)   {
+        try{
+            JProduct result = new JProduct();
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * FROM tbproduct WHERE pid="+pid+" limit 1");
+            if (rs.next()) {
+                int uid = rs.getInt("userid");
+                String name = rs.getString("name") ;
+                String info = rs.getString("info");
+                JProduct pdt = new Gson().fromJson(info, JProduct.class) ;
+                pdt.pid = pid ;
+                pdt.userid = uid ;
+                pdt.name = name ;
 
-            {//bandlist
-                Statement stmtb = JRDBHelperForWebservice.getConnection().createStatement();
-                ResultSet rsb = stmtb.executeQuery("SELECT * FROM tbproductband WHERE pid="+String.valueOf(pid)
-                        +" Order by bindex ASC") ;
-                while(rsb.next()){
-                    int pidb = rsb.getInt("pid" );
-                    int bindex = rsb.getInt("bIndex") ;
-                    String infob = rsb.getString("info") ;
-                    JProductBand band1 = new Gson().fromJson(infob, JProductBand.class) ;
-                    band1.pid = pidb ;
-                    band1.bIndex = bindex ;
-                    pdt.bandList.add(band1) ;
-                }
-            }
-
-            {//HBase table
-                Statement stmth = JRDBHelperForWebservice.getConnection().createStatement();
-                ResultSet rsh = stmth.executeQuery("SELECT * FROM tbhbasetable WHERE htablename='"+
-                        pdt.hTableName + "' LIMIT 1 ") ;
-                if( rsh.next() ){
-                    pdt.hbaseTable.hTableName = rsh.getString("hTableName") ;
-                    pdt.hbaseTable.hFamily = rsh.getString("hFamily") ;
-                    pdt.hbaseTable.hPidByteNum = rsh.getInt("hPidByteNum") ;
-                    pdt.hbaseTable.hYXByteNum = rsh.getInt("hYXByteNum") ;
+                {//bandlist
+                    Statement stmtb = JRDBHelperForWebservice.getConnection().createStatement();
+                    ResultSet rsb = stmtb.executeQuery("SELECT * FROM tbproductband WHERE pid="+String.valueOf(pid)
+                            +" Order by bindex ASC") ;
+                    while(rsb.next()){
+                        int pidb = rsb.getInt("pid" );
+                        int bindex = rsb.getInt("bIndex") ;
+                        String infob = rsb.getString("info") ;
+                        JProductBand band1 = new Gson().fromJson(infob, JProductBand.class) ;
+                        band1.pid = pidb ;
+                        band1.bIndex = bindex ;
+                        pdt.bandList.add(band1) ;
+                    }
                 }
 
-            }
+                {//HBase table
+                    Statement stmth = JRDBHelperForWebservice.getConnection().createStatement();
+                    ResultSet rsh = stmth.executeQuery("SELECT * FROM tbhbasetable WHERE htablename='"+
+                            pdt.hTableName + "' LIMIT 1 ") ;
+                    if( rsh.next() ){
+                        pdt.hbaseTable.hTableName = rsh.getString("hTableName") ;
+                        pdt.hbaseTable.hFamily = rsh.getString("hFamily") ;
+                        pdt.hbaseTable.hPidByteNum = rsh.getInt("hPidByteNum") ;
+                        pdt.hbaseTable.hYXByteNum = rsh.getInt("hYXByteNum") ;
+                    }
 
-            result = pdt ;
+                }
+
+                result = pdt ;
+            }
+            return result ;
+        }catch(Exception ex){
+            System.out.println("rdbGetProductForAPI exception:"+ex.getMessage());
+            return null ;
         }
-        return result ;
+
     }
     //2021-3-23
     public ArrayList<JProduct> rdbGetProducts() throws SQLException {
@@ -826,5 +832,30 @@ public class JRDBHelperForWebservice {
             result.add(aa) ;
         }
         return result ;
+    }
+
+    //获取感兴趣区或者行政区的geojson路径
+    public String rdbGetGeoJsonFilePath(String rtype,Long rid) {
+        try{
+            String sqlstr = "" ;
+            if( rtype.equals("area")==true ){
+                sqlstr = String.format("SELECT path FROM area WHERE id=%d ", rid) ;
+            }else{
+                sqlstr = String.format("SELECT geojson FROM tbregion WHERE rid=%d ",rid) ;
+            }
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery(sqlstr );
+            if (rs.next()) {
+                String result = rs.getString(1) ;
+                return result ;
+            }else{
+                System.out.println("rdbGetGeoJsonFilePath no record for "+rtype+","+rid);
+                return null ;
+            }
+        }catch(Exception ex){
+            System.out.println("rdbGetGeoJsonFilePath exception:"+ex.getMessage());
+            return null ;
+        }
+
     }
 }

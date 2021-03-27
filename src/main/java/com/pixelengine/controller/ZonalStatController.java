@@ -5,8 +5,10 @@ import com.pixelengine.DAO.ZonalStatDAO;
 import com.pixelengine.DTO.RegionDTO;
 import com.pixelengine.DTO.StyleDTO;
 import com.pixelengine.DTO.ZonalStatDTO;
+import com.pixelengine.DataModel.JProduct;
 import com.pixelengine.DataModel.JZonalStatParams;
 import com.pixelengine.DataModel.RestResult;
+import com.pixelengine.JRDBHelperForWebservice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -67,6 +69,16 @@ public class ZonalStatController {
         params.rtype = rtype ;
         params.vmin = Double.parseDouble(vmin) ;
         params.vmax  = Double.parseDouble(vmax) ;
+
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+
+        JProduct pdt = rdb.rdbGetProductForAPI(params.pid) ;
+        params.regfile = rdb.rdbGetGeoJsonFilePath(params.rtype,params.rid) ;
+        params.zlevel = pdt.maxZoom ;
+        params.hTableName = pdt.hTableName ;
+        params.hPid = pdt.bandList.get(params.bandindex).hPid ;
+        params.bsqIndex = pdt.bandList.get(params.bandindex).bsqIndex ;
+        params.dataType = pdt.dataType ;
 
         ZonalStatDTO task =new ZonalStatDTO() ;
         task.setContent(params.toJson());
