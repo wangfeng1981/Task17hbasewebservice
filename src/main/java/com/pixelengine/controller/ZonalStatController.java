@@ -79,6 +79,9 @@ public class ZonalStatController {
         params.hPid = pdt.bandList.get(params.bandindex).hPid ;
         params.bsqIndex = pdt.bandList.get(params.bandindex).bsqIndex ;
         params.dataType = pdt.dataType ;
+        params.hFamily = pdt.hbaseTable.hFamily ;
+        params.hpidblen = pdt.hbaseTable.hPidByteNum ;
+        params.yxblen = pdt.hbaseTable.hYXByteNum ;
 
         ZonalStatDTO task =new ZonalStatDTO() ;
         task.setContent(params.toJson());

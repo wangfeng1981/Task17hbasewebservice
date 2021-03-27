@@ -15,6 +15,9 @@ public class JZonalStatParams {
     public Integer hPid ;
     public int bsqIndex ;
     public int dataType ;
+    public String hFamily ;
+    public int hpidblen ;//hbase pid byte length
+    public int yxblen ; //hbase tile yx byte length
 
     public String toJson() {
         Gson gson = new Gson();
