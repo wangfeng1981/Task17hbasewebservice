@@ -847,6 +847,9 @@ public class JRDBHelperForWebservice {
             ResultSet rs = stmt.executeQuery(sqlstr );
             if (rs.next()) {
                 String result = rs.getString(1) ;
+                if( rtype.equals("area") == true ){
+                    result = WConfig.sharedConfig.arearootpath + result ;
+                }
                 return result ;
             }else{
                 System.out.println("rdbGetGeoJsonFilePath no record for "+rtype+","+rid);

@@ -1,0 +1,6 @@
+2021-1-28
+1.发布前要替换 wmts-template.xml模板文件中的IP地址。
+2.新加wmts-template2.xml模板，用于支持新的接口，使用tbRenderTask中的zlevel值动态替换matrixSet值。matrixSet值样例为ms_{zlevel}, ms_7 , ms_9 ....
+如果zlevel值为空，那么默认使用zlevel=7（约1km）
+
+

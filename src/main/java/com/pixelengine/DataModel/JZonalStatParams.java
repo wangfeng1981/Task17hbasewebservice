@@ -6,7 +6,7 @@ public class JZonalStatParams {
     public String rtype;
     public Long rid ;
     public int pid,bandindex ;
-    public double vmin,vmax;
+    public double vmin,vmax;//统计区间
     public Long dt ;//datetime
     //extra params by produt info
     public String regfile ;
@@ -18,6 +18,9 @@ public class JZonalStatParams {
     public String hFamily ;
     public int hpidblen ;//hbase pid byte length
     public int yxblen ; //hbase tile yx byte length
+    public double bandValidMin ;
+    public double bandValidMax ;
+    public double bandNodata ;
 
     public String toJson() {
         Gson gson = new Gson();

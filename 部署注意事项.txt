@@ -1,0 +1,1 @@
+部署前注意修改 ./src/main/resources/application.properties 中mysql的配置信息.

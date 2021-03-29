@@ -1,0 +1,17 @@
+{
+"zookeeper":"hp1",
+"sparkmaster":"spark://hp1:7077",
+"connstr":"jdbc:mysql://10.1.7.170:3306/pe?useUnicode=true&characterEncoding=utf-8" ,
+"user":"big",
+"pwd":"wfhbase2021",
+"wmtsxml":"/home/hadoop/IdeaProjects/Task17hbasewebservice/wmts-template.xml",
+"wmtsxml2":"/home/hadoop/IdeaProjects/Task17hbasewebservice/wmts-template2.xml",
+"tempdir":"/home/hadoop/tempdata/pe-tmpdir/",
+"hbaseuserfiletable":"sparkv8out" ,
+
+  "productwmts":"/home/hadoop/IdeaProjects/Task17hbasewebservice/productwmts-template.xml",
+  "host": "10.1.7.96",
+  "port": "15900" ,
+  "uploadRegionPath": "/home/hadoop/tempdata/pe-tmpdir" , 
+  "arearootpath":"/home/hadoop/tempdata/pe-tmpdir"
+}

@@ -24,5 +24,5 @@ public class WConfig {
     public String zookeeper,sparkmaster,connstr,user,pwd;
     public String wmtsxml, wmtsxml2 ,tempdir , hbaseuserfiletable;
     public String productwmts , host , port ;
-    public String uploadRegionPath ;
+    public String uploadRegionPath , arearootpath;
 }
