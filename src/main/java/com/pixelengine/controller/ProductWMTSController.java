@@ -95,7 +95,7 @@ public class ProductWMTSController {
         String ystr = lowerParams.get("tilerow")  ;// req.get_param_value("TILEROW");
         String xstr = lowerParams.get("tilecol")  ;// req.get_param_value("TILECOL");
         String dtstr = lowerParams.get("datetime")  ;//req.get_param_value("dt");
-        String styleId = lowerParams.get("style") ;//default or styleid
+        String styleId = lowerParams.get("styleid") ;
 
         System.out.println("request:"+request) ;
         System.out.println("service:" + servicestr ) ;
@@ -103,7 +103,7 @@ public class ProductWMTSController {
         System.out.println("tilerow:" + ystr) ;
         System.out.println("tilecol:" + xstr) ;
         System.out.println("datetime:" + dtstr ) ;
-        System.out.println("style:" + styleId) ;
+        System.out.println("styleid:" + styleId) ;
 
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
         //从数据库通过pid获取产品信息
@@ -111,13 +111,19 @@ public class ProductWMTSController {
             JProduct pdt = rdb.rdbGetProductForAPI( Integer.parseInt(pid)) ;
 
             //get render style content
-            String pdtStyle = rdb.rdbGetStyleText( pdt.styleid) ;
+            String pdtStyle = "" ;
+            if( styleId==null  || styleId.equals("") || styleId.equals("default") ){
+                pdtStyle = rdb.rdbGetStyleText( pdt.styleid) ;
+            }else{
+                pdtStyle = rdb.rdbGetStyleText( Integer.parseInt(styleId) ) ;
+            }
+            System.out.println("style ok") ;
 
             if( pdt.name.equals("") == false )
             {
                 HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
                 String scriptContent = scriptContentTemplate.replace("{{{name}}}", pdt.name) ;
-                scriptContent.replace("{{{dt}}}" , dtstr) ;
+                scriptContent = scriptContent.replace("{{{dt}}}" , dtstr) ;
                 TileComputeResult res1 = cv8.RunScriptForTileWithRenderWithExtra(
                         "com/pixelengine/HBasePixelEngineHelper",
                         scriptContent,
@@ -142,16 +148,16 @@ public class ProductWMTSController {
                 }
             }else
             {
-                System.out.println("Error : not find product .");
+                System.out.println("Error : product no find ");
                 final HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.TEXT_PLAIN);
                 return new ResponseEntity<byte[]>( "not find product".getBytes(), headers, HttpStatus.NOT_FOUND);
             }
         }catch (Exception ex){
-            System.out.println("Error : not find product .");
+            System.out.println("Error : product wmts exception .");
             final HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.TEXT_PLAIN);
-            return new ResponseEntity<byte[]>( "not find product".getBytes(), headers, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<byte[]>( "product wmts exception".getBytes(), headers, HttpStatus.NOT_FOUND);
         }
     }
 

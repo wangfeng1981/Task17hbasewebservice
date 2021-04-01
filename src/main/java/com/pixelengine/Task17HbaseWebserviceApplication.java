@@ -22,6 +22,11 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.2 region api, zonalstat api. 2021-3-27");
 		System.out.println("v2.2.2 extra params for zonalstat task, add hFamily,hpidblen,yxblen. 2021-3-27");
 		System.out.println("v2.2.3 new zonalstat task.2021-3-29") ;
+		System.out.println("v2.2.4 use tbstyle replace tbStyle 2021-3-30.") ;
+		System.out.println("v2.3 update zonalstat, add serialanalyse, wmts use styleid 2021-4-1") ;
+		//scriptContent bugfixed
+
+
 		if( args.length != 1 )
 		{
 			System.out.println("Error : args.length not 1.");

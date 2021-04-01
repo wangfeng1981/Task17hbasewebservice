@@ -25,4 +25,6 @@ public class WConfig {
     public String wmtsxml, wmtsxml2 ,tempdir , hbaseuserfiletable;
     public String productwmts , host , port ;
     public String uploadRegionPath , arearootpath;
+    public String userhtable, userhfami ;
+    public int userhpidblen , useryxblen ;
 }

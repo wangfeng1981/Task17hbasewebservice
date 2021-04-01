@@ -7,7 +7,8 @@ public class JZonalStatParams {
     public Long rid ;
     public int pid,bandindex ;
     public double vmin,vmax;//统计区间
-    public Long dt ;//datetime
+    public Long fromdt ;//datetime
+    public Long todt ;
     //extra params by produt info
     public String regfile ;
     public int zlevel ;
@@ -21,6 +22,8 @@ public class JZonalStatParams {
     public double bandValidMin ;
     public double bandValidMax ;
     public double bandNodata ;
+    public String method; //min,max,ave
+    public String offsetdt ;
 
     public String toJson() {
         Gson gson = new Gson();

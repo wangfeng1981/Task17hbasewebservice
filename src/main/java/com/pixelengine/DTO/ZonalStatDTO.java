@@ -21,6 +21,17 @@ public class ZonalStatDTO {
     @Column(name = "uid")
     private Long uid;
 
+    @Column(name = "mode")
+    private int mode;
+
+    public int getMode() {
+        return mode;
+    }
+
+    public void setMode(int mode) {
+        this.mode = mode;
+    }
+
     @Column(name = "content")
     private String content;
 

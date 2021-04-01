@@ -574,7 +574,7 @@ public class JRDBHelperForWebservice {
         try {
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
             ResultSet rs = stmt.executeQuery("SELECT styleContent "
-                    +" FROM tbStyle WHERE styleid="+sid+" LIMIT 1") ;
+                    +" FROM tbstyle WHERE styleid="+sid+" LIMIT 1") ;
             if (rs.next()) {
                 String styleContent = rs.getString("styleContent") ;
 
@@ -595,7 +595,7 @@ public class JRDBHelperForWebservice {
         try {
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
             ResultSet rs = stmt.executeQuery("SELECT styleContent "
-                    +" FROM tbStyle WHERE styleid="+sid+" LIMIT 1") ;
+                    +" FROM tbstyle WHERE styleid="+sid+" LIMIT 1") ;
             if (rs.next()) {
                 String styleContent = rs.getString("styleContent")  ;
                 return styleContent;
@@ -858,6 +858,34 @@ public class JRDBHelperForWebservice {
         }catch(Exception ex){
             System.out.println("rdbGetGeoJsonFilePath exception:"+ex.getMessage());
             return null ;
+        }
+
+    }
+
+    //新建一个空的产品记录，用于数据合成或者其他离线任务，返回的主键ID用于hbase中的hpid
+    //返回主键id
+    public int rdbNewEmptyProduct( String name, int uid) {
+        try
+        {
+            String query = " insert into tbproduct (name, userid)"
+                    + " values (?, ?)";
+            // create the mysql insert preparedstatement
+            PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            preparedStmt.setString (1, name);
+            preparedStmt.setInt    (2, uid);
+            // execute the preparedstatement
+            preparedStmt.executeUpdate();
+            ResultSet rs = preparedStmt.getGeneratedKeys();
+            int last_inserted_id = -1 ;
+            if(rs.next())
+            {
+                last_inserted_id = rs.getInt(1);
+            }
+            return last_inserted_id;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbNewEmptyProduct exception , " + ex.getMessage() ) ;
+            return -1 ;
         }
 
     }

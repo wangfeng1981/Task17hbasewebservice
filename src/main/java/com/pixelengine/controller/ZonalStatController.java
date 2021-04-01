@@ -18,7 +18,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/offtask/zonalstat")
-public class ZonalStatController {
+public class ZonalStatController<tbStyle> {
     @Autowired
     ZonalStatDAO dao ;
 
@@ -26,8 +26,16 @@ public class ZonalStatController {
     @CrossOrigin
     @GetMapping("/userlist")
     @ResponseBody
-    public RestResult userList(String userid) {
-        List<ZonalStatDTO> rlist = dao.findAllByUserid( Long.parseLong(userid)) ;
+    public RestResult userList(String userid,String mode) {
+        int imode = 0 ;//0-zs , 1-sk , 2-ls
+        if( mode.equals("sk") ){
+            imode = 1 ;
+        }else if( mode.equals("ls") ){
+            imode = 2 ;
+        }else{
+            imode = 0 ;
+        }
+        List<ZonalStatDTO> rlist = dao.findAllByUserid( Long.parseLong(userid),imode) ;
         RestResult returnT = new RestResult();
         returnT.setState(0);
         returnT.setMessage("");
@@ -55,15 +63,21 @@ public class ZonalStatController {
     public RestResult createNew(String rtype,
                                 String rid,
                                 String userid,
+                                String mode , //zs , sk , ls
                                 String pid ,
                                 String bandindex,
                                 String vmin,
                                 String vmax,
-                                String datetime ) {
+                                String fromdt ,
+                                String todt,
+                                String method,
+                                String offsetdt
+    ) {
 
         JZonalStatParams params = new JZonalStatParams() ;
         params.bandindex = Integer.parseInt(bandindex) ;
-        params.dt = Long.parseLong(datetime) ;
+        params.fromdt = Long.parseLong(fromdt) ;
+        params.todt = Long.parseLong(todt) ;
         params.pid = Integer.parseInt(pid) ;
         params.rid = Long.parseLong(rid) ;
         params.rtype = rtype ;
@@ -85,6 +99,8 @@ public class ZonalStatController {
         params.bandValidMin = pdt.bandList.get(params.bandindex).validMin ;
         params.bandValidMax = pdt.bandList.get(params.bandindex).validMax ;
         params.bandNodata = pdt.bandList.get(params.bandindex).noData ;
+        params.method=method;
+        params.offsetdt=offsetdt ;
 
         ZonalStatDTO task =new ZonalStatDTO() ;
         task.setContent(params.toJson());
@@ -95,6 +111,14 @@ public class ZonalStatController {
         task.setStatus(0);
         task.setTag("");
         task.setUid(Long.parseLong(userid));
+
+        if( mode.equals("sk") ){
+            task.setMode(1);
+        }else if( mode.equals("ls")){
+            task.setMode(2);
+        }else{
+            task.setMode(0);
+        }
 
         ZonalStatDTO newtask = dao.save(task) ;
 
