@@ -27,14 +27,14 @@ public class CompositeController {
 
     private final String scriptTemplate="function maxfunc(vals,index,numds)" +
             "{var res={{{filldata}}};var cnt=0;for(var i=0;i<numds;++i)" +
-            "{if(vals[i]>={{{vmin}}}&&vals[i]<={{{vmax}}}){if(cnt==0){res=vals[i];++cnt}" +
-            "else if(vals[i]>res)res=vals[i]}}return res} function minfunc(vals,index,numds)" +
+            "{if(vals[i]>={{{vmin}}}&&vals[i]<={{{vmax}}}){if(cnt==0){res=vals[i];++cnt;}" +
+            "else if(vals[i]>res)res=vals[i];}}return res;} function minfunc(vals,index,numds)" +
             "{var res={{{filldata}}};var cnt=0;for(var i=0;i<numds;++i)" +
-            "{if(vals[i]>={{{vmin}}}&&vals[i]<={{{vmax}}}){if(cnt==0){res=vals[i];++cnt}" +
-            "else if(vals[i]<res)res=vals[i]}}return res} function avefunc(vals,index,numds)" +
+            "{if(vals[i]>={{{vmin}}}&&vals[i]<={{{vmax}}}){if(cnt==0){res=vals[i];++cnt;}" +
+            "else if(vals[i]<res)res=vals[i];}}return res;} function avefunc(vals,index,numds)" +
             "{var res={{{filldata}}};var cnt=0;var sum=0.0;for(var i=0;i<numds;++i)" +
-            "{if(vals[i]>={{{vmin}}}&&vals[i]<={{{vmax}}}){sum+=vals[i];++cnt}}if(cnt>0)" +
-            "{res=sum/cnt}return res}function main(){var dsarr=pe.DatasetArray('{{{name}}}'," +
+            "{if(vals[i]>={{{vmin}}}&&vals[i]<={{{vmax}}}){sum+=vals[i];++cnt;}}if(cnt>0)" +
+            "{res=sum/cnt;}return res;}function main(){var dsarr=pe.DatasetArray('{{{name}}}'," +
             "{{{fromdt}}},{{{todt}}},[{{{iband}}}],-1,-1,0,-1,-1);" +
             "var resds=dsarr.forEachPixel({{{methodfunc}}});return resds;}" ;
 
@@ -87,7 +87,7 @@ public class CompositeController {
         params.bandindex = Integer.parseInt(bandindex) ;
         params.fromdt = Long.parseLong(fromdt) ;
         params.todt = Long.parseLong(todt) ;
-        params.pid = Integer.parseInt(pid) ;
+        params.inpid = Integer.parseInt(pid) ;//2021-4-6
         params.vmin = Double.parseDouble(vmin) ;
         params.vmax  = Double.parseDouble(vmax) ;
         params.filldata = Double.parseDouble(filldata) ;
@@ -95,7 +95,7 @@ public class CompositeController {
 
         //
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
-        JProduct product = rdb.rdbGetProductForAPI(params.pid) ;
+        JProduct product = rdb.rdbGetProductForAPI(params.inpid) ;
         String methodfunc = "min" ;
         if( method.equals("min") ){
             methodfunc = "minfunc" ;
@@ -127,7 +127,8 @@ public class CompositeController {
         params.scriptfilename = scriptfilename ;
         params.outhtable = WConfig.sharedConfig.userhtable ;
         params.outhfami = WConfig.sharedConfig.userhfami ;
-        params.outhpid = rdb.rdbNewEmptyProduct( userFileName , Integer.parseInt(userid)) ;
+        params.outpid = rdb.rdbNewEmptyProduct( userFileName , Integer.parseInt(userid)) ;
+        params.outhpid = params.outpid ;//目前让输出产品的hpid与输出的tbproduct.pid一致。2021-4-6
         params.outhpidblen = WConfig.sharedConfig.userhpidblen ;
         params.outyxblen = WConfig.sharedConfig.useryxblen ;
         params.outhcol = 1 ;

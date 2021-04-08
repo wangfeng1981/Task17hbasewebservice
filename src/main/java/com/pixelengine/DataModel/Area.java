@@ -6,4 +6,5 @@ public class Area {
     public String name;
     public String parentCode;
     public String path;
+    public Integer children;//是否有子节点 0/1
 }

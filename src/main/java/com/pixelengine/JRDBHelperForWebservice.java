@@ -829,9 +829,27 @@ public class JRDBHelperForWebservice {
             aa.name = rs.getString("name") ;
             aa.parentCode = rs.getString("parent_code") ;
             aa.path = rs.getString("path") ;
+            aa.children = this.rdbAreaHasChildren(aa.code) ;
             result.add(aa) ;
         }
         return result ;
+    }
+
+    public int rdbAreaHasChildren(String parentCode)  {
+        try{
+            ArrayList<Area> result = new ArrayList<>();
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            String sqlstr = String.format("SELECT `id` FROM area WHERE parent_code='%s' LIMIT 1",parentCode) ;
+            ResultSet rs = stmt.executeQuery(sqlstr );
+            if( rs.next() ){
+                return 1 ;
+            }else{
+                return 0 ;
+            }
+        }catch(Exception ex){
+            System.out.println("rdbAreaHasChildren exception:"+ex.getMessage());
+            return 0 ;
+        }
     }
 
     //获取感兴趣区或者行政区的geojson路径
