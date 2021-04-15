@@ -5,6 +5,7 @@ import com.pixelengine.DAO.RegionDAO;
 import com.pixelengine.DAO.StyleDAO;
 import com.pixelengine.DTO.RegionDTO;
 import com.pixelengine.DataModel.RestResult;
+import com.pixelengine.JUser;
 import com.pixelengine.WConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -112,91 +113,110 @@ public class RegionController {
     @CrossOrigin
     @RequestMapping("/upload")
     @ResponseBody
-    public RestResult upload(MultipartFile[] files, String userid, HttpServletRequest httpServletRequest){
+    public RestResult upload(
+            @RequestHeader("token") String token,
+            MultipartFile[] files,  HttpServletRequest httpServletRequest){
         System.out.println("uploading ...");
         RestResult returnT = new RestResult();
         returnT.setState(0);
         returnT.setMessage("");
 
-        Date date = new Date();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-        String da = sdf.format(date);
-        String uploadPath = WConfig.sharedConfig.uploadRegionPath + "/" +da +"/";
-        String shp = "";
-        String shpFilePath = "" ;
-        for(int ifile = 0 ; ifile < files.length;++ ifile ){
-            String name = uploadFile(files[ifile],uploadPath);
-            System.out.println(name); ;
-        }
+        JUser tempUser = JUser.getUserByToken(token) ;
+        if( tempUser == null ){
+            returnT.setData(1);
+            returnT.setMessage("没有用户登录信息");
+            return returnT ;
+        }else{
+            Date date = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+            String datestr = sdf.format(date);
 
-        //查询是否够四个文件，够了入库
-        boolean shpBoo = false;
-        boolean dbfBoo = false;
-        boolean prjBoo = false;
-        boolean shxBoo = false;
-        File rootfile = new File(uploadPath);
-        if(rootfile.exists()){
-
-            File[] files_server = rootfile.listFiles();
-            for(File fil: files_server){
-                System.out.println("---"+fil.getName());
-                if(fil.getName().endsWith(".shp")){
-                    shp = fil.getName();
-                    shpFilePath = fil.getPath() ;
-                    shpBoo = true;
-                }
-                if(fil.getName().endsWith(".dbf")){
-                    dbfBoo = true;
-                }
-                if(fil.getName().endsWith(".prj")){
-                    prjBoo = true;
-                }
-                if(fil.getName().endsWith(".shx")){
-                    shxBoo = true;
-                }
+            String roiRootDir = WConfig.sharedConfig.pedir + "/roi/" ;
+            File roiRootDirFileObj = new File(roiRootDir) ;
+            if( roiRootDirFileObj.exists()==false ){
+                roiRootDirFileObj.mkdir() ;
             }
-            if(shpBoo && dbfBoo && prjBoo && shxBoo){
-                System.out.println(""+shpBoo +dbfBoo + prjBoo + shxBoo);
-                //将shp文件转换为geojson文件
-                String shpFileNameWithoutExtName = shp.split(".shp")[0];
-                String geojsonFilePath = uploadPath + shpFileNameWithoutExtName +".geojson" ;
-                int itry = 1;
-                while( (new File(geojsonFilePath)).exists()==true ){
-                    geojsonFilePath = uploadPath + shpFileNameWithoutExtName +"-" +itry  +".geojson" ;
-                    ++itry ;
+            String relativeUploadDateDir = "/roi/" + datestr + "/" ;
+            String absUploadDateDir = WConfig.sharedConfig.pedir + relativeUploadDateDir ;
+            String shp = "";
+            String shpFilePath = "" ;
+            for(int ifile = 0 ; ifile < files.length;++ ifile ){
+                String name = uploadFile(files[ifile],absUploadDateDir);
+                System.out.println(name); ;
+            }
+
+            //查询是否够四个文件，够了入库
+            boolean shpBoo = false;
+            boolean dbfBoo = false;
+            boolean prjBoo = false;
+            boolean shxBoo = false;
+            File rootfile = new File(absUploadDateDir);
+            if(rootfile.exists()){
+
+                File[] files_server = rootfile.listFiles();
+                for(File fil: files_server){
+                    System.out.println("---"+fil.getName());
+                    if(fil.getName().endsWith(".shp")){
+                        shp = fil.getName();
+                        shpFilePath = fil.getPath() ;
+                        shpBoo = true;
+                    }
+                    if(fil.getName().endsWith(".dbf")){
+                        dbfBoo = true;
+                    }
+                    if(fil.getName().endsWith(".prj")){
+                        prjBoo = true;
+                    }
+                    if(fil.getName().endsWith(".shx")){
+                        shxBoo = true;
+                    }
                 }
-                System.out.println("used geojson file:" + geojsonFilePath);
-                //do convert shp to geojson
-                boolean convertOk = convertShp2Geojson(shpFilePath,geojsonFilePath) ;
-                if( convertOk==false ){
-                    //failed.
-                    returnT.setState(1);
-                    returnT.setMessage("convert geojson failed.");
+                if(shpBoo && dbfBoo && prjBoo && shxBoo){
+                    System.out.println(""+shpBoo +dbfBoo + prjBoo + shxBoo);
+                    //将shp文件转换为geojson文件
+                    String shpFileNameWithoutExtName = shp.split(".shp")[0];
+
+                    String dbFilePath = relativeUploadDateDir + shpFileNameWithoutExtName +".geojson" ;
+                    String geojsonFilePath = WConfig.sharedConfig.pedir + dbFilePath ;
+                    int itry = 1;
+                    while( (new File(geojsonFilePath)).exists()==true ){
+                        dbFilePath = relativeUploadDateDir + shpFileNameWithoutExtName + "-" + itry +".geojson" ;
+                        geojsonFilePath = WConfig.sharedConfig.pedir + dbFilePath ;
+                        ++itry ;
+                    }
+                    System.out.println("used geojson file:" + geojsonFilePath);
+                    //do convert shp to geojson
+                    boolean convertOk = convertShp2Geojson(shpFilePath,geojsonFilePath) ;
+                    if( convertOk==false ){
+                        //failed.
+                        returnT.setState(1);
+                        returnT.setMessage("convert geojson failed.");
+                    }else{
+                        //数据入库
+                        RegionDTO region1 = new RegionDTO() ;
+                        region1.setGeojson(dbFilePath);
+                        region1.setShp(shpFilePath);
+                        region1.setName(shpFileNameWithoutExtName);
+                        region1.setUid( tempUser.uid );//
+
+                        RegionDTO newregion = dao.save(region1) ;
+                        returnT.setData(newregion);
+                    }
                 }else{
-                    //数据入库
-                    RegionDTO region1 = new RegionDTO() ;
-                    region1.setGeojson(geojsonFilePath);
-                    region1.setShp(shpFilePath);
-                    region1.setName(shpFileNameWithoutExtName);
-                    region1.setUid( Integer.parseInt(userid));//
-
-                    RegionDTO newregion = dao.save(region1) ;
-                    returnT.setData(newregion);
+                    System.out.println("lack of some files:");
+                    System.out.println("shp "+ shpBoo);
+                    System.out.println("shp "+ dbfBoo);
+                    System.out.println("shp "+ prjBoo);
+                    System.out.println("shp "+ shxBoo);
                 }
-            }else{
-                System.out.println("lack of some files:");
-                System.out.println("shp "+ shpBoo);
-                System.out.println("shp "+ dbfBoo);
-                System.out.println("shp "+ prjBoo);
-                System.out.println("shp "+ shxBoo);
             }
+            return returnT;
         }
-        return returnT;
     }
     //write file into file system.
-    public static String uploadFile(MultipartFile file,String filePath){
+    public static String uploadFile(MultipartFile file,String dateDir){
         String fileName = file.getOriginalFilename();
-        File targetFile = new File(filePath);
+        File targetFile = new File(dateDir);
         //第一步：判断文件是否为空
         if(!file.isEmpty()){
             //第二步：判断目录是否存在   不存在：创建目录
@@ -206,7 +226,7 @@ public class RegionController {
             //第三部：通过输出流将文件写入硬盘文件夹并关闭流
             BufferedOutputStream stream = null;
             try {
-                stream = new BufferedOutputStream(new FileOutputStream(filePath+fileName));
+                stream = new BufferedOutputStream(new FileOutputStream(dateDir+fileName));
                 stream.write(file.getBytes());
                 stream.flush();
             }catch (IOException e){
@@ -288,42 +308,111 @@ public class RegionController {
     /**wf
      **/
     @CrossOrigin
-    @PostMapping("/savegeojson")
+    @PostMapping("/savegeojson2")
     @ResponseBody
-    public RestResult saveGeoJson(String userid,String content,String name){
+    public RestResult saveGeoJson2(
+            @RequestHeader("token") String token,
+            String content,String name){
+
         System.out.println("saving geojson ...");
         RestResult returnT = new RestResult();
-        returnT.setState(0);
-        returnT.setMessage("");
 
-        Date date = new Date();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-        String da = sdf.format(date);
-        SimpleDateFormat sdf1 = new SimpleDateFormat("yyyyMMddhhmmss");
-        String da1 = sdf1.format(date);
-        String uploadPath = WConfig.sharedConfig.uploadRegionPath + "/" +da +"/";
-
-        String gjFileNameWithoutExtName = (new String()).format("u%s-%s",userid , da1);
-        String geojsonFilePath = uploadPath + gjFileNameWithoutExtName +".geojson" ;
-        int itry = 1;
-        while( (new File(geojsonFilePath)).exists()==true ){
-            geojsonFilePath = uploadPath + gjFileNameWithoutExtName +"-" +itry  +".geojson" ;
-            ++itry ;
+        JUser tempUser = JUser.getUserByToken(token) ;
+        if( tempUser == null ){
+            returnT.setData(1);
+            returnT.setMessage("没有用户登录信息");
+            return returnT ;
         }
-        System.out.println("used geojson file:" + geojsonFilePath);
-        writeFile( content , geojsonFilePath) ;
+        else{
+            Date date = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+            String datestr = sdf.format(date);
+            SimpleDateFormat sdf1 = new SimpleDateFormat("yyyyMMddhhmmss");
+            String datestr1 = sdf1.format(date);
 
-        //数据入库
-        RegionDTO region1 = new RegionDTO() ;
-        region1.setGeojson(geojsonFilePath);
-        region1.setShp("");
-        region1.setName(name);
-        region1.setUid( Integer.parseInt(userid));//
+            String roiRootDir = WConfig.sharedConfig.pedir + "/roi/" ;
+            File roiRootDirFileObj = new File(roiRootDir) ;
+            if( roiRootDirFileObj.exists()==false ){
+                roiRootDirFileObj.mkdir() ;
+            }
+            String dbroidir =  "/roi/" +datestr +"/";
+            String gjFileNameWithoutExtName = (new String()).format("roi-%d-%s",tempUser.uid , datestr1);
+            String dbFilePath = dbroidir + gjFileNameWithoutExtName +".geojson" ;
+            String geojsonFilePath = WConfig.sharedConfig.pedir +dbFilePath ;
+            int itry = 1;
+            while( (new File(geojsonFilePath)).exists()==true ){
+                dbFilePath = dbroidir + gjFileNameWithoutExtName +"-" +itry+".geojson" ;
+                geojsonFilePath =WConfig.sharedConfig.pedir + dbFilePath ;
+                ++itry ;
+            }
+            System.out.println("used geojson file:" + geojsonFilePath);
+            writeFile( content , geojsonFilePath) ;
 
-        RegionDTO newregion = dao.save(region1) ;
-        returnT.setData(newregion);
+            //数据入库
+            RegionDTO region1 = new RegionDTO() ;
+            region1.setGeojson(dbFilePath);
+            region1.setShp("");
+            region1.setName(name);
+            region1.setUid(  tempUser.uid );//
 
-        return returnT;
+            RegionDTO newregion = dao.save(region1) ;
+            returnT.setData(newregion);
+
+            return returnT;
+        }
+    }
+
+
+    //保存geojson，并入库
+    /**wf
+     **/
+    @CrossOrigin
+    @PostMapping("/savegeojson")
+    @ResponseBody
+    public RestResult saveGeoJson(
+            String userid,
+            String content,String name){
+
+        System.out.println("saving geojson ...");
+        RestResult returnT = new RestResult();
+
+        {
+            Date date = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+            String datestr = sdf.format(date);
+            SimpleDateFormat sdf1 = new SimpleDateFormat("yyyyMMddhhmmss");
+            String datestr1 = sdf1.format(date);
+
+            String roiRootDir = WConfig.sharedConfig.pedir + "/roi/" ;
+            File roiRootDirFileObj = new File(roiRootDir) ;
+            if( roiRootDirFileObj.exists()==false ){
+                roiRootDirFileObj.mkdir() ;
+            }
+            String dbroidir =  "/roi/" +datestr +"/";
+            String gjFileNameWithoutExtName = (new String()).format("roi-%s-%s", userid , datestr1);
+            String dbFilePath = dbroidir + gjFileNameWithoutExtName +".geojson" ;
+            String geojsonFilePath = WConfig.sharedConfig.pedir +dbFilePath ;
+            int itry = 1;
+            while( (new File(geojsonFilePath)).exists()==true ){
+                dbFilePath = dbroidir + gjFileNameWithoutExtName +"-" +itry+".geojson" ;
+                geojsonFilePath =WConfig.sharedConfig.pedir + dbFilePath ;
+                ++itry ;
+            }
+            System.out.println("used geojson file:" + geojsonFilePath);
+            writeFile( content , geojsonFilePath) ;
+
+            //数据入库
+            RegionDTO region1 = new RegionDTO() ;
+            region1.setGeojson(dbFilePath);
+            region1.setShp("");
+            region1.setName(name);
+            region1.setUid(  Integer.valueOf(userid) );//
+
+            RegionDTO newregion = dao.save(region1) ;
+            returnT.setData(newregion);
+
+            return returnT;
+        }
     }
 
 

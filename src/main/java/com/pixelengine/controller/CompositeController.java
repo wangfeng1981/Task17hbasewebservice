@@ -114,7 +114,8 @@ public class CompositeController {
                 .replace("{{{vmax}}}",  String.valueOf(params.vmax) )
                 .replace("{{{filldata}}}",  String.valueOf(params.filldata) )
                 .replace("{{{methodfunc}}}",  methodfunc) ;
-        String scriptfilename = FileDirTool.makeDatetimeFilename( WConfig.sharedConfig.tempdir,"co",".js") ;
+        String tempDir = WConfig.sharedConfig.pedir + "/temp/" ;
+        String scriptfilename = FileDirTool.makeDatetimeFilename( tempDir,"co",".js") ;
         boolean writeOk = FileDirTool.writeToFile(scriptfilename , scriptcontent) ;
        if( writeOk==false ){
            result.setState(1);

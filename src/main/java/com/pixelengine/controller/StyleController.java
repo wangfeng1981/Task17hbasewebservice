@@ -4,6 +4,7 @@ package com.pixelengine.controller;
 import com.pixelengine.DAO.StyleDAO;
 import com.pixelengine.DTO.StyleDTO;
 import com.pixelengine.DataModel.RestResult;
+import com.pixelengine.JUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,21 +21,50 @@ public class StyleController {
     StyleDAO styleDao ;
 
 
-    @PostMapping(value="/new")
-    public RestResult styleNew(String stylecontent, String userid
-        , String description )
+    @PostMapping(value="/new2")
+    public RestResult styleNew(@RequestHeader("token") String token,
+                               String stylecontent , String description )
     {
-        StyleDTO s1 = new StyleDTO() ;
-        s1.setStyleContent(stylecontent);
-        s1.setDescription(description);
-        s1.setUserid( Long.valueOf(userid));
-        s1.setCreatetime(Calendar.getInstance().getTime());
-        s1.setUpdatetime(Calendar.getInstance().getTime());
-        StyleDTO newStyle = styleDao.save(s1) ;
         RestResult result = new RestResult() ;
-        result.setState(0);
-        result.setData(newStyle);
-        return result;
+        JUser tempUser = JUser.getUserByToken(token) ;
+        if( tempUser == null ){
+            result.setData(1);
+            result.setMessage("没有用户登录信息");
+            return result ;
+        }else{
+            StyleDTO s1 = new StyleDTO() ;
+            s1.setStyleContent(stylecontent);
+            s1.setDescription(description);
+            s1.setUserid(  (long)tempUser.uid );
+            s1.setCreatetime(Calendar.getInstance().getTime());
+            s1.setUpdatetime(Calendar.getInstance().getTime());
+            StyleDTO newStyle = styleDao.save(s1) ;
+
+            result.setState(0);
+            result.setData(newStyle);
+            return result;
+        }
+    }
+
+    @PostMapping(value="/new")
+    public RestResult styleNewOld( String userid,
+                               String stylecontent , String description )
+    {
+        RestResult result = new RestResult() ;
+
+        {
+            StyleDTO s1 = new StyleDTO() ;
+            s1.setStyleContent(stylecontent);
+            s1.setDescription(description);
+            s1.setUserid(  Long.valueOf(userid) );
+            s1.setCreatetime(Calendar.getInstance().getTime());
+            s1.setUpdatetime(Calendar.getInstance().getTime());
+            StyleDTO newStyle = styleDao.save(s1) ;
+
+            result.setState(0);
+            result.setData(newStyle);
+            return result;
+        }
     }
 
     @PostMapping(value="/edit")

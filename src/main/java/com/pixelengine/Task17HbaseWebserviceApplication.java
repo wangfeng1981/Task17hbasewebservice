@@ -26,6 +26,8 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.3 update zonalstat, add serialanalyse, wmts use styleid 2021-4-1") ;
 		System.out.println("v2.4 update composite controller 2021-4-6") ;
 		System.out.println("v2.5 update Area and ROI 2021-4-8") ;
+		System.out.println("v2.6 add user login 2021-4-12") ;
+		System.out.println("v2.6.4 package version 2021-4-13") ;
 		//scriptContent bugfixed
 
 

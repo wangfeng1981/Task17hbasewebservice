@@ -346,12 +346,13 @@ public class JRDBHelperForWebservice {
     {
         try {
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT uid,uname "
-                    +" FROM tbUser WHERE uname='"+uname+"' LIMIT 1") ;
+            ResultSet rs = stmt.executeQuery("SELECT uid,uname,password "
+                    +" FROM tbuser WHERE uname='"+uname+"' LIMIT 1") ;
             if (rs.next()) {
                 JUser user = new JUser();
                 user.uid = rs.getInt("uid");
                 user.uname = rs.getString("uname");
+                user.password = rs.getString("password") ;
                 return user;
             }
             return null;
@@ -865,9 +866,7 @@ public class JRDBHelperForWebservice {
             ResultSet rs = stmt.executeQuery(sqlstr );
             if (rs.next()) {
                 String result = rs.getString(1) ;
-                if( rtype.equals("area") == true ){
-                    result = WConfig.sharedConfig.arearootpath + result ;
-                }
+                result = WConfig.sharedConfig.pedir + result ;
                 return result ;
             }else{
                 System.out.println("rdbGetGeoJsonFilePath no record for "+rtype+","+rid);
