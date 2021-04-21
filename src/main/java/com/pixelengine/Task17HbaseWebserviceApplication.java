@@ -28,7 +28,8 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.5 update Area and ROI 2021-4-8") ;
 		System.out.println("v2.6 add user login 2021-4-12") ;
 		System.out.println("v2.6.9 package version 2021-4-19") ;
-		System.out.println("v2.7 add data export apis 2021-4-21") ;
+		System.out.println("v2.7.1 add data export apis 2021-4-21") ;
+		System.out.println("v2.8.2 离线任务mysql参数中统一增加outfilename,outfilenamedb两个字段 2021-4-21") ;
 		//scriptContent bugfixed
 
 

@@ -66,6 +66,8 @@ public class ExportController {
             String[] outdirArr = FileDirTool.checkAndMakeCurrentYearDateDir(WConfig.sharedConfig.pedir,"export");
             ep.outfilename = outdirArr[0] + "export-u" + userid + "-" + FileDirTool.dateTimeString() + ".tif" ;
             ep.outfilenamedb = outdirArr[1] + "export-u" + userid + "-" + FileDirTool.dateTimeString() + ".tif" ;
+            ep.zookeeper = WConfig.sharedConfig.zookeeper ;
+            ep.datatype = product.dataType ;
 
             Gson gson = new Gson() ;
             String paramsJsonText = gson.toJson(ep , JExportParams.class) ;

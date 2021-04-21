@@ -9,6 +9,8 @@ import com.pixelengine.DataModel.JProduct;
 import com.pixelengine.DataModel.JZonalStatParams;
 import com.pixelengine.DataModel.RestResult;
 import com.pixelengine.JRDBHelperForWebservice;
+import com.pixelengine.WConfig;
+import com.pixelengine.tools.FileDirTool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,7 +25,7 @@ public class ZonalStatController<tbStyle> {
     ZonalStatDAO dao ;
 
     //get user region list
-    @CrossOrigin
+    @CrossOrigin(origins = "*")
     @GetMapping("/userlist")
     @ResponseBody
     public RestResult userList(String userid,String mode) {
@@ -49,9 +51,9 @@ public class ZonalStatController<tbStyle> {
         List<ZonalStatDTO> rlist = null ;
         if( mode.equals("xl") )
         {
-            rlist = dao.findAllByUserid( Long.parseLong(userid),imode) ;
-        }else{
             rlist = dao.findAllXLTaskByUserid( Long.parseLong(userid)) ;
+        }else{
+            rlist = dao.findAllByUserid( Long.parseLong(userid),imode) ;
         }
 
         RestResult returnT = new RestResult();
@@ -62,7 +64,7 @@ public class ZonalStatController<tbStyle> {
     }
 
     //task detail
-    @CrossOrigin
+    @CrossOrigin(origins = "*")
     @GetMapping("/detail")
     @ResponseBody
     public RestResult getDetail(String tid) {
@@ -75,7 +77,7 @@ public class ZonalStatController<tbStyle> {
     }
 
     //task new
-    @CrossOrigin
+    @CrossOrigin(origins = "*")
     @PostMapping("/new")
     @ResponseBody
     public RestResult createNew(String rtype,
@@ -88,7 +90,7 @@ public class ZonalStatController<tbStyle> {
                                 String vmax,
                                 String fromdt ,
                                 String todt,
-                                String method,
+                                String method,//min,max,ave
                                 String offsetdt
     ) {
 
@@ -119,6 +121,10 @@ public class ZonalStatController<tbStyle> {
         params.bandNodata = pdt.bandList.get(params.bandindex).noData ;
         params.method=method;
         params.offsetdt=offsetdt ;
+        String[] outdirArr = FileDirTool.checkAndMakeCurrentYearDateDir(WConfig.sharedConfig.pedir,"offtask");
+        params.outfilename = outdirArr[0] + "xl-u" + userid + "-" + FileDirTool.dateTimeString() + ".json" ;
+        params.outfilenamedb = outdirArr[1] + "xl-u" + userid + "-" + FileDirTool.dateTimeString() + ".json" ;
+
 
         ZonalStatDTO task =new ZonalStatDTO() ;
         task.setContent(params.toJson());
@@ -149,7 +155,7 @@ public class ZonalStatController<tbStyle> {
 
 
     //task new
-    @CrossOrigin
+    @CrossOrigin(origins = "*")
     @PostMapping("/edittag")
     @ResponseBody
     public RestResult editTag(String tid,
@@ -166,7 +172,7 @@ public class ZonalStatController<tbStyle> {
     }
 
     //task new
-    @CrossOrigin
+    @CrossOrigin(origins = "*")
     @PostMapping("/remove")
     @ResponseBody
     public RestResult editTag(String tid ) {

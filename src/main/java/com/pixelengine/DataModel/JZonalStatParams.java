@@ -25,6 +25,8 @@ public class JZonalStatParams {
     public String method; //min,max,ave
     public String offsetdt ;
 
+    public String outfilename,outfilenamedb ;//new
+
     public String toJson() {
         Gson gson = new Gson();
         String jsonstr = gson.toJson(this);

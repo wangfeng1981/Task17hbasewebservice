@@ -15,7 +15,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping(value="/style")
-@CrossOrigin
+@CrossOrigin(origins = "*")
 public class StyleController {
     @Autowired
     StyleDAO styleDao ;

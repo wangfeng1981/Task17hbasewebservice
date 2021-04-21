@@ -39,7 +39,7 @@ public class CompositeController {
             "var resds=dsarr.forEachPixel({{{methodfunc}}});return resds;}" ;
 
     //get user region list
-    @CrossOrigin
+    @CrossOrigin(origins = "*")
     @GetMapping("/userlist")
     @ResponseBody
     public RestResult userList(String userid) {
@@ -53,7 +53,7 @@ public class CompositeController {
     }
 
     //task detail
-    @CrossOrigin
+    @CrossOrigin(origins = "*")
     @GetMapping("/detail")
     @ResponseBody
     public RestResult getDetail(String tid) {
@@ -66,7 +66,7 @@ public class CompositeController {
     }
 
     //task new
-    @CrossOrigin
+    @CrossOrigin(origins = "*")
     @PostMapping("/new")
     @ResponseBody
     public RestResult createNew(
@@ -141,6 +141,10 @@ public class CompositeController {
         params.zmin = product.minZoom ;
         params.zmax = product.maxZoom ;
 
+        String[] outdirArr = FileDirTool.checkAndMakeCurrentYearDateDir(WConfig.sharedConfig.pedir,"offtask");
+        params.outfilename = outdirArr[0] + "co-u" + userid + "-" + FileDirTool.dateTimeString() + ".json" ;
+        params.outfilenamedb = outdirArr[1] + "co-u" + userid + "-" + FileDirTool.dateTimeString() + ".json" ;
+
 
         ZonalStatDTO task =new ZonalStatDTO() ;
         task.setContent(params.toJson());
@@ -164,7 +168,7 @@ public class CompositeController {
 
 
     //task new
-    @CrossOrigin
+    @CrossOrigin(origins = "*")
     @PostMapping("/edittag")
     @ResponseBody
     public RestResult editTag(String tid,
@@ -181,7 +185,7 @@ public class CompositeController {
     }
 
     //task new
-    @CrossOrigin
+    @CrossOrigin(origins = "*")
     @PostMapping("/remove")
     @ResponseBody
     public RestResult editTag(String tid ) {

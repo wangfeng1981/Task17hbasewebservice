@@ -22,6 +22,8 @@ public class JCompositeParams {
     public double left,right,top,bottom ;
     public int zmin,zmax ;
 
+    public String outfilename,outfilenamedb ;//new
+
     public String toJson(){
         Gson gson = new Gson();
         String jsonstr = gson.toJson(this);
