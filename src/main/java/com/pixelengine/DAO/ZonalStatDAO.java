@@ -12,4 +12,8 @@ public interface ZonalStatDAO extends JpaRepository<ZonalStatDTO,Long>  {
     //不考虑删除项（4）
     @Query( nativeQuery = true, value = "SELECT  * FROM tbofftaskzonalstat where uid=:userid AND mode=:mode  AND status<>4 ORDER by createtime")
     List<ZonalStatDTO> findAllByUserid(@Param("userid") Long userid, @Param("mode") int mode);
+
+    //检索全部序列任务（实况+历史）
+    @Query( nativeQuery = true, value = "SELECT  * FROM tbofftaskzonalstat where uid=:userid AND mode in (1,2)  AND status<>4 ORDER by createtime")
+    List<ZonalStatDTO> findAllXLTaskByUserid(@Param("userid") Long userid);
 }

@@ -27,15 +27,33 @@ public class ZonalStatController<tbStyle> {
     @GetMapping("/userlist")
     @ResponseBody
     public RestResult userList(String userid,String mode) {
-        int imode = 0 ;//0-zs , 1-sk , 2-ls
+        int imode = 0 ;//0-zs , 1-sk , 2-ls , 4-co , 5-ex
         if( mode.equals("sk") ){
             imode = 1 ;
         }else if( mode.equals("ls") ){
             imode = 2 ;
-        }else{
+        }else if( mode.equals("zs") ){
             imode = 0 ;
+        }else if( mode.equals("co") )
+        {
+            imode = 4 ;
+        }else if( mode.equals("ex") ){
+            imode = 5 ;
+        }else if( mode.equals("xl") )
+        {
+            imode = 9012 ;//获取全部序列分析任务，包括实况序列和历史序列
         }
-        List<ZonalStatDTO> rlist = dao.findAllByUserid( Long.parseLong(userid),imode) ;
+        else{
+            imode =-1 ;
+        }
+        List<ZonalStatDTO> rlist = null ;
+        if( mode.equals("xl") )
+        {
+            rlist = dao.findAllByUserid( Long.parseLong(userid),imode) ;
+        }else{
+            rlist = dao.findAllXLTaskByUserid( Long.parseLong(userid)) ;
+        }
+
         RestResult returnT = new RestResult();
         returnT.setState(0);
         returnT.setMessage("");

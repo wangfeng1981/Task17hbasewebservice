@@ -12,6 +12,8 @@ import java.util.Date;
 @Entity
 @Table(name="tbregion")
 public class RegionDTO {
+    //
+
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     @Column(name = "rid")

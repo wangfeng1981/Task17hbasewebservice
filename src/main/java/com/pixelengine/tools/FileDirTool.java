@@ -42,6 +42,41 @@ public class FileDirTool {
         return tempfullname ;
     }
 
+    static public String dateTimeString()
+    {
+        Date date = new Date();
+        SimpleDateFormat sdf1 = new SimpleDateFormat("yyyyMMddhhmmss");
+        String dtstr = sdf1.format(date);
+        return dtstr ;
+    }
+
+    ///根据当前日期构建一个目录，格式 {rootdir}/{subdir}/yyyy/yyyyMMdd/
+    ///rootdir必须存在，函数不对rootdir做检查
+    ///subdir 可以存在也可以不存在，如果不存在就创建
+    ///返回绝对路径和相对路径包含斜杠结尾 0-绝对路径， 1-相对路径
+    static public String[] checkAndMakeCurrentYearDateDir(String rootdir, String subdir ){
+        Date date = new Date();
+        SimpleDateFormat yearformat = new SimpleDateFormat("yyyy");
+        String yearstr = yearformat.format(date);
+        SimpleDateFormat ymdformat = new SimpleDateFormat("yyyyMMdd");
+        String ymdstr = ymdformat.format(date);
+
+        String relativeDir = "/" + subdir + "/" +yearstr + "/" +ymdstr +"/" ;
+        String absDir = rootdir + relativeDir ;
+        File dirfile = new File( absDir) ;
+        if( dirfile.exists() == false ){
+            dirfile.mkdirs() ;
+        }
+        if( dirfile.exists()==false ){
+            System.out.println("Create dir failed:" + absDir);
+            return null ;
+        }
+        String[] outdir = new String[2] ;
+        outdir[0] = absDir ;
+        outdir[1] = relativeDir ;
+        return outdir ;
+    }
+
     static public boolean writeToFile(String filename,String content)
     {
         BufferedOutputStream stream = null;

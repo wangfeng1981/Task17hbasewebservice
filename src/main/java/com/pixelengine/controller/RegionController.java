@@ -4,6 +4,7 @@ package com.pixelengine.controller;
 import com.pixelengine.DAO.RegionDAO;
 import com.pixelengine.DAO.StyleDAO;
 import com.pixelengine.DTO.RegionDTO;
+import com.pixelengine.DataModel.ROI;
 import com.pixelengine.DataModel.RestResult;
 import com.pixelengine.JUser;
 import com.pixelengine.WConfig;
@@ -17,7 +18,9 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -27,37 +30,69 @@ public class RegionController {
     @Autowired
     RegionDAO dao ;
 
+
+    private ROI convertRegionDTO2ROI(RegionDTO region )
+    {
+        ROI roi = new ROI() ;
+        roi.rid = Integer.parseInt( region.getRid().toString() ) ;
+        roi.shp = region.getShp();
+        roi.uid = region.getUid() ;
+        roi.children = 0 ;
+        roi.code = "0" ;
+        roi.parentCode = "0" ;
+        roi.geojson = region.getGeojson() ;
+        roi.name = region.getName() ;
+        roi.rtype = "roi" ;
+        roi.createtime = region.getCreatetime() ;
+        roi.updatetime = region.getUpdatetime() ;
+        return roi ;
+    }
+
     //get user region list
-    @CrossOrigin
+    @CrossOrigin(origins = "*")
     @RequestMapping("/userlist")
     @ResponseBody
     public RestResult userList(String userid) {
         List<RegionDTO> rlist = dao.findAllByUserid( Long.parseLong(userid)) ;
+        ArrayList<ROI> roilist = new ArrayList<>() ;
+        for(int i = 0 ; i<rlist.size();++i )
+        {
+            roilist.add(convertRegionDTO2ROI(rlist.get(i))) ;
+        }
+
         RestResult returnT = new RestResult();
         returnT.setState(0);
         returnT.setMessage("");
-        returnT.setData(rlist);
+        returnT.setData(roilist);
 
         return returnT ;
     }
 
 
     //key filter
-    @CrossOrigin
+    @CrossOrigin(origins = "*")
     @RequestMapping("/findByName")
     @ResponseBody
     public RestResult findByName(String userid, String key) {
         List<RegionDTO> rlist = dao.findByName( Long.parseLong(userid),key) ;
+
+        ArrayList<ROI> roilist = new ArrayList<>() ;
+        for(int i = 0 ; i<rlist.size();++i )
+        {
+            roilist.add(convertRegionDTO2ROI(rlist.get(i))) ;
+        }
+
+
         RestResult returnT = new RestResult();
         returnT.setState(0);
         returnT.setMessage("");
-        returnT.setData(rlist);
+        returnT.setData(roilist);
 
         return returnT ;
     }
 
     //modify region name
-    @CrossOrigin
+    @CrossOrigin(origins = "*")
     @PostMapping("/updatename")
     @ResponseBody
     public RestResult updateName(String rid,String name) {
@@ -67,13 +102,13 @@ public class RegionController {
         RestResult returnT = new RestResult();
         returnT.setState(0);
         returnT.setMessage("");
-        returnT.setData(newregion);
+        returnT.setData( convertRegionDTO2ROI(newregion) );
         return returnT ;
     }
 
 
     //remove region
-    @CrossOrigin
+    @CrossOrigin(origins = "*")
     @RequestMapping("/remove")
     @ResponseBody
     public RestResult remove(String rid) {
@@ -110,10 +145,10 @@ public class RegionController {
      * @param: [files, httpServletRequest]
      * @return: com.piesat.utils.ReturnT
      **/
-    @CrossOrigin
-    @RequestMapping("/upload")
+    @CrossOrigin(origins = "*")
+    @RequestMapping("/upload2")
     @ResponseBody
-    public RestResult upload(
+    public RestResult upload2(
             @RequestHeader("token") String token,
             MultipartFile[] files,  HttpServletRequest httpServletRequest){
         System.out.println("uploading ...");
@@ -138,43 +173,43 @@ public class RegionController {
             }
             String relativeUploadDateDir = "/roi/" + datestr + "/" ;
             String absUploadDateDir = WConfig.sharedConfig.pedir + relativeUploadDateDir ;
-            String shp = "";
-            String shpFilePath = "" ;
-            for(int ifile = 0 ; ifile < files.length;++ ifile ){
-                String name = uploadFile(files[ifile],absUploadDateDir);
-                System.out.println(name); ;
-            }
 
+            String shpFileNameOnlyInServer = "" ;
+            String shpFilePathInServer = "" ;
             //查询是否够四个文件，够了入库
             boolean shpBoo = false;
             boolean dbfBoo = false;
             boolean prjBoo = false;
             boolean shxBoo = false;
+
+            for(int ifile = 0 ; ifile < files.length;++ ifile ){
+                String tempfilename = uploadFile(files[ifile],absUploadDateDir);
+                System.out.println(tempfilename);
+
+                if(tempfilename.endsWith(".shp")){
+                    shpFileNameOnlyInServer = tempfilename ;
+                    shpFilePathInServer =absUploadDateDir + tempfilename;
+                    shpBoo = true;
+                }
+                if(tempfilename.endsWith(".dbf")){
+                    dbfBoo = true;
+                }
+                if(tempfilename.endsWith(".prj")){
+                    prjBoo = true;
+                }
+                if(tempfilename.endsWith(".shx")){
+                    shxBoo = true;
+                }
+            }
+
+
             File rootfile = new File(absUploadDateDir);
             if(rootfile.exists()){
 
-                File[] files_server = rootfile.listFiles();
-                for(File fil: files_server){
-                    System.out.println("---"+fil.getName());
-                    if(fil.getName().endsWith(".shp")){
-                        shp = fil.getName();
-                        shpFilePath = fil.getPath() ;
-                        shpBoo = true;
-                    }
-                    if(fil.getName().endsWith(".dbf")){
-                        dbfBoo = true;
-                    }
-                    if(fil.getName().endsWith(".prj")){
-                        prjBoo = true;
-                    }
-                    if(fil.getName().endsWith(".shx")){
-                        shxBoo = true;
-                    }
-                }
                 if(shpBoo && dbfBoo && prjBoo && shxBoo){
                     System.out.println(""+shpBoo +dbfBoo + prjBoo + shxBoo);
                     //将shp文件转换为geojson文件
-                    String shpFileNameWithoutExtName = shp.split(".shp")[0];
+                    String shpFileNameWithoutExtName = shpFileNameOnlyInServer.split(".shp")[0];
 
                     String dbFilePath = relativeUploadDateDir + shpFileNameWithoutExtName +".geojson" ;
                     String geojsonFilePath = WConfig.sharedConfig.pedir + dbFilePath ;
@@ -186,7 +221,7 @@ public class RegionController {
                     }
                     System.out.println("used geojson file:" + geojsonFilePath);
                     //do convert shp to geojson
-                    boolean convertOk = convertShp2Geojson(shpFilePath,geojsonFilePath) ;
+                    boolean convertOk = convertShp2Geojson(shpFilePathInServer,geojsonFilePath) ;
                     if( convertOk==false ){
                         //failed.
                         returnT.setState(1);
@@ -195,12 +230,12 @@ public class RegionController {
                         //数据入库
                         RegionDTO region1 = new RegionDTO() ;
                         region1.setGeojson(dbFilePath);
-                        region1.setShp(shpFilePath);
+                        region1.setShp(shpFilePathInServer);
                         region1.setName(shpFileNameWithoutExtName);
                         region1.setUid( tempUser.uid );//
 
                         RegionDTO newregion = dao.save(region1) ;
-                        returnT.setData(newregion);
+                        returnT.setData( convertRegionDTO2ROI(newregion) );
                     }
                 }else{
                     System.out.println("lack of some files:");
@@ -213,6 +248,118 @@ public class RegionController {
             return returnT;
         }
     }
+
+    //上传shp，转geojson，并入库
+    /**
+     * @Description:上传矢量文件
+     * @Author: zyp
+     * @Date: 2021/1/15
+     * @param: [files, httpServletRequest]
+     * @return: com.piesat.utils.ReturnT
+     **/
+    @CrossOrigin(origins = "*")
+    @RequestMapping("/upload")
+    @ResponseBody
+    public RestResult upload(
+            String userid,
+            MultipartFile[] files,  HttpServletRequest httpServletRequest){
+        System.out.println("uploading ...");
+        RestResult returnT = new RestResult();
+        returnT.setState(0);
+        returnT.setMessage("");
+
+        {
+            Date date = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+            String datestr = sdf.format(date);
+
+            String roiRootDir = WConfig.sharedConfig.pedir + "/roi/" ;
+            File roiRootDirFileObj = new File(roiRootDir) ;
+            if( roiRootDirFileObj.exists()==false ){
+                roiRootDirFileObj.mkdir() ;
+            }
+            String relativeUploadDateDir = "/roi/" + datestr + "/" ;
+            String absUploadDateDir = WConfig.sharedConfig.pedir + relativeUploadDateDir ;
+
+            String shpFileNameOnlyInServer = "" ;
+            String shpFilePathInServer = "" ;
+
+            //查询是否够四个文件，够了入库
+            boolean shpBoo = false;
+            boolean dbfBoo = false;
+            boolean prjBoo = false;
+            boolean shxBoo = false;
+
+            for(int ifile = 0 ; ifile < files.length;++ ifile ){
+                String tempfilename = uploadFile(files[ifile],absUploadDateDir);
+                System.out.println(tempfilename);
+
+                if(tempfilename.endsWith(".shp")){
+                    shpFileNameOnlyInServer = tempfilename ;
+                    shpFilePathInServer =absUploadDateDir + tempfilename;
+                    shpBoo = true;
+                }
+                if(tempfilename.endsWith(".dbf")){
+                    dbfBoo = true;
+                }
+                if(tempfilename.endsWith(".prj")){
+                    prjBoo = true;
+                }
+                if(tempfilename.endsWith(".shx")){
+                    shxBoo = true;
+                }
+            }
+
+
+            File rootfile = new File(absUploadDateDir);
+            if(rootfile.exists()){
+
+                if(shpBoo && dbfBoo && prjBoo && shxBoo){
+                    System.out.println(""+shpBoo +dbfBoo + prjBoo + shxBoo);
+                    //将shp文件转换为geojson文件
+                    String shpFileNameWithoutExtName = shpFileNameOnlyInServer.split(".shp")[0];
+
+                    String dbFilePath = relativeUploadDateDir + shpFileNameWithoutExtName +".geojson" ;
+                    String geojsonFilePath = WConfig.sharedConfig.pedir + dbFilePath ;
+                    int itry = 1;
+                    while( (new File(geojsonFilePath)).exists()==true ){
+                        dbFilePath = relativeUploadDateDir + shpFileNameWithoutExtName + "-" + itry +".geojson" ;
+                        geojsonFilePath = WConfig.sharedConfig.pedir + dbFilePath ;
+                        ++itry ;
+                    }
+                    System.out.println("used geojson file:" + geojsonFilePath);
+                    //do convert shp to geojson
+                    boolean convertOk = convertShp2Geojson(shpFilePathInServer,geojsonFilePath) ;
+                    if( convertOk==false ){
+                        //failed.
+                        returnT.setState(1);
+                        returnT.setMessage("convert geojson failed.");
+                    }else{
+                        //数据入库
+                        RegionDTO region1 = new RegionDTO() ;
+                        region1.setGeojson(dbFilePath);
+                        region1.setShp(shpFilePathInServer);
+                        region1.setName(shpFileNameWithoutExtName);
+                        region1.setUid( Integer.valueOf(userid) );//
+
+                        RegionDTO newregion = dao.save(region1) ;
+                        returnT.setData( convertRegionDTO2ROI(newregion) );
+                    }
+                }else{
+                    System.out.println("lack of some files:");
+                    System.out.println("shp "+ shpBoo);
+                    System.out.println("dbf "+ dbfBoo);
+                    System.out.println("prj "+ prjBoo);
+                    System.out.println("shx "+ shxBoo);
+                    returnT.setState(1);
+                    returnT.setMessage("shp,dbf,prj,shx其中一个或者多个文件上传失败。");
+                }
+            }
+            return returnT;
+        }
+    }
+
+
     //write file into file system.
     public static String uploadFile(MultipartFile file,String dateDir){
         String fileName = file.getOriginalFilename();
@@ -307,7 +454,7 @@ public class RegionController {
     //保存geojson，并入库
     /**wf
      **/
-    @CrossOrigin
+    @CrossOrigin(origins = "*")
     @PostMapping("/savegeojson2")
     @ResponseBody
     public RestResult saveGeoJson2(
@@ -356,7 +503,7 @@ public class RegionController {
             region1.setUid(  tempUser.uid );//
 
             RegionDTO newregion = dao.save(region1) ;
-            returnT.setData(newregion);
+            returnT.setData( convertRegionDTO2ROI(newregion) );
 
             return returnT;
         }
@@ -366,7 +513,7 @@ public class RegionController {
     //保存geojson，并入库
     /**wf
      **/
-    @CrossOrigin
+    @CrossOrigin(origins = "*")
     @PostMapping("/savegeojson")
     @ResponseBody
     public RestResult saveGeoJson(
@@ -409,7 +556,7 @@ public class RegionController {
             region1.setUid(  Integer.valueOf(userid) );//
 
             RegionDTO newregion = dao.save(region1) ;
-            returnT.setData(newregion);
+            returnT.setData( convertRegionDTO2ROI(newregion));
 
             return returnT;
         }
