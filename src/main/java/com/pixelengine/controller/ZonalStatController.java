@@ -5,15 +5,19 @@ import com.pixelengine.DAO.ZonalStatDAO;
 import com.pixelengine.DTO.RegionDTO;
 import com.pixelengine.DTO.StyleDTO;
 import com.pixelengine.DTO.ZonalStatDTO;
+import com.pixelengine.DataModel.JOfftaskResult;
 import com.pixelengine.DataModel.JProduct;
 import com.pixelengine.DataModel.JZonalStatParams;
 import com.pixelengine.DataModel.RestResult;
+import com.pixelengine.JOfflineTask;
 import com.pixelengine.JRDBHelperForWebservice;
 import com.pixelengine.WConfig;
 import com.pixelengine.tools.FileDirTool;
+import jdk.nashorn.internal.scripts.JO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -60,6 +64,54 @@ public class ZonalStatController<tbStyle> {
         returnT.setState(0);
         returnT.setMessage("");
         returnT.setData(rlist);
+        return returnT ;
+    }
+
+
+    //get user region list
+    @CrossOrigin(origins = "*")
+    @GetMapping("/userlist2")
+    @ResponseBody
+    public RestResult userList2(String userid,String mode) {
+        int imode = 0 ;//0-zs , 1-sk , 2-ls , 4-co , 5-ex
+        if( mode.equals("sk") ){
+            imode = 1 ;
+        }else if( mode.equals("ls") ){
+            imode = 2 ;
+        }else if( mode.equals("zs") ){
+            imode = 0 ;
+        }else if( mode.equals("co") )
+        {
+            imode = 4 ;
+        }else if( mode.equals("ex") ){
+            imode = 5 ;
+        }else if( mode.equals("xl") )
+        {
+            imode = 9012 ;//获取全部序列分析任务，包括实况序列和历史序列
+        }
+        else{
+            imode =-1 ;
+        }
+        List<ZonalStatDTO> rlist = null ;
+        if( mode.equals("xl") )
+        {
+            rlist = dao.findAllXLTaskByUserid( Long.parseLong(userid)) ;
+        }else{
+            rlist = dao.findAllByUserid( Long.parseLong(userid),imode) ;
+        }
+
+        ArrayList<JOfftaskResult> list2 = new ArrayList<>() ;
+        for(int i = 0 ; i<rlist.size();++i )
+        {
+            JOfftaskResult offres = new JOfftaskResult() ;
+            offres.initWithZonalStatDTO( rlist.get(i));
+            list2.add(offres) ;
+        }
+
+        RestResult returnT = new RestResult();
+        returnT.setState(0);
+        returnT.setMessage("");
+        returnT.setData(list2);
         return returnT ;
     }
 

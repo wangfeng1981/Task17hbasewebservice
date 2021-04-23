@@ -30,8 +30,7 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.6.9 package version 2021-4-19") ;
 		System.out.println("v2.7.1 add data export apis 2021-4-21") ;
 		System.out.println("v2.8.2 离线任务mysql参数中统一增加outfilename,outfilenamedb两个字段 2021-4-21") ;
-		//scriptContent bugfixed
-
+		System.out.println("v2.9 增加静态产品信息接口 2021-4-23");
 
 		if( args.length != 1 )
 		{

@@ -31,22 +31,6 @@ public class RegionController {
     RegionDAO dao ;
 
 
-    private ROI convertRegionDTO2ROI(RegionDTO region )
-    {
-        ROI roi = new ROI() ;
-        roi.rid = Integer.parseInt( region.getRid().toString() ) ;
-        roi.shp = region.getShp();
-        roi.uid = region.getUid() ;
-        roi.children = 0 ;
-        roi.code = "0" ;
-        roi.parentCode = "0" ;
-        roi.geojson = region.getGeojson() ;
-        roi.name = region.getName() ;
-        roi.rtype = "roi" ;
-        roi.createtime = region.getCreatetime() ;
-        roi.updatetime = region.getUpdatetime() ;
-        return roi ;
-    }
 
     //get user region list
     @CrossOrigin(origins = "*")
@@ -57,7 +41,7 @@ public class RegionController {
         ArrayList<ROI> roilist = new ArrayList<>() ;
         for(int i = 0 ; i<rlist.size();++i )
         {
-            roilist.add(convertRegionDTO2ROI(rlist.get(i))) ;
+            roilist.add( ROI.convertRegionDTO2ROI(rlist.get(i))) ;
         }
 
         RestResult returnT = new RestResult();
@@ -79,7 +63,7 @@ public class RegionController {
         ArrayList<ROI> roilist = new ArrayList<>() ;
         for(int i = 0 ; i<rlist.size();++i )
         {
-            roilist.add(convertRegionDTO2ROI(rlist.get(i))) ;
+            roilist.add( ROI.convertRegionDTO2ROI(rlist.get(i))) ;
         }
 
 
@@ -102,7 +86,7 @@ public class RegionController {
         RestResult returnT = new RestResult();
         returnT.setState(0);
         returnT.setMessage("");
-        returnT.setData( convertRegionDTO2ROI(newregion) );
+        returnT.setData( ROI.convertRegionDTO2ROI(newregion) );
         return returnT ;
     }
 
@@ -235,7 +219,7 @@ public class RegionController {
                         region1.setUid( tempUser.uid );//
 
                         RegionDTO newregion = dao.save(region1) ;
-                        returnT.setData( convertRegionDTO2ROI(newregion) );
+                        returnT.setData( ROI.convertRegionDTO2ROI(newregion) );
                     }
                 }else{
                     System.out.println("lack of some files:");
@@ -343,7 +327,7 @@ public class RegionController {
                         region1.setUid( Integer.valueOf(userid) );//
 
                         RegionDTO newregion = dao.save(region1) ;
-                        returnT.setData( convertRegionDTO2ROI(newregion) );
+                        returnT.setData( ROI.convertRegionDTO2ROI(newregion) );
                     }
                 }else{
                     System.out.println("lack of some files:");
@@ -503,7 +487,7 @@ public class RegionController {
             region1.setUid(  tempUser.uid );//
 
             RegionDTO newregion = dao.save(region1) ;
-            returnT.setData( convertRegionDTO2ROI(newregion) );
+            returnT.setData( ROI.convertRegionDTO2ROI(newregion) );
 
             return returnT;
         }
@@ -556,7 +540,7 @@ public class RegionController {
             region1.setUid(  Integer.valueOf(userid) );//
 
             RegionDTO newregion = dao.save(region1) ;
-            returnT.setData( convertRegionDTO2ROI(newregion));
+            returnT.setData( ROI.convertRegionDTO2ROI(newregion));
 
             return returnT;
         }

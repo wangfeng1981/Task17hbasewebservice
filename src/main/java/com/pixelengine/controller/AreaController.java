@@ -56,20 +56,7 @@ public class AreaController {
         return rr;
     }
 
-    private ROI convertArea2ROI(Area tarea)
-    {
-        ROI roi = new ROI();
-        roi.name = tarea.name ;
-        roi.uid = 0;
-        roi.shp = "" ;
-        roi.geojson =  tarea.path;
-        roi.rid = tarea.id ;
-        roi.rtype = "area" ;
-        roi.children = tarea.children ;
-        roi.code = tarea.code ;
-        roi.parentCode = tarea.parentCode ;
-        return roi ;
-    }
+
 
     //行政区划根节点列表
     @ResponseBody
@@ -85,7 +72,7 @@ public class AreaController {
             ArrayList<Area> datalist = rdb.rdbGetAreaList("0") ;
             ArrayList<ROI> roilist = new ArrayList<>() ;
             for(int i = 0 ; i < datalist.size(); ++ i ){
-                roilist.add( convertArea2ROI(datalist.get(i))) ;
+                roilist.add( ROI.convertArea2ROI(datalist.get(i))) ;
             }
             rr.setData(roilist);
         }catch (Exception ex){
@@ -109,7 +96,7 @@ public class AreaController {
             ArrayList<Area> datalist = rdb.rdbGetAreaList(parentCode) ;
             ArrayList<ROI> roilist = new ArrayList<>() ;
             for(int i = 0 ; i < datalist.size(); ++ i ){
-                roilist.add( convertArea2ROI(datalist.get(i))) ;
+                roilist.add( ROI.convertArea2ROI(datalist.get(i))) ;
             }
             rr.setData(roilist);
         }catch (Exception ex){

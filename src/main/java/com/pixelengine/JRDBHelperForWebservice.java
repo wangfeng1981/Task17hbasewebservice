@@ -1,10 +1,8 @@
 package com.pixelengine;
 
 import com.google.gson.Gson;
-import com.pixelengine.DataModel.Area;
-import com.pixelengine.DataModel.JProduct;
-import com.pixelengine.DataModel.JProductBand;
-import com.pixelengine.DataModel.JProductDataItem;
+import com.pixelengine.DTO.RegionDTO;
+import com.pixelengine.DataModel.*;
 
 
 import java.io.FileInputStream;
@@ -97,6 +95,39 @@ public class JRDBHelperForWebservice {
             }
         }else{
             return pinfo1 ;
+        }
+    }
+
+    //如果name为空字符串返回全部静态图层，否则做关键字检索并返回匹配的图层
+    public ArrayList<JStaticMapLayerProduct> rdbGetStaticMapLayer(String name)   {
+        try {
+            ArrayList<JStaticMapLayerProduct> result = new ArrayList<>() ;
+
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            String sqlstr = "SELECT * FROM tbstaticmaplayer ORDER BY iorder";
+            if( name.equals("")==false )
+            {
+                sqlstr = "SELECT * FROM tbstaticmaplayer WHERE productname like '%"+name+ "%' ORDER BY iorder" ;
+            }
+            ResultSet rs = stmt.executeQuery(sqlstr) ;
+            while (rs.next()) {
+                JStaticMapLayerProduct sml = new JStaticMapLayerProduct();
+                sml.cat = rs.getInt("cat") ;
+                sml.iorder = rs.getInt("iorder") ;
+                sml.layertype = rs.getString("layertype") ;
+                sml.params = rs.getString("params") ;
+                sml.productdescription = rs.getString("productdescription") ;
+                sml.productname = rs.getString("productname") ;
+                sml.smid = rs.getInt("smid") ;
+                sml.thumb = rs.getString("thumb") ;
+                sml.visible = rs.getInt("visible") ;
+                result.add(sml) ;
+
+            }
+            return result ;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return null ;
         }
     }
 
@@ -660,6 +691,35 @@ public class JRDBHelperForWebservice {
         }
 
     }
+
+
+    //获取一个产品的显示信息
+    public JProductDisplay rdbGetProductDisplayInfo(int pid)   {
+        try{
+            JProductDisplay pdt = new JProductDisplay();
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rspd = stmt.executeQuery("SELECT * FROM tbproductdisplay WHERE pid="+pid+" limit 1");
+            if (rspd.next()) {
+                pdt.dpid = rspd.getInt("dpid") ;
+                pdt.pid = rspd.getInt("pid") ;
+
+                pdt.satellite = rspd.getString("satellite") ;
+                pdt.sensor = rspd.getString("sensor") ;
+                pdt.productname = rspd.getString("productname") ;
+                pdt.productdescription = rspd.getString("productdescription") ;
+                pdt.thumb = rspd.getString("thumb") ;
+
+                pdt.visible = rspd.getInt("visible") ;
+            }
+            return pdt ;
+        }catch(Exception ex){
+            System.out.println("rdbGetProductDisplayInfo exception:"+ex.getMessage());
+            return null ;
+        }
+
+    }
+
+
     //2021-3-23
     public ArrayList<JProduct> rdbGetProducts() throws SQLException {
         ArrayList<JProduct> result = new ArrayList<>() ;
@@ -836,6 +896,49 @@ public class JRDBHelperForWebservice {
         return result ;
     }
 
+
+
+    //通过ID获取一个对象
+    public Area rdbGetArea(int theid) throws SQLException {
+        Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+        String sqlstr = String.format("SELECT * FROM area WHERE id='%s' ",theid) ;
+        ResultSet rs = stmt.executeQuery(sqlstr );
+        if (rs.next()) {
+            Area aa = new Area() ;
+            aa.id = rs.getInt("id") ;
+            aa.code = rs.getString("code") ;
+            aa.name = rs.getString("name") ;
+            aa.parentCode = rs.getString("parent_code") ;
+            aa.path = rs.getString("path") ;
+            aa.children = this.rdbAreaHasChildren(aa.code) ;
+            return aa ;
+        }else
+        {
+            return null ;
+        }
+    }
+
+    //通过ID获取一个Region对象
+    public RegionDTO rdbGetRegion(int theid) throws SQLException {
+        Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+        String sqlstr = String.format("SELECT * FROM tbregion WHERE rid='%s' ",theid) ;
+        ResultSet rs = stmt.executeQuery(sqlstr );
+        if (rs.next()) {
+            RegionDTO result = new RegionDTO() ;
+            result.setRid( rs.getLong("rid"));
+            result.setName( rs.getString("name"));
+            result.setShp( rs.getString("shp"));
+            result.setGeojson( rs.getString("geojson"));
+            result.setUid( rs.getInt("uid"));
+            return result ;
+        }else
+        {
+            return null ;
+        }
+    }
+
+
+
     public int rdbAreaHasChildren(String parentCode)  {
         try{
             ArrayList<Area> result = new ArrayList<>();
@@ -874,6 +977,22 @@ public class JRDBHelperForWebservice {
             }
         }catch(Exception ex){
             System.out.println("rdbGetGeoJsonFilePath exception:"+ex.getMessage());
+            return null ;
+        }
+    }
+
+    //获取感兴趣区或者行政区的信息
+    public ROI rdbGetROIInfo(String rtype,int rid) {
+        try{
+            if( rtype.equals("area")==true ){
+                Area aa = this.rdbGetArea(rid) ;
+                return ROI.convertArea2ROI(aa) ;
+            }else{
+                RegionDTO rr = this.rdbGetRegion(rid) ;
+                return ROI.convertRegionDTO2ROI(rr) ;
+            }
+        }catch(Exception ex){
+            System.out.println("rdbGetROIInfo exception:"+ex.getMessage());
             return null ;
         }
 
