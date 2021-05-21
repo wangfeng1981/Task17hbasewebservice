@@ -15,6 +15,15 @@ public class JProduct {
     public int tileWid,tileHei ;
     public String compress ;
     public int styleid , userid ;
+    public String[] caps ;//
+    /*
+    区域统计	zs
+    序列分析	xl
+    数据合成	co
+    数据导出	ex
+    渲染方案修改	st
+    日期选择	dt
+     */
 
     //exteranl
     public ArrayList<JProductBand> bandList = new ArrayList<>() ;

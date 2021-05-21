@@ -1,5 +1,6 @@
 package com.pixelengine.controller;
 
+import com.google.gson.Gson;
 import com.pixelengine.DAO.ZonalStatDAO;
 import com.pixelengine.DTO.ZonalStatDTO;
 import com.pixelengine.DataModel.JCompositeParams;
@@ -65,6 +66,49 @@ public class CompositeController {
         return returnT ;
     }
 
+
+
+    //添加到图层接口
+    @CrossOrigin(origins = "*")
+    @GetMapping("/layerinfo")
+    @ResponseBody
+    public RestResult LayerInfo(String tid) {
+        RestResult returnT = new RestResult();
+        Optional<ZonalStatDTO> task = dao.findById( Long.parseLong(tid)) ;
+        if( task != null )
+        {
+            String jsontext = task.get().getContent() ;
+            Gson gson = new Gson() ;
+            JCompositeParams coparams = gson.fromJson(jsontext , JCompositeParams.class);
+            if( coparams.outpid>0 )
+            {
+                JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+                JProduct pdt = rdb.rdbGetOneProductLayerInfoById(coparams.outpid) ;
+                if( pdt==null )
+                {
+                    returnT.setState(3);
+                    returnT.setMessage("product layer info is null.");
+                }else
+                {
+                    pdt.caps = new String[]{"zs","ex","st","dt" } ;
+                    returnT.setState(0);
+                    returnT.setMessage("");
+                    returnT.setData(pdt);
+                }
+
+            }else
+            {
+                returnT.setState(2);
+                returnT.setMessage("Invalid pid of " + coparams.outpid + ", the task maybe failed.");
+            }
+        }else
+        {
+            returnT.setState(1);
+            returnT.setMessage("No task data for tid:"+tid);
+        }
+        return returnT ;
+    }
+
     //task new
     @CrossOrigin(origins = "*")
     @PostMapping("/new")
@@ -78,7 +122,12 @@ public class CompositeController {
                                 String filldata,
                                 String fromdt ,
                                 String todt,
-                                String method  //合成方法min，max，ave，日后在增加一个累加模式 2021-4-1
+                                String method , //合成方法min，max，ave，日后在增加一个累加模式 2021-4-1
+                                String usebound , //0-全部范围，1-使用矩形范围
+                                String left,    //-180~+180
+                                String right,   //-180~+180
+                                String top,     //-90~+90
+                                String bottom   //-90~+90
     ) {
         RestResult result = new RestResult() ;
 
@@ -124,6 +173,53 @@ public class CompositeController {
        }
        String userFileName = "/" + FilenameUtils.getBaseName(scriptfilename) ;
 
+        int iusebound = Integer.parseInt(usebound) ;//是否使用矩形感兴趣区 0-no use , 1-use
+        double dleft = Double.parseDouble(left);
+        double dright = Double.parseDouble(right);
+        double dtop = Double.parseDouble(top);
+        double dbottom = Double.parseDouble(bottom);
+
+        if( iusebound==1 )
+        {
+            if( dleft < -180 || dleft > 180 ){
+                result.setState(1);
+                result.setMessage("left值无效，有效范围-180~180");
+                return result ;
+            }
+            if( dright < -180 || dright > 180 ){
+                result.setState(1);
+                result.setMessage("right值无效，有效范围-180~180");
+                return result ;
+            }
+            if( dtop < -90 || dtop > 90 ){
+                result.setState(1);
+                result.setMessage("top值无效，有效范围-90~90");
+                return result ;
+            }
+            if( dbottom<-90 || dbottom > 90 )
+            {
+                result.setState(1);
+                result.setMessage("bottom值无效，有效范围-90~90");
+                return result ;
+            }
+
+            if( dleft >= dright )
+            {
+                result.setState(1);
+                result.setMessage("left不能大于等于right");
+                return result ;
+            }
+
+            if( dtop <= dbottom )
+            {
+                result.setState(1);
+                result.setMessage("bottom不能大于等于top");
+                return result ;
+            }
+        }
+
+
+
         //其他参数
         params.scriptfilename = scriptfilename ;
         params.outhtable = WConfig.sharedConfig.userhtable ;
@@ -133,11 +229,11 @@ public class CompositeController {
         params.outhpidblen = WConfig.sharedConfig.userhpidblen ;
         params.outyxblen = WConfig.sharedConfig.useryxblen ;
         params.outhcol = 1 ;
-        params.userbound = 0 ;
-        params.left = 0 ;
-        params.right = 0 ;
-        params.top = 0 ;
-        params.bottom = 0 ;
+        params.usebound = Integer.parseInt(usebound);
+        params.left = Double.parseDouble(left);
+        params.right = Double.parseDouble(right);
+        params.top = Double.parseDouble(top);
+        params.bottom = Double.parseDouble(bottom);
         params.zmin = product.minZoom ;
         params.zmax = product.maxZoom ;
 

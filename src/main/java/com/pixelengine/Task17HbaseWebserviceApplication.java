@@ -31,6 +31,10 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.7.1 add data export apis 2021-4-21") ;
 		System.out.println("v2.8.2 离线任务mysql参数中统一增加outfilename,outfilenamedb两个字段 2021-4-21") ;
 		System.out.println("v2.9 增加静态产品信息接口 2021-4-23");
+		System.out.println("v2.9.1 bugfix for zonalstat/remove, use DESC order for zonalstst/userlist2.2021-4-26");
+		System.out.println("v2.9.2 数据合成接口增加矩形区域参数.2021-4-29");
+		System.out.println("v2.9.3 数据合成接口userbound改为usebound. 2021-4-29 ");
+		System.out.println("v2.9.5 增加数据合成任务产品图层信息接口 2021-4-29 ");
 
 		if( args.length != 1 )
 		{

@@ -8,6 +8,7 @@ public class JStaticMapLayerProduct {
     public String productname ;
     public String productdescription ;
     public String thumb ;
+    public String[] caps ;
     public int visible =1;
     public int iorder =0;
 }

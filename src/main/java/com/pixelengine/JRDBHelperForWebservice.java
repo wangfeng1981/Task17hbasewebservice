@@ -734,7 +734,7 @@ public class JRDBHelperForWebservice {
             pdt.pid = pid ;
             pdt.userid = uid ;
             pdt.name = name ;
-
+            pdt.caps = new String[]{"zs","xl","co","ex","st","dt"} ;
             {//bandlist
                 Statement stmtb = JRDBHelperForWebservice.getConnection().createStatement();
                 ResultSet rsb = stmtb.executeQuery("SELECT * FROM tbproductband WHERE pid="+String.valueOf(pid)
@@ -795,6 +795,99 @@ public class JRDBHelperForWebservice {
             result.add(pdt) ;
         }
         return result ;
+    }
+
+    //2021-4-29获取一个完整的可加载到图层的产品信息
+    public JProduct rdbGetOneProductLayerInfoById(int mysqlPid)  {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * FROM tbproduct WHERE pid=" + mysqlPid + " limit 1") ;
+            if (rs.next()) {
+                int pid = rs.getInt("pid");
+                int uid = rs.getInt("userid");
+                String name = rs.getString("name") ;
+                String info = rs.getString("info");
+                JProduct pdt = new Gson().fromJson(info, JProduct.class) ;
+                pdt.pid = pid ;
+                pdt.userid = uid ;
+                pdt.name = name ;
+
+                {//bandlist
+                    Statement stmtb = JRDBHelperForWebservice.getConnection().createStatement();
+                    ResultSet rsb = stmtb.executeQuery("SELECT * FROM tbproductband WHERE pid="+String.valueOf(pid)
+                            +" Order by bindex ASC") ;
+                    while(rsb.next()){
+                        int pidb = rsb.getInt("pid" );
+                        int bindex = rsb.getInt("bIndex") ;
+                        String infob = rsb.getString("info") ;
+                        JProductBand band1 = new Gson().fromJson(infob, JProductBand.class) ;
+                        band1.pid = pidb ;
+                        band1.bIndex = bindex ;
+                        pdt.bandList.add(band1) ;
+                    }
+                }
+
+                {//HBase table
+                    Statement stmth = JRDBHelperForWebservice.getConnection().createStatement();
+                    ResultSet rsh = stmth.executeQuery("SELECT * FROM tbhbasetable WHERE htablename='"+
+                            pdt.hTableName + "' LIMIT 1 ") ;
+                    if( rsh.next() ){
+                        pdt.hbaseTable.hTableName = rsh.getString("hTableName") ;
+                        pdt.hbaseTable.hFamily = rsh.getString("hFamily") ;
+                        pdt.hbaseTable.hPidByteNum = rsh.getInt("hPidByteNum") ;
+                        pdt.hbaseTable.hYXByteNum = rsh.getInt("hYXByteNum") ;
+                    }
+                }
+
+                {//product display info
+                    Statement stmtpd = JRDBHelperForWebservice.getConnection().createStatement();
+                    ResultSet rspd= stmtpd.executeQuery("SELECT * FROM tbproductdisplay WHERE pid='"+
+                            pdt.pid + "' LIMIT 1 ") ;
+                    if( rspd.next() ){
+                        pdt.productDisplay.dpid = rspd.getInt("dpid") ;
+                        pdt.productDisplay.pid = rspd.getInt("pid") ;
+
+                        pdt.productDisplay.satellite = rspd.getString("satellite") ;
+                        pdt.productDisplay.sensor = rspd.getString("sensor") ;
+                        pdt.productDisplay.productname = rspd.getString("productname") ;
+                        pdt.productDisplay.productdescription = rspd.getString("productdescription") ;
+                        pdt.productDisplay.thumb = rspd.getString("thumb") ;
+
+                        pdt.productDisplay.visible = rspd.getInt("visible") ;
+                    }else{
+                        //没有可视化的信息 主要是针对用户产品而言的
+                        pdt.productDisplay.dpid = 0 ;
+                        pdt.productDisplay.pid = pid ;
+                        pdt.productDisplay.satellite="" ;
+                        pdt.productDisplay.sensor = "" ;
+                        pdt.productDisplay.productname =name ;
+                        pdt.productDisplay.productdescription = "";
+                        pdt.productDisplay.thumb =  "";
+                        pdt.productDisplay.visible = 1 ;
+                    }
+                }
+
+                {//latest datetime
+                    Statement stmtdt = JRDBHelperForWebservice.getConnection().createStatement();
+                    ResultSet rsdt= stmtdt.executeQuery("SELECT * FROM tbproductdataitem WHERE pid='"+
+                            pdt.pid + "' Order by hcol DESC LIMIT 1 ") ;
+                    if( rsdt.next() ){
+                        pdt.latestDataItem.fid = rsdt.getInt("fid") ;
+                        pdt.latestDataItem.pid = rsdt.getInt("pid") ;
+                        pdt.latestDataItem.hcol = rsdt.getLong("hcol") ;
+                        pdt.latestDataItem.convertShowValRealVal(pdt.timeType);
+                    }
+                }
+                return pdt ;
+            }
+            else{
+                return null ;
+            }
+        }catch (Exception ex)
+        {
+            System.out.println("rdbGetOneProductLayerInfoById exception:" + ex.getMessage());
+            return null ;
+        }
     }
 
 

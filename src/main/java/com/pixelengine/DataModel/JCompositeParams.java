@@ -18,7 +18,7 @@ public class JCompositeParams {
     public int outhpid; //output product in hbase hpid.
     public int outhpidblen, outyxblen ;
     public int outhcol ;//这里使用outhpid来区别每次客户的合成操作，所以这里hcol基本没有用处了，直接给个1值就完了
-    public int userbound ;//0/1
+    public int usebound ;// 0 or 1
     public double left,right,top,bottom ;
     public int zmin,zmax ;
 

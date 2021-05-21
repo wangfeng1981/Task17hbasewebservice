@@ -227,7 +227,7 @@ public class ZonalStatController<tbStyle> {
     @CrossOrigin(origins = "*")
     @PostMapping("/remove")
     @ResponseBody
-    public RestResult editTag(String tid ) {
+    public RestResult removeItem(String tid ) {
         Optional<ZonalStatDTO> oldtask = dao.findById( Long.parseLong(tid)) ;
         oldtask.get().setStatus( ZonalStatDTO.STATUS_DELETE );// wait to delete (4)
         oldtask.get().setUpdatetime(new Date());
