@@ -4,8 +4,10 @@ package com.pixelengine.controller;
 import com.pixelengine.DAO.RegionDAO;
 import com.pixelengine.DAO.StyleDAO;
 import com.pixelengine.DTO.RegionDTO;
+import com.pixelengine.DataModel.Area;
 import com.pixelengine.DataModel.ROI;
 import com.pixelengine.DataModel.RestResult;
+import com.pixelengine.JRDBHelperForWebservice;
 import com.pixelengine.JUser;
 import com.pixelengine.WConfig;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -543,6 +545,50 @@ public class RegionController {
             returnT.setData( ROI.convertRegionDTO2ROI(newregion));
 
             return returnT;
+        }
+    }
+
+
+    //将预定义区域保存到我的感兴趣区
+    /**wf 2021-5-25
+     **/
+    @CrossOrigin(origins = "*")
+    @PostMapping("/addarea")
+    @ResponseBody
+    public RestResult addArea(
+            String areaid,
+            String userid){
+
+        System.out.println("add area ...");
+        RestResult returnT = new RestResult();
+        try
+        {
+            JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+            Area area = rdb.rdbGetArea( Integer.parseInt(areaid)) ;
+            if( area != null )
+            {
+                //数据入库
+                RegionDTO region1 = new RegionDTO() ;
+                region1.setGeojson(area.path);
+                region1.setShp("");
+                region1.setName(area.name);
+                region1.setUid(  Integer.valueOf(userid) );//
+
+                RegionDTO newregion = dao.save(region1) ;
+                returnT.setState(0);
+                returnT.setMessage("");
+                returnT.setData( ROI.convertRegionDTO2ROI(newregion));
+                return returnT;
+            }else{
+                returnT.setState(2);
+                returnT.setMessage("not found the area record.");
+                return returnT ;
+            }
+
+        }catch (Exception ex){
+            returnT.setState(1);
+            returnT.setMessage(ex.getMessage());
+            return returnT ;
         }
     }
 

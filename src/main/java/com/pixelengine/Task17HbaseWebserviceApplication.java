@@ -35,6 +35,7 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.9.2 数据合成接口增加矩形区域参数.2021-4-29");
 		System.out.println("v2.9.3 数据合成接口userbound改为usebound. 2021-4-29 ");
 		System.out.println("v2.9.5 增加数据合成任务产品图层信息接口 2021-4-29 ");
+		System.out.println("v2.9.6 增加添加预定义区域到我的感兴趣区接口 2021-5-25 ");
 
 		if( args.length != 1 )
 		{
