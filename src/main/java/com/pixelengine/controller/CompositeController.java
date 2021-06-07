@@ -83,7 +83,7 @@ public class CompositeController {
             if( coparams.outpid>0 )
             {
                 JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
-                JProduct pdt = rdb.rdbGetOneProductLayerInfoById(coparams.outpid, true ) ;
+                JProduct pdt = rdb.rdbGetOneProductLayerInfoById(coparams.outpid ) ;
                 if( pdt==null )
                 {
                     returnT.setState(3);
@@ -144,7 +144,7 @@ public class CompositeController {
 
         //
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
-        JProduct product = rdb.rdbGetProductForAPI(params.inpid , false ) ;//用户合成产品的输入产品一定要是系统产品
+        JProduct product = rdb.rdbGetProductForAPI(params.inpid ) ;//
         String methodfunc = "min" ;
         if( method.equals("min") ){
             methodfunc = "minfunc" ;

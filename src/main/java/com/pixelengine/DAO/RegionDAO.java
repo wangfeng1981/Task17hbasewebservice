@@ -12,10 +12,10 @@ import java.util.List;
 
 public interface RegionDAO extends JpaRepository<RegionDTO,Long> {
 
-    @Query( nativeQuery = true, value = "SELECT  * FROM tbregion where uid=:uid ")
+    @Query( nativeQuery = true, value = "SELECT  * FROM tbregion where uid=:uid ORDER By rid DESC")
     List<RegionDTO> findAllByUserid(@Param("uid") Long uid);
 
-    @Query( nativeQuery = true, value = "SELECT  * FROM tbregion where name like %:key% AND uid=:userid ")
+    @Query( nativeQuery = true, value = "SELECT  * FROM tbregion where name like %:key% AND uid=:userid ORDER By rid DESC")
     List<RegionDTO> findByName(@Param("userid") Long userid,@Param("key") String key);
 
 }

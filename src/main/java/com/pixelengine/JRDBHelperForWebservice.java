@@ -69,17 +69,12 @@ public class JRDBHelperForWebservice {
         {
             try {
                 String productTable = "tbproduct" ;
-                boolean userProduct = false ;
-                if( dsname.charAt(0) == '/' ){
-                    productTable = "tbuserproduct" ;
-                    userProduct = true ;
-                }
 
                 Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
                 ResultSet rs = stmt.executeQuery("SELECT pid FROM "+productTable+" WHERE name='"+dsname+"' LIMIT 1") ;
                 if (rs.next()) {
                     int pid = rs.getInt("pid");
-                    JProduct newpdt = this.rdbGetProductForAPI(pid, userProduct) ;
+                    JProduct newpdt = this.rdbGetProductForAPI(pid) ;
                     System.out.println("=== find dsname,pid : "+dsname+","+newpdt.name);
                     synchronized(this){
                         if( productInfoPool.size() > 1000 ){
@@ -647,14 +642,10 @@ public class JRDBHelperForWebservice {
     }
 
     //2021-3-23 获取一个简短的产品信息，包含HBase信息和波段信息
-    public JProduct rdbGetProductForAPI(int pid , boolean userProduct)   {
+    public JProduct rdbGetProductForAPI(int pid )   {
         try{
             String productTable = "tbproduct" ;
             String bandTable = "tbproductband" ;
-            if( userProduct==true ){
-                productTable = "tbuserproduct" ;
-                bandTable = "tbuserproductband" ;
-            }
 
             JProduct result = new JProduct();
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
@@ -826,21 +817,13 @@ public class JRDBHelperForWebservice {
     }
 
     //2021-4-29获取一个完整的可加载到图层的产品信息
-    public JProduct rdbGetOneProductLayerInfoById(int mysqlPid, boolean userProduct)  {
+    public JProduct rdbGetOneProductLayerInfoById(int mysqlPid )  {
         try {
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
-            String productTable = "" ;
-            String bandTable = "" ;
-            String dataItemTable = "" ;
-            if( userProduct==true ){
-                productTable = "tbuserproduct" ;
-                bandTable = "tbuserproductband" ;
-                dataItemTable = "tbuserproductdataitem" ;
-            }else{
-                productTable = "tbproduct" ;
-                bandTable = "tbproductband" ;
-                dataItemTable = "tbproductdataitem" ;
-            }
+            String productTable = "tbproduct" ;
+            String bandTable = "tbproductband" ;
+            String dataItemTable = "tbproductdataitem" ;
+
             String tsql = "SELECT * FROM "+productTable+" WHERE pid=" + mysqlPid + " limit 1" ;
             ResultSet rs = stmt.executeQuery(tsql) ;
             if (rs.next()) {
@@ -881,10 +864,9 @@ public class JRDBHelperForWebservice {
                 }
 
                 {//product display info
-                    if( userProduct==true ){
+                    pdt.productDisplay = this.rdbGetProductDisplayInfo(pdt.pid) ;
+                    if( pdt.productDisplay==null ){
                         pdt.productDisplay = new JProductDisplay() ;
-                    }else{
-                        pdt.productDisplay = this.rdbGetProductDisplayInfo(pdt.pid) ;
                     }
                 }
 
@@ -916,7 +898,7 @@ public class JRDBHelperForWebservice {
                                                                  int ipage,
                                                                  int pagesize,
                                                                  String orderstr ) throws SQLException {
-        JProduct pdt = rdbGetProductForAPI(pid,false) ;
+        JProduct pdt = rdbGetProductForAPI(pid) ;
 
         ArrayList<JProductDataItem> result = new ArrayList<>();
         Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
@@ -935,7 +917,7 @@ public class JRDBHelperForWebservice {
 
     public ArrayList<Integer> rdbGetProductYearList(int pid)
             throws SQLException {
-        JProduct pdt = rdbGetProductForAPI(pid,false) ;
+        JProduct pdt = rdbGetProductForAPI(pid) ;
         ArrayList<Integer> result = new ArrayList<>();
         Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
         String sqlstr = String.format("SELECT DISTINCT FLOOR(hcol/10000000000) as year FROM tbproductdataitem "
@@ -951,7 +933,7 @@ public class JRDBHelperForWebservice {
 
     public ArrayList<Integer> rdbGetProductMonthList(int pid,
                                                      int year) throws SQLException {
-        JProduct pdt = rdbGetProductForAPI(pid,false) ;
+        JProduct pdt = rdbGetProductForAPI(pid) ;
         ArrayList<Integer> result = new ArrayList<>();
         Long ymd0 = year*10000000000L ;
         Long ymd1 = (year+1)*10000000000L ;
@@ -972,7 +954,7 @@ public class JRDBHelperForWebservice {
             int year,
             int mon
             ) throws SQLException {
-        JProduct pdt = rdbGetProductForAPI(pid,false) ;
+        JProduct pdt = rdbGetProductForAPI(pid) ;
         ArrayList<JProductDataItem> result = new ArrayList<>();
         Long ymd0 = (year*10000L+mon*100L    )*1000000L ;
         Long ymd1 = (year*10000L+(mon+1)*100L)*1000000L ;

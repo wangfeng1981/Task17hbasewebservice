@@ -93,7 +93,7 @@ public class RegionController {
     }
 
 
-    //remove region
+    //remove region 当geojson的路径是/area开头的不删除，否则删除geojson和shp
     @CrossOrigin(origins = "*")
     @RequestMapping("/remove")
     @ResponseBody
@@ -111,11 +111,16 @@ public class RegionController {
         }
 
         if( tregion.getGeojson() != null && tregion.getGeojson().equals("")==false){
-            new File(tregion.getGeojson()).delete() ;
+            String geojsonfilename = tregion.getGeojson() ;
+            if( geojsonfilename.length()> 5 && geojsonfilename.substring(0,5).compareTo("/area") == 0 )
+            {
+                //预定义区域，不删除
+            }else{
+                //删除
+                new File(tregion.getGeojson()).delete() ;
+            }
         }
-
-
-        dao.deleteById( Long.parseLong(rid));
+        dao.deleteById( Long.parseLong(rid));//删除记录
         RestResult returnT = new RestResult();
         returnT.setState(0);
         returnT.setMessage("");

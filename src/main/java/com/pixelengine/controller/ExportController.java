@@ -7,6 +7,7 @@ import com.pixelengine.DAO.ZonalStatDAO;
 import com.pixelengine.DTO.ZonalStatDTO;
 import com.pixelengine.DataModel.JExportParams;
 import com.pixelengine.DataModel.JProduct;
+import com.pixelengine.DataModel.JProductDisplay;
 import com.pixelengine.DataModel.RestResult;
 import com.pixelengine.JRDBHelperForWebservice;
 import com.pixelengine.WConfig;
@@ -30,7 +31,6 @@ public class ExportController {
     public RestResult exportNew(
             String userid,
             String pid,
-            String userproduct , //用户产品为1，系统产品为0 2021-5-29
             String dt,
             String left,
             String right,
@@ -41,12 +41,8 @@ public class ExportController {
 
         RestResult result = new RestResult() ;
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
-        boolean userProduct = false ;
-        if( userproduct.compareTo("1") == 0){
-            userProduct = true ;
-        }
 
-        JProduct product = rdb.rdbGetProductForAPI( Integer.parseInt(pid) , userProduct) ;
+        JProduct product = rdb.rdbGetProductForAPI( Integer.parseInt(pid)) ;
         if( product==null )
         {
             result.setState(1);
@@ -57,7 +53,14 @@ public class ExportController {
         {
             JExportParams ep = new JExportParams() ;
             ep.inpid = Integer.parseInt(pid) ;
-            ep.inuserproduct = userProduct ? 1 : 0 ;
+
+            String useTag = product.name ;
+            JProductDisplay pdtDisplay = rdb.rdbGetProductDisplayInfo(ep.inpid) ;
+            if( pdtDisplay != null && pdtDisplay.productname.compareTo("")!=0 )
+            {
+                useTag = pdtDisplay.productname ;
+            }
+
             ep.dt = Long.parseLong(dt) ;
             ep.htable = product.hbaseTable.hTableName ;
             ep.hfami = product.hbaseTable.hFamily ;
@@ -86,7 +89,7 @@ public class ExportController {
             task.setMessage("");
             task.setResult("");
             task.setStatus(0);
-            task.setTag("");
+            task.setTag(useTag);
             task.setUid(Long.parseLong(userid));
             task.setMode(5);//0-zs , 1-sk , 2-ls , 4-composite , 5-export
             ZonalStatDTO newtask = dao.save(task) ;

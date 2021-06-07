@@ -116,9 +116,7 @@ public class ProductWMTSController {
         System.out.println("styleid:" + styleId) ;
 
         /// 将xyz写入一个图片直接返回，目前先不通过hbase拿数据，不通过v8计算。
-        String img = this.getClass().getResource("/placeholder.png").getPath();
-        //"classpath:/resources/placeholder.png" ;
-        //String a = this.getClass().getResource("/placeholder.png").getPath();
+
         try{
             InputStream instream = this.getClass().getResourceAsStream("/placeholder.png");
             BufferedImage image = ImageIO.read(instream);
@@ -136,6 +134,7 @@ public class ProductWMTSController {
             headers.setContentType(MediaType.IMAGE_PNG);
             return new ResponseEntity<byte[]>(bytestream.toByteArray(), headers, HttpStatus.OK);
         }catch (Exception ex ){
+            String img = this.getClass().getResource("/placeholder.png").getPath();
             System.out.println("read img:" + img) ;
             System.out.println(ex.getMessage());
             final HttpHeaders headers = new HttpHeaders();
@@ -214,11 +213,10 @@ public class ProductWMTSController {
     // /pe/product/123/pixvals/...
     // /pe/uproduct/123/pixvals/...
     @ResponseBody
-    @RequestMapping(value="/{product}/{pid}/pixvals/",method= RequestMethod.GET)
+    @RequestMapping(value="/product/{pid}/pixvals/",method= RequestMethod.GET)
     @CrossOrigin(origins = "*")
     public RestResult getPixelValues(
             @PathVariable String pid,
-            @PathVariable String product, //product为系统产品，uproduct为用户产品
             String lon,String lat,String datetime )
     {
         System.out.println(String.format("getPixelValues lon %s, lat %s, dt %s",lon,lat,datetime));
@@ -231,12 +229,7 @@ public class ProductWMTSController {
 
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
         try{
-            boolean userProduct = true ;
-            if( product.compareTo("product") == 0 ){
-                userProduct = false ;
-            }
-
-            JProduct pdt = rdb.rdbGetProductForAPI( Integer.parseInt(pid) , userProduct ) ;
+            JProduct pdt = rdb.rdbGetProductForAPI( Integer.parseInt(pid)  ) ;
             if( pdt!=null && pdt.name.equals("")==false &&
                     inlon>=-180.0 && inlon<=180.0 && inlat>=-90.0 && inlat<=90.0)
             {

@@ -137,7 +137,6 @@ public class ZonalStatController<tbStyle> {
                                 String userid,
                                 String mode , //zs , sk , ls
                                 String pid ,
-                                String userproduct, //用户表为1， 系统表为0
                                 String bandindex,
                                 String vmin,
                                 String vmax,
@@ -146,22 +145,19 @@ public class ZonalStatController<tbStyle> {
                                 String method,//min,max,ave
                                 String offsetdt
     ) {
-        int iuserproduct = Integer.parseInt(userproduct) ;
-        boolean userProduct = (iuserproduct==1) ? true:false ;
 
         JZonalStatParams params = new JZonalStatParams() ;
         params.bandindex = Integer.parseInt(bandindex) ;
         params.fromdt = Long.parseLong(fromdt) ;
         params.todt = Long.parseLong(todt) ;
         params.pid = Integer.parseInt(pid) ;
-        params.userproduct = iuserproduct ;
         params.rid = Long.parseLong(rid) ;
         params.rtype = rtype ;
         params.vmin = Double.parseDouble(vmin) ;
         params.vmax  = Double.parseDouble(vmax) ;
 
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
-        JProduct pdt = rdb.rdbGetProductForAPI(params.pid , userProduct) ;
+        JProduct pdt = rdb.rdbGetProductForAPI(params.pid ) ;
         params.regfile = rdb.rdbGetGeoJsonFilePath(params.rtype,params.rid) ;
         params.zlevel = pdt.maxZoom ;
         params.hTableName = pdt.hTableName ;
