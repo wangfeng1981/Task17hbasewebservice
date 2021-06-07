@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 
+//这个controller 下一个大版本要删除掉，统一使用product all接口。2021-5-29
 @RestController
 public class StaticMapLayerController {
 

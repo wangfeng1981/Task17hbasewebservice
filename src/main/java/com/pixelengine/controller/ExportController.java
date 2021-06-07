@@ -30,6 +30,7 @@ public class ExportController {
     public RestResult exportNew(
             String userid,
             String pid,
+            String userproduct , //用户产品为1，系统产品为0 2021-5-29
             String dt,
             String left,
             String right,
@@ -40,7 +41,12 @@ public class ExportController {
 
         RestResult result = new RestResult() ;
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
-        JProduct product = rdb.rdbGetProductForAPI( Integer.parseInt(pid)) ;
+        boolean userProduct = false ;
+        if( userproduct.compareTo("1") == 0){
+            userProduct = true ;
+        }
+
+        JProduct product = rdb.rdbGetProductForAPI( Integer.parseInt(pid) , userProduct) ;
         if( product==null )
         {
             result.setState(1);
@@ -51,6 +57,7 @@ public class ExportController {
         {
             JExportParams ep = new JExportParams() ;
             ep.inpid = Integer.parseInt(pid) ;
+            ep.inuserproduct = userProduct ? 1 : 0 ;
             ep.dt = Long.parseLong(dt) ;
             ep.htable = product.hbaseTable.hTableName ;
             ep.hfami = product.hbaseTable.hFamily ;

@@ -2,6 +2,7 @@ package com.pixelengine.DataModel;
 
 public class JExportParams {
     public int inpid ;//mysql pid
+    public int inuserproduct;//1-user product, 0-system product
     public long dt ;//hcol
     public String htable ;
     public String hfami ;

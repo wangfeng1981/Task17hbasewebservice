@@ -36,6 +36,11 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.9.3 数据合成接口userbound改为usebound. 2021-4-29 ");
 		System.out.println("v2.9.5 增加数据合成任务产品图层信息接口 2021-4-29 ");
 		System.out.println("v2.9.6 增加添加预定义区域到我的感兴趣区接口 2021-5-25 ");
+		System.out.println("v2.10.0 用户产品表和系统产品表分离，增加预加载图层接口 2021-5-29 ");
+		System.out.println("v2.10.2 使用最小测试环境，不连接HBase，统一使用占位图片返回 2021-6-7 ");
+
+
+
 
 		if( args.length != 1 )
 		{

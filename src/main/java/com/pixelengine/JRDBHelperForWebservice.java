@@ -68,11 +68,18 @@ public class JRDBHelperForWebservice {
         if( pinfo1==null  )
         {
             try {
+                String productTable = "tbproduct" ;
+                boolean userProduct = false ;
+                if( dsname.charAt(0) == '/' ){
+                    productTable = "tbuserproduct" ;
+                    userProduct = true ;
+                }
+
                 Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT pid FROM tbproduct WHERE name='"+dsname+"' LIMIT 1") ;
+                ResultSet rs = stmt.executeQuery("SELECT pid FROM "+productTable+" WHERE name='"+dsname+"' LIMIT 1") ;
                 if (rs.next()) {
                     int pid = rs.getInt("pid");
-                    JProduct newpdt = this.rdbGetProductForAPI(pid) ;
+                    JProduct newpdt = this.rdbGetProductForAPI(pid, userProduct) ;
                     System.out.println("=== find dsname,pid : "+dsname+","+newpdt.name);
                     synchronized(this){
                         if( productInfoPool.size() > 1000 ){
@@ -640,11 +647,18 @@ public class JRDBHelperForWebservice {
     }
 
     //2021-3-23 获取一个简短的产品信息，包含HBase信息和波段信息
-    public JProduct rdbGetProductForAPI(int pid)   {
+    public JProduct rdbGetProductForAPI(int pid , boolean userProduct)   {
         try{
+            String productTable = "tbproduct" ;
+            String bandTable = "tbproductband" ;
+            if( userProduct==true ){
+                productTable = "tbuserproduct" ;
+                bandTable = "tbuserproductband" ;
+            }
+
             JProduct result = new JProduct();
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT * FROM tbproduct WHERE pid="+pid+" limit 1");
+            ResultSet rs = stmt.executeQuery("SELECT * FROM "+productTable+" WHERE pid="+pid+" limit 1");
             if (rs.next()) {
                 int uid = rs.getInt("userid");
                 String name = rs.getString("name") ;
@@ -656,7 +670,7 @@ public class JRDBHelperForWebservice {
 
                 {//bandlist
                     Statement stmtb = JRDBHelperForWebservice.getConnection().createStatement();
-                    ResultSet rsb = stmtb.executeQuery("SELECT * FROM tbproductband WHERE pid="+String.valueOf(pid)
+                    ResultSet rsb = stmtb.executeQuery("SELECT * FROM "+bandTable+" WHERE pid="+String.valueOf(pid)
                             +" Order by bindex ASC") ;
                     while(rsb.next()){
                         int pidb = rsb.getInt("pid" );
@@ -702,25 +716,53 @@ public class JRDBHelperForWebservice {
             if (rspd.next()) {
                 pdt.dpid = rspd.getInt("dpid") ;
                 pdt.pid = rspd.getInt("pid") ;
-
+                pdt.type = rspd.getString("type") ;
                 pdt.satellite = rspd.getString("satellite") ;
                 pdt.sensor = rspd.getString("sensor") ;
                 pdt.productname = rspd.getString("productname") ;
                 pdt.productdescription = rspd.getString("productdescription") ;
                 pdt.thumb = rspd.getString("thumb") ;
-
                 pdt.visible = rspd.getInt("visible") ;
+                pdt.cat = rspd.getInt("cat") ;
+                pdt.iorder = rspd.getInt("iorder") ;
+                pdt.params = rspd.getString("params") ;
             }
             return pdt ;
         }catch(Exception ex){
             System.out.println("rdbGetProductDisplayInfo exception:"+ex.getMessage());
             return null ;
         }
+    }
 
+    //获取一个产品的显示信息by displayid
+    public JProductDisplay rdbGetProductDisplayInfoByDisplayId(int displayid)   {
+        try{
+            JProductDisplay pdt = new JProductDisplay();
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rspd = stmt.executeQuery("SELECT * FROM tbproductdisplay WHERE dpid="+displayid+" limit 1");
+            if (rspd.next()) {
+                pdt.dpid = rspd.getInt("dpid") ;
+                pdt.pid = rspd.getInt("pid") ;
+                pdt.type = rspd.getString("type") ;
+                pdt.satellite = rspd.getString("satellite") ;
+                pdt.sensor = rspd.getString("sensor") ;
+                pdt.productname = rspd.getString("productname") ;
+                pdt.productdescription = rspd.getString("productdescription") ;
+                pdt.thumb = rspd.getString("thumb") ;
+                pdt.visible = rspd.getInt("visible") ;
+                pdt.cat = rspd.getInt("cat") ;
+                pdt.iorder = rspd.getInt("iorder") ;
+                pdt.params = rspd.getString("params") ;
+            }
+            return pdt ;
+        }catch(Exception ex){
+            System.out.println("rdbGetProductDisplayInfo exception:"+ex.getMessage());
+            return null ;
+        }
     }
 
 
-    //2021-3-23
+    //2021-3-23 显示全部系统产品，不包括用户产品
     public ArrayList<JProduct> rdbGetProducts() throws SQLException {
         ArrayList<JProduct> result = new ArrayList<>() ;
         Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
@@ -764,21 +806,7 @@ public class JRDBHelperForWebservice {
             }
 
             {//product display info
-                Statement stmtpd = JRDBHelperForWebservice.getConnection().createStatement();
-                ResultSet rspd= stmtpd.executeQuery("SELECT * FROM tbproductdisplay WHERE pid='"+
-                        pdt.pid + "' LIMIT 1 ") ;
-                if( rspd.next() ){
-                    pdt.productDisplay.dpid = rspd.getInt("dpid") ;
-                    pdt.productDisplay.pid = rspd.getInt("pid") ;
-
-                    pdt.productDisplay.satellite = rspd.getString("satellite") ;
-                    pdt.productDisplay.sensor = rspd.getString("sensor") ;
-                    pdt.productDisplay.productname = rspd.getString("productname") ;
-                    pdt.productDisplay.productdescription = rspd.getString("productdescription") ;
-                    pdt.productDisplay.thumb = rspd.getString("thumb") ;
-
-                    pdt.productDisplay.visible = rspd.getInt("visible") ;
-                }
+                pdt.productDisplay = this.rdbGetProductDisplayInfo(pdt.pid) ;
             }
 
             {//latest datetime
@@ -798,10 +826,23 @@ public class JRDBHelperForWebservice {
     }
 
     //2021-4-29获取一个完整的可加载到图层的产品信息
-    public JProduct rdbGetOneProductLayerInfoById(int mysqlPid)  {
+    public JProduct rdbGetOneProductLayerInfoById(int mysqlPid, boolean userProduct)  {
         try {
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT * FROM tbproduct WHERE pid=" + mysqlPid + " limit 1") ;
+            String productTable = "" ;
+            String bandTable = "" ;
+            String dataItemTable = "" ;
+            if( userProduct==true ){
+                productTable = "tbuserproduct" ;
+                bandTable = "tbuserproductband" ;
+                dataItemTable = "tbuserproductdataitem" ;
+            }else{
+                productTable = "tbproduct" ;
+                bandTable = "tbproductband" ;
+                dataItemTable = "tbproductdataitem" ;
+            }
+            String tsql = "SELECT * FROM "+productTable+" WHERE pid=" + mysqlPid + " limit 1" ;
+            ResultSet rs = stmt.executeQuery(tsql) ;
             if (rs.next()) {
                 int pid = rs.getInt("pid");
                 int uid = rs.getInt("userid");
@@ -814,7 +855,7 @@ public class JRDBHelperForWebservice {
 
                 {//bandlist
                     Statement stmtb = JRDBHelperForWebservice.getConnection().createStatement();
-                    ResultSet rsb = stmtb.executeQuery("SELECT * FROM tbproductband WHERE pid="+String.valueOf(pid)
+                    ResultSet rsb = stmtb.executeQuery("SELECT * FROM "+bandTable+" WHERE pid="+String.valueOf(pid)
                             +" Order by bindex ASC") ;
                     while(rsb.next()){
                         int pidb = rsb.getInt("pid" );
@@ -840,36 +881,16 @@ public class JRDBHelperForWebservice {
                 }
 
                 {//product display info
-                    Statement stmtpd = JRDBHelperForWebservice.getConnection().createStatement();
-                    ResultSet rspd= stmtpd.executeQuery("SELECT * FROM tbproductdisplay WHERE pid='"+
-                            pdt.pid + "' LIMIT 1 ") ;
-                    if( rspd.next() ){
-                        pdt.productDisplay.dpid = rspd.getInt("dpid") ;
-                        pdt.productDisplay.pid = rspd.getInt("pid") ;
-
-                        pdt.productDisplay.satellite = rspd.getString("satellite") ;
-                        pdt.productDisplay.sensor = rspd.getString("sensor") ;
-                        pdt.productDisplay.productname = rspd.getString("productname") ;
-                        pdt.productDisplay.productdescription = rspd.getString("productdescription") ;
-                        pdt.productDisplay.thumb = rspd.getString("thumb") ;
-
-                        pdt.productDisplay.visible = rspd.getInt("visible") ;
+                    if( userProduct==true ){
+                        pdt.productDisplay = new JProductDisplay() ;
                     }else{
-                        //没有可视化的信息 主要是针对用户产品而言的
-                        pdt.productDisplay.dpid = 0 ;
-                        pdt.productDisplay.pid = pid ;
-                        pdt.productDisplay.satellite="" ;
-                        pdt.productDisplay.sensor = "" ;
-                        pdt.productDisplay.productname =name ;
-                        pdt.productDisplay.productdescription = "";
-                        pdt.productDisplay.thumb =  "";
-                        pdt.productDisplay.visible = 1 ;
+                        pdt.productDisplay = this.rdbGetProductDisplayInfo(pdt.pid) ;
                     }
                 }
 
                 {//latest datetime
                     Statement stmtdt = JRDBHelperForWebservice.getConnection().createStatement();
-                    ResultSet rsdt= stmtdt.executeQuery("SELECT * FROM tbproductdataitem WHERE pid='"+
+                    ResultSet rsdt= stmtdt.executeQuery("SELECT * FROM "+dataItemTable+" WHERE pid='"+
                             pdt.pid + "' Order by hcol DESC LIMIT 1 ") ;
                     if( rsdt.next() ){
                         pdt.latestDataItem.fid = rsdt.getInt("fid") ;
@@ -890,12 +911,12 @@ public class JRDBHelperForWebservice {
         }
     }
 
-
+    //获取系统产品期次信息
     public ArrayList<JProductDataItem> rdbGetProductDataItemList(int pid,
                                                                  int ipage,
                                                                  int pagesize,
                                                                  String orderstr ) throws SQLException {
-        JProduct pdt = rdbGetProductForAPI(pid) ;
+        JProduct pdt = rdbGetProductForAPI(pid,false) ;
 
         ArrayList<JProductDataItem> result = new ArrayList<>();
         Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
@@ -914,7 +935,7 @@ public class JRDBHelperForWebservice {
 
     public ArrayList<Integer> rdbGetProductYearList(int pid)
             throws SQLException {
-        JProduct pdt = rdbGetProductForAPI(pid) ;
+        JProduct pdt = rdbGetProductForAPI(pid,false) ;
         ArrayList<Integer> result = new ArrayList<>();
         Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
         String sqlstr = String.format("SELECT DISTINCT FLOOR(hcol/10000000000) as year FROM tbproductdataitem "
@@ -930,7 +951,7 @@ public class JRDBHelperForWebservice {
 
     public ArrayList<Integer> rdbGetProductMonthList(int pid,
                                                      int year) throws SQLException {
-        JProduct pdt = rdbGetProductForAPI(pid) ;
+        JProduct pdt = rdbGetProductForAPI(pid,false) ;
         ArrayList<Integer> result = new ArrayList<>();
         Long ymd0 = year*10000000000L ;
         Long ymd1 = (year+1)*10000000000L ;
@@ -951,7 +972,7 @@ public class JRDBHelperForWebservice {
             int year,
             int mon
             ) throws SQLException {
-        JProduct pdt = rdbGetProductForAPI(pid) ;
+        JProduct pdt = rdbGetProductForAPI(pid,false) ;
         ArrayList<JProductDataItem> result = new ArrayList<>();
         Long ymd0 = (year*10000L+mon*100L    )*1000000L ;
         Long ymd1 = (year*10000L+(mon+1)*100L)*1000000L ;
@@ -1093,10 +1114,10 @@ public class JRDBHelperForWebservice {
 
     //新建一个空的产品记录，用于数据合成或者其他离线任务，返回的主键ID用于hbase中的hpid
     //返回主键id
-    public int rdbNewEmptyProduct( String name, int uid) {
+    public int rdbNewEmptyUserProduct( String name, int uid) {
         try
         {
-            String query = " insert into tbproduct (name, userid)"
+            String query = " insert into tbuserproduct (name, userid)"
                     + " values (?, ?)";
             // create the mysql insert preparedstatement
             PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
@@ -1117,5 +1138,100 @@ public class JRDBHelperForWebservice {
             return -1 ;
         }
 
+    }
+
+    //获取用户预加载产品dpid列表，如果没有用户记录返回系统记录，如果有多条记录返回最新一条 2021-5-29
+    public JPreloadMapsData rdbGetPreloadMapsDisplayId( int uid){
+        JPreloadMapsData outdata = new JPreloadMapsData() ;
+        try{
+            String sqlstr = String.format("SELECT * FROM tbpreloadmap WHERE uid=%d Order by premapid DESC LIMIT 1",uid)  ;
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery(sqlstr );
+            if (rs.next()) {
+                outdata.premapid = rs.getInt(1) ;
+                outdata.uid = rs.getInt(2) ;
+                outdata.preloadlist = rs.getString(3) ;
+                return outdata ;
+            }else{
+                sqlstr = String.format("SELECT * FROM tbpreloadmap WHERE uid=0 Order by premapid DESC LIMIT 1")  ;
+                Statement stmt2 = JRDBHelperForWebservice.getConnection().createStatement();
+                ResultSet rs2 = stmt2.executeQuery(sqlstr );
+                if (rs2.next()) {
+                    outdata.premapid = rs2.getInt(1) ;
+                    outdata.uid = rs2.getInt(2) ;
+                    outdata.preloadlist = rs2.getString(3) ;
+                    return outdata ;
+                }else {
+                    System.out.println("rdbGetPreloadMapsDisplayId no record");
+                    return null ;
+                }
+            }
+        }catch(Exception ex){
+            System.out.println("rdbGetPreloadMapsDisplayId exception:"+ex.getMessage());
+            return null ;
+        }
+    }
+
+    //insert user preloadlist
+    public boolean rdbInsertPreloadlist( int uid , String preloadlist ){
+        try
+        {
+            String query = " insert into tbpreloadmap (uid, preloadlist)"
+                    + " values (?, ?)";
+            // create the mysql insert preparedstatement
+            PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            preparedStmt.setInt (1, uid);
+            preparedStmt.setString(2, preloadlist);
+            // execute the preparedstatement
+            preparedStmt.executeUpdate();
+            ResultSet rs = preparedStmt.getGeneratedKeys();
+            int last_inserted_id = -1 ;
+            if(rs.next())
+            {
+                last_inserted_id = rs.getInt(1);
+            }
+            if( last_inserted_id>0){
+                return true ;
+            }else{
+                return false ;
+            }
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbInsertPreloadlist exception , " + ex.getMessage() ) ;
+            return false ;
+        }
+    }
+
+    //update user preloadlist
+    public boolean rdbUpdatePreloadlist( int premapid , String preloadlist ){
+        try{
+            //update
+            String query2 = "update tbpreloadmap set preloadlist = ? where premapid = ?";
+            PreparedStatement preparedStmt2 = JRDBHelperForWebservice.getConnection().prepareStatement(query2);
+            preparedStmt2.setString   (1, preloadlist);
+            preparedStmt2.setInt      (2, premapid);
+            preparedStmt2.executeUpdate();
+            return true ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbUpdatePreloadlist exception , " + ex.getMessage() ) ;
+            return false ;
+        }
+    }
+
+    //delete user preloadlist
+    public boolean rdbDeletePreloadlist( int uid  ){
+        try{
+            //update  DELETE FROM table_name [WHERE Clause]
+            String query2 = "DELETE FROM tbpreloadmap where uid = ?";
+            PreparedStatement preparedStmt2 = JRDBHelperForWebservice.getConnection().prepareStatement(query2);
+            preparedStmt2.setInt      (1, uid);
+            preparedStmt2.executeUpdate();
+            return true ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbDeletePreloadlist exception , " + ex.getMessage() ) ;
+            return false ;
+        }
     }
 }

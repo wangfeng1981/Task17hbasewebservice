@@ -83,7 +83,7 @@ public class CompositeController {
             if( coparams.outpid>0 )
             {
                 JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
-                JProduct pdt = rdb.rdbGetOneProductLayerInfoById(coparams.outpid) ;
+                JProduct pdt = rdb.rdbGetOneProductLayerInfoById(coparams.outpid, true ) ;
                 if( pdt==null )
                 {
                     returnT.setState(3);
@@ -109,7 +109,7 @@ public class CompositeController {
         return returnT ;
     }
 
-    //task new
+    //task new 新建一个用户合成产品
     @CrossOrigin(origins = "*")
     @PostMapping("/new")
     @ResponseBody
@@ -144,7 +144,7 @@ public class CompositeController {
 
         //
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
-        JProduct product = rdb.rdbGetProductForAPI(params.inpid) ;
+        JProduct product = rdb.rdbGetProductForAPI(params.inpid , false ) ;//用户合成产品的输入产品一定要是系统产品
         String methodfunc = "min" ;
         if( method.equals("min") ){
             methodfunc = "minfunc" ;
@@ -224,7 +224,7 @@ public class CompositeController {
         params.scriptfilename = scriptfilename ;
         params.outhtable = WConfig.sharedConfig.userhtable ;
         params.outhfami = WConfig.sharedConfig.userhfami ;
-        params.outpid = rdb.rdbNewEmptyProduct( userFileName , Integer.parseInt(userid)) ;
+        params.outpid = rdb.rdbNewEmptyUserProduct( userFileName , Integer.parseInt(userid)) ;
         params.outhpid = params.outpid ;//目前让输出产品的hpid与输出的tbproduct.pid一致。2021-4-6
         params.outhpidblen = WConfig.sharedConfig.userhpidblen ;
         params.outyxblen = WConfig.sharedConfig.useryxblen ;

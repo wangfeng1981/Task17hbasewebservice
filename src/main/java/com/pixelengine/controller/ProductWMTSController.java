@@ -11,7 +11,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 
+import javax.imageio.ImageIO;
+import javax.imageio.stream.ImageOutputStream;
 import javax.servlet.http.HttpServletRequest;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -23,20 +27,23 @@ public class ProductWMTSController {
             +"var ds=pe.Dataset('{{{name}}}', {{{dt}}} );"
             +"return ds; } " ;
 
+    // /pe/product/123/wmts/...
+    // /pe/uproduct/123/wmts/...
     @ResponseBody
-    @RequestMapping(value="/product/{pid}/wmts/WMTSCapabilities.xml",method= RequestMethod.GET)
+    @RequestMapping(value="/{product}/{pid}/wmts/WMTSCapabilities.xml",method= RequestMethod.GET)
     @CrossOrigin(origins = "*")
-    public ResponseEntity<byte[]> wmtsGetCap(@PathVariable String pid) throws IOException {
+    public ResponseEntity<byte[]> wmtsGetCap(
+            @PathVariable String pid,
+            @PathVariable String product
+
+    ) throws IOException {
         System.out.println("ProductWMTSController.wmtsGetCap");
-        System.out.println("/product/"+pid.toString()+"/wmts/WMTSCapabilities.xml");
+        System.out.println("/" +product + "/"+pid.toString()+"/wmts/WMTSCapabilities.xml");
 
         final HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.TEXT_XML);
         //从数据库查询zlevel数值 后面这个地方要修改，数据库中tbProduct.maxZoom write to zlevel.
         JProduct pdt  = new JProduct() ; pdt.maxZoom = 12 ;
-
-
-
 
         //read template
         String xmlfile = WConfig.sharedConfig.productwmts ;
@@ -64,14 +71,17 @@ public class ProductWMTSController {
     }
 
     //获取瓦片数据的具体接口 getTile /product/{pid}/wmts/WMTSCapabilities.xml
+    //获取瓦片数据的具体接口 getTile /uproduct/{pid}/wmts/WMTSCapabilities.xml
     @ResponseBody
-    @RequestMapping(value="/product/{pid}/wmts/",method= RequestMethod.GET)
+    @RequestMapping(value="/{product}/{pid}/wmts/",method= RequestMethod.GET)
     @CrossOrigin(origins = "*")
     public ResponseEntity<byte[]> wmtsGetTiles(@PathVariable String pid,
+                                               @PathVariable String product, //product为系统产品，uproduct为用户产品
                                                HttpServletRequest request,
                                                ModelMap model) {
 
         System.out.println("ProductWMTSController.wmtsGetTiles");
+        System.out.println("product:"+product);
         System.out.println("pid:"+pid);
         StringBuilder requestURL = new StringBuilder(request.getRequestURL().toString());
         String queryString = request.getQueryString();
@@ -105,67 +115,111 @@ public class ProductWMTSController {
         System.out.println("datetime:" + dtstr ) ;
         System.out.println("styleid:" + styleId) ;
 
-        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
-        //从数据库通过pid获取产品信息
+        /// 将xyz写入一个图片直接返回，目前先不通过hbase拿数据，不通过v8计算。
+        String img = this.getClass().getResource("/placeholder.png").getPath();
+        //"classpath:/resources/placeholder.png" ;
+        //String a = this.getClass().getResource("/placeholder.png").getPath();
         try{
-            JProduct pdt = rdb.rdbGetProductForAPI( Integer.parseInt(pid)) ;
-
-            //get render style content
-            String pdtStyle = "" ;
-            if( styleId==null  || styleId.equals("") || styleId.equals("default") ){
-                pdtStyle = rdb.rdbGetStyleText( pdt.styleid) ;
-            }else{
-                pdtStyle = rdb.rdbGetStyleText( Integer.parseInt(styleId) ) ;
-            }
-            System.out.println("style ok") ;
-
-            if( pdt.name.equals("") == false )
-            {
-                HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
-                String scriptContent = scriptContentTemplate.replace("{{{name}}}", pdt.name) ;
-                scriptContent = scriptContent.replace("{{{dt}}}" , dtstr) ;
-                TileComputeResult res1 = cv8.RunScriptForTileWithRenderWithExtra(
-                        "com/pixelengine/HBasePixelEngineHelper",
-                        scriptContent,
-                        pdtStyle,
-                        "{}",
-                        Integer.parseInt(zstr),
-                        Integer.parseInt(ystr),
-                        Integer.parseInt(xstr)) ;
-                if( res1.status==0 )
-                {//ok
-                    System.out.println("Info : tile compute ok.");
-                    final HttpHeaders headers = new HttpHeaders();
-                    headers.setContentType(MediaType.IMAGE_PNG);
-                    //return new ResponseEntity<byte[]>(retpng, headers, HttpStatus.OK);
-                    return new ResponseEntity<byte[]>(res1.binaryData, headers, HttpStatus.OK);
-                }else
-                {
-                    System.out.println("Error : bad compute.");
-                    final HttpHeaders headers = new HttpHeaders();
-                    headers.setContentType(MediaType.TEXT_PLAIN);
-                    return new ResponseEntity<byte[]>( "bad compute".getBytes(), headers, HttpStatus.NOT_FOUND);
-                }
-            }else
-            {
-                System.out.println("Error : product no find ");
-                final HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.TEXT_PLAIN);
-                return new ResponseEntity<byte[]>( "not find product".getBytes(), headers, HttpStatus.NOT_FOUND);
-            }
-        }catch (Exception ex){
-            System.out.println("Error : product wmts exception .");
+            InputStream instream = this.getClass().getResourceAsStream("/placeholder.png");
+            BufferedImage image = ImageIO.read(instream);
+            Graphics g = image.getGraphics();
+            g.setFont(g.getFont().deriveFont(12f));
+            g.setColor(Color.black);
+            String xyzStr = "x:"+xstr+",y:"+ystr+",z:"+zstr ;
+            g.drawString(xyzStr, 0, 20);
+            g.dispose();
+            //ImageIO.write(image, "png", new File("test.png"));
+            ByteArrayOutputStream bytestream = new ByteArrayOutputStream();
+            ImageOutputStream imgoutput = ImageIO.createImageOutputStream(bytestream);
+            ImageIO.write(image , "png" ,imgoutput ) ;
+            final HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.IMAGE_PNG);
+            return new ResponseEntity<byte[]>(bytestream.toByteArray(), headers, HttpStatus.OK);
+        }catch (Exception ex ){
+            System.out.println("read img:" + img) ;
+            System.out.println(ex.getMessage());
             final HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.TEXT_PLAIN);
-            return new ResponseEntity<byte[]>( "product wmts exception".getBytes(), headers, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<byte[]>( "bad wmts placeholder image".getBytes(), headers, HttpStatus.NOT_FOUND);
+
         }
+
+
+
+
+
+        /// 以下代码暂时不用 2021-6-7
+//
+//        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+//        //从数据库通过pid获取产品信息
+//        try{
+//            boolean userProduct = true ;
+//            if( product.compareTo("product") == 0 ){
+//                userProduct = false ;
+//            }
+//            JProduct pdt = rdb.rdbGetProductForAPI( Integer.parseInt(pid) , userProduct ) ;
+//
+//            //get render style content
+//            String pdtStyle = "" ;
+//            if( styleId==null  || styleId.equals("") || styleId.equals("default") ){
+//                pdtStyle = rdb.rdbGetStyleText( pdt.styleid) ;
+//            }else{
+//                pdtStyle = rdb.rdbGetStyleText( Integer.parseInt(styleId) ) ;
+//            }
+//            System.out.println("style ok") ;
+//
+//            if( pdt.name.equals("") == false )
+//            {
+//                HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
+//                String scriptContent = scriptContentTemplate.replace("{{{name}}}", pdt.name) ;
+//                scriptContent = scriptContent.replace("{{{dt}}}" , dtstr) ;
+//                TileComputeResult res1 = cv8.RunScriptForTileWithRenderWithExtra(
+//                        "com/pixelengine/HBasePixelEngineHelper",
+//                        scriptContent,
+//                        pdtStyle,
+//                        "{}",
+//                        Integer.parseInt(zstr),
+//                        Integer.parseInt(ystr),
+//                        Integer.parseInt(xstr)) ;
+//                if( res1.status==0 )
+//                {//ok
+//                    System.out.println("Info : tile compute ok.");
+//                    final HttpHeaders headers = new HttpHeaders();
+//                    headers.setContentType(MediaType.IMAGE_PNG);
+//                    //return new ResponseEntity<byte[]>(retpng, headers, HttpStatus.OK);
+//                    return new ResponseEntity<byte[]>(res1.binaryData, headers, HttpStatus.OK);
+//                }else
+//                {
+//                    System.out.println("Error : bad compute.");
+//                    final HttpHeaders headers = new HttpHeaders();
+//                    headers.setContentType(MediaType.TEXT_PLAIN);
+//                    return new ResponseEntity<byte[]>( "bad compute".getBytes(), headers, HttpStatus.NOT_FOUND);
+//                }
+//            }else
+//            {
+//                System.out.println("Error : product no find ");
+//                final HttpHeaders headers = new HttpHeaders();
+//                headers.setContentType(MediaType.TEXT_PLAIN);
+//                return new ResponseEntity<byte[]>( "not find product".getBytes(), headers, HttpStatus.NOT_FOUND);
+//            }
+//        }catch (Exception ex){
+//            System.out.println("Error : product wmts exception .");
+//            final HttpHeaders headers = new HttpHeaders();
+//            headers.setContentType(MediaType.TEXT_PLAIN);
+//            return new ResponseEntity<byte[]>( "product wmts exception".getBytes(), headers, HttpStatus.NOT_FOUND);
+//        }
     }
 
+
+    // /pe/product/123/pixvals/...
+    // /pe/uproduct/123/pixvals/...
     @ResponseBody
-    @RequestMapping(value="/product/{pid}/pixvals/",method= RequestMethod.GET)
+    @RequestMapping(value="/{product}/{pid}/pixvals/",method= RequestMethod.GET)
     @CrossOrigin(origins = "*")
     public RestResult getPixelValues(
-            @PathVariable String pid, String lon,String lat,String datetime )
+            @PathVariable String pid,
+            @PathVariable String product, //product为系统产品，uproduct为用户产品
+            String lon,String lat,String datetime )
     {
         System.out.println(String.format("getPixelValues lon %s, lat %s, dt %s",lon,lat,datetime));
         RestResult result = new RestResult() ;
@@ -177,7 +231,12 @@ public class ProductWMTSController {
 
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
         try{
-            JProduct pdt = rdb.rdbGetProductForAPI( Integer.parseInt(pid)) ;
+            boolean userProduct = true ;
+            if( product.compareTo("product") == 0 ){
+                userProduct = false ;
+            }
+
+            JProduct pdt = rdb.rdbGetProductForAPI( Integer.parseInt(pid) , userProduct ) ;
             if( pdt!=null && pdt.name.equals("")==false &&
                     inlon>=-180.0 && inlon<=180.0 && inlat>=-90.0 && inlat<=90.0)
             {

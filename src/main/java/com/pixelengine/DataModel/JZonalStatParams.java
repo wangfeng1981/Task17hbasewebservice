@@ -6,6 +6,7 @@ public class JZonalStatParams {
     public String rtype;
     public Long rid ;
     public int pid,bandindex ;
+    public int userproduct ;// pid在用户表该值为1， pid在系统表该值为0
     public double vmin,vmax;//统计区间
     public Long fromdt ;//datetime
     public Long todt ;
