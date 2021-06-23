@@ -117,96 +117,96 @@ public class ProductWMTSController {
 
         /// 将xyz写入一个图片直接返回，目前先不通过hbase拿数据，不通过v8计算。
 
-        try{
-            InputStream instream = this.getClass().getResourceAsStream("/placeholder.png");
-            BufferedImage image = ImageIO.read(instream);
-            Graphics g = image.getGraphics();
-            g.setFont(g.getFont().deriveFont(12f));
-            g.setColor(Color.black);
-            String xyzStr = "x:"+xstr+",y:"+ystr+",z:"+zstr ;
-            g.drawString(xyzStr, 0, 20);
-            g.dispose();
-            //ImageIO.write(image, "png", new File("test.png"));
-            ByteArrayOutputStream bytestream = new ByteArrayOutputStream();
-            ImageOutputStream imgoutput = ImageIO.createImageOutputStream(bytestream);
-            ImageIO.write(image , "png" ,imgoutput ) ;
-            final HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.IMAGE_PNG);
-            return new ResponseEntity<byte[]>(bytestream.toByteArray(), headers, HttpStatus.OK);
-        }catch (Exception ex ){
-            String img = this.getClass().getResource("/placeholder.png").getPath();
-            System.out.println("read img:" + img) ;
-            System.out.println(ex.getMessage());
-            final HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.TEXT_PLAIN);
-            return new ResponseEntity<byte[]>( "bad wmts placeholder image".getBytes(), headers, HttpStatus.NOT_FOUND);
-
-        }
-
-
-
-
-
-        /// 以下代码暂时不用 2021-6-7
-//
-//        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
-//        //从数据库通过pid获取产品信息
 //        try{
-//            boolean userProduct = true ;
-//            if( product.compareTo("product") == 0 ){
-//                userProduct = false ;
-//            }
-//            JProduct pdt = rdb.rdbGetProductForAPI( Integer.parseInt(pid) , userProduct ) ;
-//
-//            //get render style content
-//            String pdtStyle = "" ;
-//            if( styleId==null  || styleId.equals("") || styleId.equals("default") ){
-//                pdtStyle = rdb.rdbGetStyleText( pdt.styleid) ;
-//            }else{
-//                pdtStyle = rdb.rdbGetStyleText( Integer.parseInt(styleId) ) ;
-//            }
-//            System.out.println("style ok") ;
-//
-//            if( pdt.name.equals("") == false )
-//            {
-//                HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
-//                String scriptContent = scriptContentTemplate.replace("{{{name}}}", pdt.name) ;
-//                scriptContent = scriptContent.replace("{{{dt}}}" , dtstr) ;
-//                TileComputeResult res1 = cv8.RunScriptForTileWithRenderWithExtra(
-//                        "com/pixelengine/HBasePixelEngineHelper",
-//                        scriptContent,
-//                        pdtStyle,
-//                        "{}",
-//                        Integer.parseInt(zstr),
-//                        Integer.parseInt(ystr),
-//                        Integer.parseInt(xstr)) ;
-//                if( res1.status==0 )
-//                {//ok
-//                    System.out.println("Info : tile compute ok.");
-//                    final HttpHeaders headers = new HttpHeaders();
-//                    headers.setContentType(MediaType.IMAGE_PNG);
-//                    //return new ResponseEntity<byte[]>(retpng, headers, HttpStatus.OK);
-//                    return new ResponseEntity<byte[]>(res1.binaryData, headers, HttpStatus.OK);
-//                }else
-//                {
-//                    System.out.println("Error : bad compute.");
-//                    final HttpHeaders headers = new HttpHeaders();
-//                    headers.setContentType(MediaType.TEXT_PLAIN);
-//                    return new ResponseEntity<byte[]>( "bad compute".getBytes(), headers, HttpStatus.NOT_FOUND);
-//                }
-//            }else
-//            {
-//                System.out.println("Error : product no find ");
-//                final HttpHeaders headers = new HttpHeaders();
-//                headers.setContentType(MediaType.TEXT_PLAIN);
-//                return new ResponseEntity<byte[]>( "not find product".getBytes(), headers, HttpStatus.NOT_FOUND);
-//            }
-//        }catch (Exception ex){
-//            System.out.println("Error : product wmts exception .");
+//            InputStream instream = this.getClass().getResourceAsStream("/placeholder.png");
+//            BufferedImage image = ImageIO.read(instream);
+//            Graphics g = image.getGraphics();
+//            g.setFont(g.getFont().deriveFont(12f));
+//            g.setColor(Color.black);
+//            String xyzStr = "x:"+xstr+",y:"+ystr+",z:"+zstr ;
+//            g.drawString(xyzStr, 0, 20);
+//            g.dispose();
+//            //ImageIO.write(image, "png", new File("test.png"));
+//            ByteArrayOutputStream bytestream = new ByteArrayOutputStream();
+//            ImageOutputStream imgoutput = ImageIO.createImageOutputStream(bytestream);
+//            ImageIO.write(image , "png" ,imgoutput ) ;
+//            final HttpHeaders headers = new HttpHeaders();
+//            headers.setContentType(MediaType.IMAGE_PNG);
+//            return new ResponseEntity<byte[]>(bytestream.toByteArray(), headers, HttpStatus.OK);
+//        }catch (Exception ex ){
+//            String img = this.getClass().getResource("/placeholder.png").getPath();
+//            System.out.println("read img:" + img) ;
+//            System.out.println(ex.getMessage());
 //            final HttpHeaders headers = new HttpHeaders();
 //            headers.setContentType(MediaType.TEXT_PLAIN);
-//            return new ResponseEntity<byte[]>( "product wmts exception".getBytes(), headers, HttpStatus.NOT_FOUND);
+//            return new ResponseEntity<byte[]>( "bad wmts placeholder image".getBytes(), headers, HttpStatus.NOT_FOUND);
+//
 //        }
+
+
+
+
+
+        /// 以下代码从HBase拿数据做v8计算
+
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+        //从数据库通过pid获取产品信息
+        try{
+            boolean userProduct = true ;
+            if( product.compareTo("product") == 0 ){
+                userProduct = false ;
+            }
+            JProduct pdt = rdb.rdbGetProductForAPI( Integer.parseInt(pid)  ) ;
+
+            //get render style content
+            String pdtStyle = "" ;
+            if( styleId==null  || styleId.equals("") || styleId.equals("default") ){
+                pdtStyle = rdb.rdbGetStyleText( pdt.styleid) ;
+            }else{
+                pdtStyle = rdb.rdbGetStyleText( Integer.parseInt(styleId) ) ;
+            }
+            System.out.println("style ok") ;
+
+            if( pdt.name.equals("") == false )
+            {
+                HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
+                String scriptContent = scriptContentTemplate.replace("{{{name}}}", pdt.name) ;
+                scriptContent = scriptContent.replace("{{{dt}}}" , dtstr) ;
+                TileComputeResult res1 = cv8.RunScriptForTileWithRenderWithExtra(
+                        "com/pixelengine/HBasePixelEngineHelper",
+                        scriptContent,
+                        pdtStyle,
+                        "{}",
+                        Integer.parseInt(zstr),
+                        Integer.parseInt(ystr),
+                        Integer.parseInt(xstr)) ;
+                if( res1.status==0 )
+                {//ok
+                    System.out.println("Info : tile compute ok.");
+                    final HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.IMAGE_PNG);
+                    //return new ResponseEntity<byte[]>(retpng, headers, HttpStatus.OK);
+                    return new ResponseEntity<byte[]>(res1.binaryData, headers, HttpStatus.OK);
+                }else
+                {
+                    System.out.println("Error : bad compute.");
+                    final HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.TEXT_PLAIN);
+                    return new ResponseEntity<byte[]>( "bad compute".getBytes(), headers, HttpStatus.NOT_FOUND);
+                }
+            }else
+            {
+                System.out.println("Error : product no find ");
+                final HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.TEXT_PLAIN);
+                return new ResponseEntity<byte[]>( "not find product".getBytes(), headers, HttpStatus.NOT_FOUND);
+            }
+        }catch (Exception ex){
+            System.out.println("Error : product wmts exception .");
+            final HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.TEXT_PLAIN);
+            return new ResponseEntity<byte[]>( "product wmts exception".getBytes(), headers, HttpStatus.NOT_FOUND);
+        }
     }
 
 

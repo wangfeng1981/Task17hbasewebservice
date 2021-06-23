@@ -10,12 +10,12 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.sql.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Dictionary;
-import java.util.Hashtable;
-import java.util.Map;
+import java.util.*;
+import java.util.Date;
 
 
 /// 关系数据库交互
@@ -725,6 +725,27 @@ public class JRDBHelperForWebservice {
         }
     }
 
+    //替换xyz产品的自定义变量
+    // {{{DATE}}} {{{DATE-0}}} {{{DATE-1}}} {{{DATE-2}}}
+    // {{{DATE-3}}} {{{DATE-4}}} {{{DATE-5}}} {{{DATE-6}}} {{{DATE-7}}}
+    private String replaceCustomVariable(String ostr){
+        String newstr = ostr ;
+        DateFormat df = new SimpleDateFormat("yyyyMMdd") ;
+        for(int iday = 0 ; iday <= 7 ; ++ iday )
+        {
+            String varname = "{{{DATE-" + String.valueOf(iday)+"}}}" ;
+            Calendar cal = Calendar.getInstance() ;
+            cal.add(Calendar.DATE,-iday) ;
+            Date date = cal.getTime() ;
+            String datestr = df.format(date) ;
+            if( iday==0 ){
+                newstr = newstr.replace("{{{DATE}}}" , datestr) ;
+            }
+            newstr = newstr.replace(varname , datestr) ;
+        }
+        return newstr ;
+    }
+
     //获取一个产品的显示信息by displayid
     public JProductDisplay rdbGetProductDisplayInfoByDisplayId(int displayid)   {
         try{
@@ -744,6 +765,13 @@ public class JRDBHelperForWebservice {
                 pdt.cat = rspd.getInt("cat") ;
                 pdt.iorder = rspd.getInt("iorder") ;
                 pdt.params = rspd.getString("params") ;
+
+                //xyz 图层增加自定义变量的替换，目前只支持一个变量
+                if( pdt.type.compareTo("xyz")==0 )
+                {
+                    pdt.productname = replaceCustomVariable(pdt.productname) ;
+                    pdt.params = replaceCustomVariable(pdt.params) ;
+                }
             }
             return pdt ;
         }catch(Exception ex){
@@ -1099,7 +1127,7 @@ public class JRDBHelperForWebservice {
     public int rdbNewEmptyUserProduct( String name, int uid) {
         try
         {
-            String query = " insert into tbuserproduct (name, userid)"
+            String query = " insert into tbproduct (name, userid)"
                     + " values (?, ?)";
             // create the mysql insert preparedstatement
             PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
@@ -1214,6 +1242,26 @@ public class JRDBHelperForWebservice {
         {
             System.out.println("Error : rdbDeletePreloadlist exception , " + ex.getMessage() ) ;
             return false ;
+        }
+    }
+
+    //get all visible display product list 2021-6-21
+    public ArrayList<Integer> rdbGetAllDisplayProduct(){
+        try{
+            //
+            String query2 = "SELECT dpid FROM tbproductdisplay WHERE visible=1 Order by iorder ASC";
+            Statement stmt2 = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt2.executeQuery(query2 );
+            ArrayList<Integer> displayProductIdArr = new ArrayList<Integer>() ;
+            while (rs.next()) {
+                int dpid = rs.getInt(1) ;
+                displayProductIdArr.add(dpid) ;
+            }
+            return displayProductIdArr ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbGetAllDisplayProduct exception , " + ex.getMessage() ) ;
+            return null ;
         }
     }
 }

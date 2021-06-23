@@ -39,7 +39,8 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.10.0 用户产品表和系统产品表分离，增加预加载图层接口 2021-5-29 ");
 		System.out.println("v2.10.2 使用最小测试环境，不连接HBase，统一使用占位图片返回 2021-6-7 ");
 		System.out.println("v2.11.0 我的区域倒排序，增加数据导出标题，删除用户产品表相关内容 2021-6-7 ");
-
+		System.out.println("v2.11.0h h for use HBase data.2021-6-16");
+		System.out.println("v2.11.3h h 修改了全部产品接口，xyz图层增加自定义变量.2021-6-23");
 
 
 		if( args.length != 1 )
