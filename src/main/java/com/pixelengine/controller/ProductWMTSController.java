@@ -115,39 +115,6 @@ public class ProductWMTSController {
         System.out.println("datetime:" + dtstr ) ;
         System.out.println("styleid:" + styleId) ;
 
-        /// 将xyz写入一个图片直接返回，目前先不通过hbase拿数据，不通过v8计算。
-
-//        try{
-//            InputStream instream = this.getClass().getResourceAsStream("/placeholder.png");
-//            BufferedImage image = ImageIO.read(instream);
-//            Graphics g = image.getGraphics();
-//            g.setFont(g.getFont().deriveFont(12f));
-//            g.setColor(Color.black);
-//            String xyzStr = "x:"+xstr+",y:"+ystr+",z:"+zstr ;
-//            g.drawString(xyzStr, 0, 20);
-//            g.dispose();
-//            //ImageIO.write(image, "png", new File("test.png"));
-//            ByteArrayOutputStream bytestream = new ByteArrayOutputStream();
-//            ImageOutputStream imgoutput = ImageIO.createImageOutputStream(bytestream);
-//            ImageIO.write(image , "png" ,imgoutput ) ;
-//            final HttpHeaders headers = new HttpHeaders();
-//            headers.setContentType(MediaType.IMAGE_PNG);
-//            return new ResponseEntity<byte[]>(bytestream.toByteArray(), headers, HttpStatus.OK);
-//        }catch (Exception ex ){
-//            String img = this.getClass().getResource("/placeholder.png").getPath();
-//            System.out.println("read img:" + img) ;
-//            System.out.println(ex.getMessage());
-//            final HttpHeaders headers = new HttpHeaders();
-//            headers.setContentType(MediaType.TEXT_PLAIN);
-//            return new ResponseEntity<byte[]>( "bad wmts placeholder image".getBytes(), headers, HttpStatus.NOT_FOUND);
-//
-//        }
-
-
-
-
-
-        /// 以下代码从HBase拿数据做v8计算
 
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
         //从数据库通过pid获取产品信息
@@ -207,6 +174,34 @@ public class ProductWMTSController {
             headers.setContentType(MediaType.TEXT_PLAIN);
             return new ResponseEntity<byte[]>( "product wmts exception".getBytes(), headers, HttpStatus.NOT_FOUND);
         }
+
+
+        /// 读取placeholder png文件， 将xyz文本写入图片直接返回，目前先不通过hbase拿数据，不通过v8计算。
+//        try{
+//            InputStream instream = this.getClass().getResourceAsStream("/placeholder.png");
+//            BufferedImage image = ImageIO.read(instream);
+//            Graphics g = image.getGraphics();
+//            g.setFont(g.getFont().deriveFont(12f));
+//            g.setColor(Color.black);
+//            String xyzStr = "x:"+xstr+",y:"+ystr+",z:"+zstr ;
+//            g.drawString(xyzStr, 0, 20);
+//            g.dispose();
+//            //ImageIO.write(image, "png", new File("test.png"));
+//            ByteArrayOutputStream bytestream = new ByteArrayOutputStream();
+//            ImageOutputStream imgoutput = ImageIO.createImageOutputStream(bytestream);
+//            ImageIO.write(image , "png" ,imgoutput ) ;
+//            final HttpHeaders headers = new HttpHeaders();
+//            headers.setContentType(MediaType.IMAGE_PNG);
+//            return new ResponseEntity<byte[]>(bytestream.toByteArray(), headers, HttpStatus.OK);
+//        }catch (Exception ex ) {
+//            String img = this.getClass().getResource("/placeholder.png").getPath();
+//            System.out.println("read img:" + img);
+//            System.out.println(ex.getMessage());
+//            final HttpHeaders headers = new HttpHeaders();
+//            headers.setContentType(MediaType.TEXT_PLAIN);
+//            return new ResponseEntity<byte[]>("bad wmts placeholder image".getBytes(), headers, HttpStatus.NOT_FOUND);
+//
+//        }
     }
 
 

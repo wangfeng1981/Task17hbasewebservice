@@ -1,19 +1,18 @@
 {
 "zookeeper":"hp1",
 "sparkmaster":"spark://hp1:7077",
-"connstr":"jdbc:mysql://10.1.7.170:3306/pe?useUnicode=true&characterEncoding=utf-8" ,
+"connstr":"jdbc:mysql://192.168.56.101:3306/pe?useUnicode=true&characterEncoding=utf-8" ,
 "user":"big",
-"pwd":"wfhbase2021",
-"wmtsxml":"/home/hadoop/IdeaProjects/Task17hbasewebservice/wmts-template.xml",
-"wmtsxml2":"/home/hadoop/IdeaProjects/Task17hbasewebservice/wmts-template2.xml",
+"pwd":"Big1234567",
 "hbaseuserfiletable":"sparkv8out" ,
-
   "productwmts":"/home/hadoop/IdeaProjects/Task17hbasewebservice/productwmts-template.xml",
-  "host": "10.1.7.96",
+  "host": "192.168.56.103",
   "port": "15900" ,
   "pedir": "/var/www/html/pe/" , 
   "userhtable":"sparkv8out", 
   "userhfami":"tiles",
   "userhpidblen":4,
-  "useryxblen":2
+  "useryxblen":2,
+
+  "tilelocalrootdir":"/home/hadoop/tempdata/tileroot/"
 }

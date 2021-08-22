@@ -1,6 +1,19 @@
+2021-8-22
+本地windows mysql服务 192.168.56.101 big/Big123456 
+
+
+2021-8-8
+1. wmts-template.xml wmts-template2.xml 不用了
+2. 考虑测试方便，不必需要HBase环境，task17config.json 增加两个配置项，
+tiletype 瓦片类型，取值hbase或local，当使用local的时候只会加载本地的瓦片数据，注意使用local模式的时候，涉及spark，hbase的在线离线计算都无法使用，只能用来测试在线wmts服务。使用hbase的时候就是正常使用hbase瓦片的模式。
+3. tilelocalrootdir 用户配置本地瓦片数据的根目录。
+
+
+
 2021-1-28
 1.发布前要替换 wmts-template.xml模板文件中的IP地址。
 2.新加wmts-template2.xml模板，用于支持新的接口，使用tbRenderTask中的zlevel值动态替换matrixSet值。matrixSet值样例为ms_{zlevel}, ms_7 , ms_9 ....
 如果zlevel值为空，那么默认使用zlevel=7（约1km）
+
 
 

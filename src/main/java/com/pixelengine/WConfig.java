@@ -22,9 +22,15 @@ public class WConfig {
         }
     }
     public String zookeeper,sparkmaster,connstr,user,pwd;
-    public String wmtsxml, wmtsxml2 , hbaseuserfiletable;
+    public String hbaseuserfiletable;
     public String productwmts , host , port ;
     public String pedir ;
     public String userhtable, userhfami ;
     public int userhpidblen , useryxblen ;
+
+    //2021-8-2 为了支持测试环境，支持本地瓦片local和大数据hbase两种
+    public String tiletype ;//local or hbase
+    public String tilelocalrootdir ;
+
+
 }
