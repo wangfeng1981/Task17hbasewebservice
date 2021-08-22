@@ -15,7 +15,10 @@ import org.apache.hadoop.hbase.filter.FilterList;
 import org.apache.hadoop.hbase.filter.KeyOnlyFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -122,14 +125,28 @@ public class HBasePixelEngineHelper {
                         copyBytes2Bytes(lastCellData, usebandlist.get(iband).bsqIndex ,
                                 bandbytesize , tiledata.tiledataArray[0], iband );
                     }else{
-                        lastCellData = hbaseGetCellData(
-                                pdt.hbaseTable.hTableName,
-                                pdt.hbaseTable.hFamily,
-                                dt,
-                                pdt.hbaseTable.hPidByteNum,
-                                newhpid,
-                                pdt.hbaseTable.hYXByteNum ,
-                                z,y,x) ;
+                        //2021-8-22
+                        if( pdt.source.equals("hbase") )
+                        {
+                            lastCellData = hbaseGetCellData(
+                                    pdt.hbaseTable.hTableName,
+                                    pdt.hbaseTable.hFamily,
+                                    dt,
+                                    pdt.hbaseTable.hPidByteNum,
+                                    newhpid,
+                                    pdt.hbaseTable.hYXByteNum ,
+                                    z,y,x) ;
+                        }else if( pdt.source.equals("file") )
+                        {
+                            lastCellData = filesystemGetCellData(
+                                    pdt.hbaseTable.hTableName,dt,newhpid,z,y,x) ;
+
+                        }else{
+                            errorMessage = "Error : pdt.source is not supported for '" + pdt.source+"'. " ;
+                            return null ;
+                        }
+
+
                         if( lastCellData==null ){
                             errorMessage = "get emtpty cell data.";
                             return null ;
@@ -147,6 +164,7 @@ public class HBasePixelEngineHelper {
                 return null ;
             }
         }else{
+            //user file only for hbase
             //use filekey or filepath
             try {
                 //get the hcol value in dataItem
@@ -224,13 +242,6 @@ public class HBasePixelEngineHelper {
 
             byte[] outByteData = CellUtil.cloneValue(cell1) ;
             System.out.println("java debug listCells.get(0) cellvalue.bytesize : " + outByteData.length ) ;
-//debug
-//            System.out.println("debug write binary file /home/hadoop/test-tiledata.raw") ;
-//            OutputStream outputStream = new FileOutputStream("/home/hadoop/test-tiledata.raw");
-//            outputStream.write(outByteData);
-//            outputStream.close();
-
-
             return outByteData;
         }catch (Exception ex)
         {
@@ -238,6 +249,40 @@ public class HBasePixelEngineHelper {
             return null;
         }
     }
+
+
+    //get cell data from filesystem at tileroot
+    private byte[] filesystemGetCellData( String htablename,
+                                          long datetime ,
+                                          int hpid ,
+                                          int z,int y,int x )
+    {
+        try{
+            String cellfilepath = WConfig.sharedConfig.tilelocalrootdir
+                    + "/"
+                    + htablename + "/"
+                    + String.valueOf(hpid) + "/"
+                    + String.valueOf(datetime) + "/"
+                    + "tile_" + String.valueOf(z) + "_" + String.valueOf(y) + "_" + String.valueOf(x) ;
+            File cellfile = new File(cellfilepath) ;
+            if( cellfile.exists() == true )
+            {
+                InputStream instream = new FileInputStream(cellfilepath) ;
+                long filesize = cellfile.length();
+                byte[] allbytes = new byte[(int)filesize] ;
+                instream.read(allbytes) ;
+                return allbytes ;
+            }else{
+                errorMessage = "not find the cell in step1." ;
+                return null ;
+            }
+        }catch (Exception ex)
+        {
+            errorMessage = "Error : filesystem get cell data exception :" + ex.getMessage() ;
+            return null;
+        }
+    }
+
 
     //copy band data into new container
     private void copyBytes2Bytes(byte[] source,
@@ -251,7 +296,7 @@ public class HBasePixelEngineHelper {
                 bandbytelen);
     }
 
-    //get filtered cell data
+    //get filtered cell data from hbase
     private ArrayList<DatetimeCellData> getFilteredDatetimeCellData(
             String tableName,
             String fami,
@@ -335,6 +380,134 @@ public class HBasePixelEngineHelper {
                 }
             });
         }
+        return dtdatalist;
+    }
+
+    //通过过滤器和开始和结束日期，生成datetime数组，用在本地瓦片数据筛选中
+    ArrayList<Long> generateDatetimeArray(long startdt,long stopdt,
+                                          int filtermon,//-1,1-12
+                                          int filterday,//-1,1-31
+                                          int filterhour,//-1,0-23
+                                          int filterminu,//-1,0-60
+                                          int filtersec )//-1,0-60  这五个过滤器只能有一个和0个-1，其他过滤器必须是确定的数字
+    {
+        int numNeg1 = 0 ;
+        if( filtermon==-1 ) ++numNeg1;
+        if( filterday==-1 ) ++numNeg1;
+        if( filterhour==-1 ) ++ numNeg1;
+        if( filterminu==-1 ) ++ numNeg1;
+        if( filtersec==-1 ) ++ numNeg1;
+
+        if( numNeg1>1 ){
+            return null ;
+        }
+
+        long year0 = startdt / 10000000000L ;
+        long year1 = stopdt / 10000000000L ;
+
+        ArrayList<Long> yearlist = new ArrayList<>();
+        for(long iyear = year0; iyear < year1+1; ++ iyear )
+        {
+            yearlist.add(iyear) ;
+        }
+
+        ArrayList<Long> monlist = new ArrayList<>() ;
+        if( filtermon==-1 ){
+            for(long imon=1;imon<13;++imon) monlist.add(imon) ;
+        }else{
+            monlist.add((long)filtermon) ;
+        }
+
+        ArrayList<Long> daylist =new ArrayList<>() ;
+        if( filterday == -1 ){
+            for(long iday = 1; iday < 32 ;++ iday ) daylist.add(iday) ;
+        }else{
+            daylist.add((long)filterday) ;
+        }
+
+        ArrayList<Long> hourlist = new ArrayList<>() ;
+        if( filterhour==-1 ){
+            for(long ih = 0 ; ih < 24;++ih ) hourlist.add(ih) ;
+        }else{
+            hourlist.add((long)filterhour) ;
+        }
+
+        ArrayList<Long> minulist = new ArrayList<>() ;
+        if( filterminu==-1 ){
+            for(long im = 0 ; im < 60 ;++im ) minulist.add(im) ;
+        }else{
+            minulist.add((long)filterminu) ;
+        }
+
+        ArrayList<Long> seclist = new ArrayList<>() ;
+        if( filtersec==-1 ){
+            for(long is = 0 ; is < 60;++is ) seclist.add(is) ;
+        }else{
+            seclist.add((long)filtersec) ;
+        }
+
+        ArrayList<Long> res =new ArrayList<Long>() ;
+        for(long year : yearlist)
+        {
+            for(long mon: monlist)
+            {
+                for(long day: daylist)
+                {
+                    for(long hour:hourlist)
+                    {
+                        for(long minu:minulist)
+                        {
+                            for(long sec:seclist)
+                            {
+                                long dt1 = (year*10000+mon*100+day)*1000000
+                                        + hour*10000+minu*100+sec ;
+                                if( dt1>=startdt && dt1 <=stopdt ){
+                                    res.add(dt1) ;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return res ;
+    }
+
+    //get filtered cell data from filesystem
+    private ArrayList<DatetimeCellData> getFilteredDatetimeCellDataFromFileSystem(
+            String tableName,
+            int hpid,long startdt,long stopdt,
+            int filterMon,
+            int filterDay,
+            int filterHour,
+            int filterMinu,
+            int filterSec,
+            int z,
+            int y,
+            int x) throws IOException {
+        final int MaxDatetimeRecords = 30 ;
+        ArrayList<DatetimeCellData> dtdatalist = new ArrayList<DatetimeCellData>() ;
+
+        ArrayList<Long> dtarr = generateDatetimeArray(startdt,stopdt,filterMon,filterDay,filterHour,filterMinu,filterSec) ;
+        if( dtarr==null ){
+            System.out.println("getFilteredDatetimeCellDataFromFileSystem generateDatetimeArray failed.") ;
+            return null ;
+        }
+
+        for(long dt1 : dtarr)
+        {
+            byte[] celldata = filesystemGetCellData(tableName , dt1 , hpid,z,y,x) ;
+            if( celldata!= null )
+            {
+                DatetimeCellData dtdata = new DatetimeCellData();
+                dtdata.dt = dt1;
+                dtdata.data = celldata ;
+                dtdatalist.add(dtdata) ;
+            }
+        }
+        System.out.println("getFilteredDatetimeCellDataFromFileSystem max records:"+MaxDatetimeRecords) ;
+        System.out.println("getFilteredDatetimeCellDataFromFileSystem findcount:" + dtarr.size() + " filtered:"+dtdatalist.size() ) ;
         return dtdatalist;
     }
 
@@ -425,20 +598,42 @@ public class HBasePixelEngineHelper {
                                     curr_bsqIndex , bandbytesize , resultTileData.tiledataArray[ids], iband );
                         }
                     }else{
-                        lastCellDataList = this.getFilteredDatetimeCellData(
-                                pdt.hbaseTable.hTableName,
-                                pdt.hbaseTable.hFamily,
-                                pdt.hbaseTable.hPidByteNum,
-                                curr_hPid,
-                                fromdtInclude,
-                                todtInclude,
-                                filterMon,
-                                filterDay,
-                                filterHour,
-                                filterMinu,
-                                filterSec,
-                                pdt.hbaseTable.hYXByteNum,
-                                z,y,x) ;
+                        if( pdt.source.equals("hbase") )
+                        {
+                            lastCellDataList = this.getFilteredDatetimeCellData(
+                                    pdt.hbaseTable.hTableName,
+                                    pdt.hbaseTable.hFamily,
+                                    pdt.hbaseTable.hPidByteNum,
+                                    curr_hPid,
+                                    fromdtInclude,
+                                    todtInclude,
+                                    filterMon,
+                                    filterDay,
+                                    filterHour,
+                                    filterMinu,
+                                    filterSec,
+                                    pdt.hbaseTable.hYXByteNum,
+                                    z,y,x) ;
+
+                        }else if( pdt.source.equals("file") )
+                        {
+                            lastCellDataList = this.getFilteredDatetimeCellDataFromFileSystem(
+                                    pdt.hbaseTable.hTableName,
+                                    curr_hPid,
+                                    fromdtInclude,
+                                    todtInclude,
+                                    filterMon,
+                                    filterDay,
+                                    filterHour,
+                                    filterMinu,
+                                    filterSec,z,y,x) ;
+
+                        }else{
+                            errorMessage = "Error : pdt.source is not supported for '" + pdt.source+"'. " ;
+                            return null ;
+                        }
+
+
                         if( lastCellDataList==null ){
                             errorMessage = "get emtpty range of cell data.";
                             return null ;

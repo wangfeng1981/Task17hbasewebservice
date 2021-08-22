@@ -15,7 +15,8 @@ public class JProduct {
     public int tileWid,tileHei ;
     public String compress ;
     public int styleid , userid ;
-    public String[] caps ;//
+    public String source;//hbase or file or sqlite(not use)
+    public String[] caps ;//not in use
     /*
     区域统计	zs
     序列分析	xl

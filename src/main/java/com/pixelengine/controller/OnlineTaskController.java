@@ -56,33 +56,10 @@ public class OnlineTaskController {
 
     //online task id - otid
     //这个是老接口，后面不再更新，请使用新的接口 /rendertask/wmts/{otid}/WMTSCapabilities.xml 2021-1-28
-    @ResponseBody
-    @RequestMapping(value="/onlinetask/wmts/{otid}/WMTSCapabilities.xml",method= RequestMethod.GET)
-    @CrossOrigin(origins = "*")
-    public ResponseEntity<byte[]> wmtsGetCap(@PathVariable String otid) throws IOException {
-        System.out.println("/onlinetask/wmts/{otid}/WMTSCapabilities.xml");
-        final HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.TEXT_XML);
-
-        //read template
-        String xmlfile = WConfig.sharedConfig.wmtsxml;
-
-        //Resource resource = new ClassPathResource("resources:wmts-template.xml");
-        java.io.InputStream instream0 = new FileInputStream(xmlfile);
-        InputStreamReader  reader0 = new InputStreamReader(instream0, "UTF-8");
-        BufferedReader bf = new BufferedReader(reader0);
-        String xmlContent = "";
-        String newLine = "";
-        while((newLine = bf.readLine()) != null){
-            xmlContent += newLine ;
-        }
-
-        //replace {oltid} with real online task id.
-        String xmlContent2 = xmlContent.replace("{oltid}",otid);
-
-        //return xml
-        return new ResponseEntity<byte[]>(xmlContent2.getBytes(), headers, HttpStatus.OK);
-    }
+//    @ResponseBody
+//    @RequestMapping(value="/onlinetask/wmts/{otid}/WMTSCapabilities.xml",method= RequestMethod.GET)
+//    @CrossOrigin(origins = "*")
+//    public ResponseEntity<byte[]> wmtsGetCap(@PathVariable String otid) throws IOException {}
 
     //这个是老的版本，使用currenttime的，新的使用extraData对象,请使用新的接口 /rendertak/wmts/{otid}/ 2021-1-28
     @ResponseBody
@@ -265,41 +242,41 @@ public class OnlineTaskController {
     }
 
 
-    //online task id - otid
-    //新的接口 /rendertask/wmts/{otid}/WMTSCapabilities.xml 2021-1-28
-    @ResponseBody
-    @RequestMapping(value="/rendertask/wmts/{otid}/WMTSCapabilities.xml",method= RequestMethod.GET)
-    @CrossOrigin(origins = "*")
-    public ResponseEntity<byte[]> wmtsGetCap2(@PathVariable String otid) throws IOException {
-        System.out.println("/rendertask/wmts/{otid}/WMTSCapabilities.xml");
-        final HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.TEXT_XML);
-
-        //从数据库查询zlevel数值
-        String zlevel = "9" ;
-
-        //read template
-        String xmlfile = WConfig.sharedConfig.wmtsxml2;
-
-        //Resource resource = new ClassPathResource("resources:wmts-template2.xml");
-        java.io.InputStream instream0 = new FileInputStream(xmlfile);
-        InputStreamReader  reader0 = new InputStreamReader(instream0, "UTF-8");
-        BufferedReader bf = new BufferedReader(reader0);
-        String xmlContent = "";
-        String newLine = "";
-        while((newLine = bf.readLine()) != null){
-            xmlContent += newLine ;
-        }
-
-        //replace {oltid} with real online task id.
-        String xmlContent2 = xmlContent.replace("{oltid}",otid);
-
-        //replace ms_{zlevel} with real zlevel.
-        xmlContent2 = xmlContent2.replace("{zlevel}",zlevel);
-
-        //return xml
-        return new ResponseEntity<byte[]>(xmlContent2.getBytes(), headers, HttpStatus.OK);
-    }
+//    //online task id - otid
+//    //新的接口 /rendertask/wmts/{otid}/WMTSCapabilities.xml 2021-1-28
+//    @ResponseBody
+//    @RequestMapping(value="/rendertask/wmts/{otid}/WMTSCapabilities.xml",method= RequestMethod.GET)
+//    @CrossOrigin(origins = "*")
+//    public ResponseEntity<byte[]> wmtsGetCap2(@PathVariable String otid) throws IOException {
+//        System.out.println("/rendertask/wmts/{otid}/WMTSCapabilities.xml");
+//        final HttpHeaders headers = new HttpHeaders();
+//        headers.setContentType(MediaType.TEXT_XML);
+//
+//        //从数据库查询zlevel数值
+//        String zlevel = "9" ;
+//
+//        //read template
+//        String xmlfile = WConfig.sharedConfig.wmtsxml2;
+//
+//        //Resource resource = new ClassPathResource("resources:wmts-template2.xml");
+//        java.io.InputStream instream0 = new FileInputStream(xmlfile);
+//        InputStreamReader  reader0 = new InputStreamReader(instream0, "UTF-8");
+//        BufferedReader bf = new BufferedReader(reader0);
+//        String xmlContent = "";
+//        String newLine = "";
+//        while((newLine = bf.readLine()) != null){
+//            xmlContent += newLine ;
+//        }
+//
+//        //replace {oltid} with real online task id.
+//        String xmlContent2 = xmlContent.replace("{oltid}",otid);
+//
+//        //replace ms_{zlevel} with real zlevel.
+//        xmlContent2 = xmlContent2.replace("{zlevel}",zlevel);
+//
+//        //return xml
+//        return new ResponseEntity<byte[]>(xmlContent2.getBytes(), headers, HttpStatus.OK);
+//    }
 
     //新接口 /rendertak/wmts/{otid}/ 2021-1-28
     @ResponseBody

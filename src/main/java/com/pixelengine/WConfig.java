@@ -28,9 +28,7 @@ public class WConfig {
     public String userhtable, userhfami ;
     public int userhpidblen , useryxblen ;
 
-    //2021-8-2 为了支持测试环境，支持本地瓦片local和大数据hbase两种
-    public String tiletype ;//local or hbase
-    public String tilelocalrootdir ;
+    public String tilelocalrootdir ;//本地瓦片数据根目录
 
 
 }

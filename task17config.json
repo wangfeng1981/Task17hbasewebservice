@@ -1,9 +1,9 @@
 {
 "zookeeper":"hp1",
 "sparkmaster":"spark://hp1:7077",
-"connstr":"jdbc:mysql://192.168.56.101:3306/pe?useUnicode=true&characterEncoding=utf-8" ,
+"connstr":"jdbc:mysql://192.168.56.101:3306/test?useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC" ,
 "user":"big",
-"pwd":"Big1234567",
+"pwd":"Big123456",
 "hbaseuserfiletable":"sparkv8out" ,
   "productwmts":"/home/hadoop/IdeaProjects/Task17hbasewebservice/productwmts-template.xml",
   "host": "192.168.56.103",

@@ -42,7 +42,7 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.11.0h h for use HBase data.2021-6-16");
 		System.out.println("v2.11.3h h 修改了全部产品接口，xyz图层增加自定义变量.2021-6-23");
 		System.out.println("v2.12.0 task7config.json can config local or hbase. 2021-8-2.") ;//not finished, very sleepy.
-
+		System.out.println("v2.12.1 use local tile data. 2021-8-22.") ;//
 
 		if( args.length != 1 )
 		{

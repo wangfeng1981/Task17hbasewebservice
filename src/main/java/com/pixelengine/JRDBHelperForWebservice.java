@@ -654,10 +654,12 @@ public class JRDBHelperForWebservice {
                 int uid = rs.getInt("userid");
                 String name = rs.getString("name") ;
                 String info = rs.getString("info");
+                String source = rs.getString("source") ;
                 JProduct pdt = new Gson().fromJson(info, JProduct.class) ;
                 pdt.pid = pid ;
                 pdt.userid = uid ;
                 pdt.name = name ;
+                pdt.source =source ;
 
                 {//bandlist
                     Statement stmtb = JRDBHelperForWebservice.getConnection().createStatement();
@@ -791,10 +793,12 @@ public class JRDBHelperForWebservice {
             int uid = rs.getInt("userid");
             String name = rs.getString("name") ;
             String info = rs.getString("info");
+            String source = rs.getString("source") ;
             JProduct pdt = new Gson().fromJson(info, JProduct.class) ;
             pdt.pid = pid ;
             pdt.userid = uid ;
             pdt.name = name ;
+            pdt.source = source ;
             pdt.caps = new String[]{"zs","xl","co","ex","st","dt"} ;
             {//bandlist
                 Statement stmtb = JRDBHelperForWebservice.getConnection().createStatement();
@@ -859,11 +863,12 @@ public class JRDBHelperForWebservice {
                 int uid = rs.getInt("userid");
                 String name = rs.getString("name") ;
                 String info = rs.getString("info");
+                String source = rs.getString("source") ;
                 JProduct pdt = new Gson().fromJson(info, JProduct.class) ;
                 pdt.pid = pid ;
                 pdt.userid = uid ;
                 pdt.name = name ;
-
+                pdt.source = source ;
                 {//bandlist
                     Statement stmtb = JRDBHelperForWebservice.getConnection().createStatement();
                     ResultSet rsb = stmtb.executeQuery("SELECT * FROM "+bandTable+" WHERE pid="+String.valueOf(pid)
@@ -1127,12 +1132,13 @@ public class JRDBHelperForWebservice {
     public int rdbNewEmptyUserProduct( String name, int uid) {
         try
         {
-            String query = " insert into tbproduct (name, userid)"
-                    + " values (?, ?)";
+            String query = " insert into tbproduct (name, userid, source)"
+                    + " values (?, ?, ?)";
             // create the mysql insert preparedstatement
             PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             preparedStmt.setString (1, name);
             preparedStmt.setInt    (2, uid);
+            preparedStmt.setString (3, "hbase");
             // execute the preparedstatement
             preparedStmt.executeUpdate();
             ResultSet rs = preparedStmt.getGeneratedKeys();

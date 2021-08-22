@@ -71,17 +71,14 @@ public class ProductWMTSController {
     }
 
     //获取瓦片数据的具体接口 getTile /product/{pid}/wmts/WMTSCapabilities.xml
-    //获取瓦片数据的具体接口 getTile /uproduct/{pid}/wmts/WMTSCapabilities.xml
     @ResponseBody
-    @RequestMapping(value="/{product}/{pid}/wmts/",method= RequestMethod.GET)
+    @RequestMapping(value="/product/{pid}/wmts/",method= RequestMethod.GET)
     @CrossOrigin(origins = "*")
     public ResponseEntity<byte[]> wmtsGetTiles(@PathVariable String pid,
-                                               @PathVariable String product, //product为系统产品，uproduct为用户产品
                                                HttpServletRequest request,
                                                ModelMap model) {
 
         System.out.println("ProductWMTSController.wmtsGetTiles");
-        System.out.println("product:"+product);
         System.out.println("pid:"+pid);
         StringBuilder requestURL = new StringBuilder(request.getRequestURL().toString());
         String queryString = request.getQueryString();
@@ -119,10 +116,6 @@ public class ProductWMTSController {
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
         //从数据库通过pid获取产品信息
         try{
-            boolean userProduct = true ;
-            if( product.compareTo("product") == 0 ){
-                userProduct = false ;
-            }
             JProduct pdt = rdb.rdbGetProductForAPI( Integer.parseInt(pid)  ) ;
 
             //get render style content
