@@ -1,9 +1,6 @@
 package com.pixelengine.controller;
 import com.pixelengine.*;
-import com.pixelengine.DataModel.JProduct;
-import com.pixelengine.DataModel.JProductDataItem;
-import com.pixelengine.DataModel.JProductDisplay;
-import com.pixelengine.DataModel.RestResult;
+import com.pixelengine.DataModel.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -18,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 
-
+//获取全部产品信息
 @RestController
 public class ProductController {
 
@@ -41,6 +38,52 @@ public class ProductController {
 //        }
 //        return rr;
 //    }
+
+    //按分类获取全部产品2021-11-28
+    @ResponseBody
+    @RequestMapping(value="/product/categories",method=RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public RestResult allCategoryProducts() {
+        RestResult rr = new RestResult() ;
+        rr.setState(0);
+        rr.setMessage("");
+
+        try {
+            JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+            ArrayList<JCategory> categories = rdb.rdbGetCategories();
+            if (categories == null) {
+                rr.setState(1);
+                rr.setMessage("failed, rdb.rdbGetCategories() return null.");
+                return rr;
+            } else {
+                for (int ic = 0; ic < categories.size(); ++ic) {
+                    ArrayList<Integer> dpidArr = rdb.rdbGetCategoryProductDisplayIdList(categories.get(ic).catid);
+                    if (dpidArr != null) {
+                        ArrayList<JProduct> productList = new ArrayList<>();
+                        for (int idp = 0; idp < dpidArr.size(); ++idp) {
+                            JProductDisplay pd = rdb.rdbGetProductDisplayInfoByDisplayId(dpidArr.get(idp));
+                            if (pd.pid > 0 && pd.type.compareTo("pe") == 0) {
+                                JProduct pinfo = rdb.rdbGetOneProductLayerInfoById(pd.pid);
+                                productList.add(pinfo);
+                            } else {
+                                JProduct emptyProduct = new JProduct();
+                                emptyProduct.productDisplay = pd;
+                                productList.add(emptyProduct);
+                            }
+                        }
+                        categories.get(ic).products = productList;
+                    }
+                }
+                rr.setState(0);
+                rr.setData(categories);
+                return rr;
+            }
+        }catch (Exception ex){
+            rr.setState(1);
+            rr.setMessage("failed, ProductController.allCategoryProducts exception:"+ex.getMessage());
+            return rr;
+        }
+    }
 
     //增加xyz的图层产品
     @ResponseBody

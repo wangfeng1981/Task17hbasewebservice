@@ -3,6 +3,7 @@ package com.pixelengine.controller;
 import com.google.gson.Gson;
 import com.pixelengine.*;
 import com.pixelengine.DataModel.JProduct;
+import com.pixelengine.DataModel.JProductDataItem;
 import com.pixelengine.DataModel.RestResult;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -40,10 +41,14 @@ public class ProductWMTSController {
         System.out.println("ProductWMTSController.wmtsGetCap");
         System.out.println("/" +product + "/"+pid.toString()+"/wmts/WMTSCapabilities.xml");
 
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+        //从数据库查询zlevel数值 数据库中tbProduct.maxZoom write to zlevel.
+        JProduct pdt  = rdb.rdbGetProductForAPI(Integer.parseInt(pid));
+        Long currentDateTime = JRDBHelperForWebservice.sgetCurrentDatetime();
+        JProductDataItem dataItem = rdb.rdbGetLowerEqualNearestHCol(pdt.pid,currentDateTime,pdt.timeType);
+
         final HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.TEXT_XML);
-        //从数据库查询zlevel数值 后面这个地方要修改，数据库中tbProduct.maxZoom write to zlevel.
-        JProduct pdt  = new JProduct() ; pdt.maxZoom = 12 ;
 
         //read template
         String xmlfile = WConfig.sharedConfig.productwmts ;
@@ -65,6 +70,10 @@ public class ProductWMTSController {
         xmlContent2 = xmlContent2.replace("{host}", WConfig.sharedConfig.host );
         //port
         xmlContent2 = xmlContent2.replace("{port}", WConfig.sharedConfig.port);
+        //datetime
+        xmlContent2 = xmlContent2.replace("{datetime}", String.valueOf(dataItem.hcol) );
+        //styleid
+        xmlContent2 = xmlContent2.replace("{styleid}", String.valueOf(pdt.styleid) );
 
         //return xml
         return new ResponseEntity<byte[]>(xmlContent2.getBytes(), headers, HttpStatus.OK);

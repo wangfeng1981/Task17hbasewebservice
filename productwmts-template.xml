@@ -45,8 +45,13 @@
             <Format>image/png</Format>
             <Dimension>
                 <ows:Identifier>datetime</ows:Identifier>
-                <Default>1</Default>
-                <Value>1</Value>
+                <Default>{datetime}</Default>
+                <Value>{datetime}</Value>
+            </Dimension>
+	    <Dimension>
+                <ows:Identifier>styleid</ows:Identifier>
+                <Default>{styleid}</Default>
+                <Value>{styleid}</Value>
             </Dimension>
             <TileMatrixSetLink>
                 <TileMatrixSet>ms_{maxZoom}</TileMatrixSet>

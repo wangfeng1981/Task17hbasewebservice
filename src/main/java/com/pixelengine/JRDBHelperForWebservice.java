@@ -2,6 +2,7 @@ package com.pixelengine;
 
 import com.google.gson.Gson;
 import com.pixelengine.DTO.RegionDTO;
+import com.pixelengine.DTO.StyleDTO;
 import com.pixelengine.DataModel.*;
 
 
@@ -62,6 +63,49 @@ public class JRDBHelperForWebservice {
             return null ;
         }
     }
+
+    //获取全部可见的分类，不包括产品,2021-11-28
+    public ArrayList<JCategory> rdbGetCategories()
+    {
+        try {
+            ArrayList<JCategory> result = new ArrayList<>() ;
+
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            String sqlstr = "SELECT * FROM tbcategory WHERE visible=1 ORDER BY iorder ASC";
+            ResultSet rs = stmt.executeQuery(sqlstr) ;
+            while (rs.next()) {
+                JCategory r1 = new JCategory();
+                r1.catid = rs.getInt("catid");
+                r1.catname = rs.getString("catname");
+                r1.visible = rs.getInt("visible");
+                r1.iorder = rs.getInt("iorder");
+                result.add(r1) ;
+            }
+            return result ;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return null ;
+        }
+    }
+
+    //获取当前分类的全部可见产品 2021-11-28
+    public ArrayList<Integer> rdbGetCategoryProductDisplayIdList(int catid)
+    {
+        try {
+            ArrayList<Integer> results = new ArrayList<>() ;
+            String query2 = "SELECT dpid FROM tbproductdisplay WHERE cat="+String.valueOf(catid)+" AND visible=1 Order by iorder ASC";
+            Statement stmt2 = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt2.executeQuery(query2 );
+            while (rs.next()) {
+                results.add(rs.getInt(1));
+            }
+            return results ;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return null ;
+        }
+    }
+
 
     public JProduct rdbGetProductInfoByName(String dsname)   {
         JProduct pinfo1 = productInfoPool.get(dsname) ;
@@ -713,6 +757,7 @@ public class JRDBHelperForWebservice {
                 pdt.satellite = rspd.getString("satellite") ;
                 pdt.sensor = rspd.getString("sensor") ;
                 pdt.productname = rspd.getString("productname") ;
+                pdt.subtitle = rspd.getString("subtitle");
                 pdt.productdescription = rspd.getString("productdescription") ;
                 pdt.thumb = rspd.getString("thumb") ;
                 pdt.visible = rspd.getInt("visible") ;
@@ -726,6 +771,31 @@ public class JRDBHelperForWebservice {
             return null ;
         }
     }
+
+
+    //获取一个渲染方案
+    public StyleDTO rdbGetStyle2(int styleid)   {
+        try{
+            StyleDTO styleobj = new StyleDTO();
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rspd = stmt.executeQuery("SELECT * FROM tbstyle WHERE styleid="+styleid+" limit 1");
+            if (rspd.next()) {
+                styleobj.setStyleid(rspd.getLong("styleid") );
+                styleobj.setStyleContent( rspd.getString("styleContent"));
+                styleobj.setDescription( rspd.getString("description"));
+                styleobj.setUserid( rspd.getLong("userid"));
+                styleobj.setCreatetime( rspd.getTime("createtime"));
+                styleobj.setUpdatetime( rspd.getTime("updatetime"));
+
+            }
+            return styleobj ;
+        }catch(Exception ex){
+            System.out.println("rdbGetProductDisplayInfo exception:"+ex.getMessage());
+            return null ;
+        }
+    }
+
+
 
     //替换xyz产品的自定义变量
     // {{{DATE}}} {{{DATE-0}}} {{{DATE-1}}} {{{DATE-2}}}
@@ -761,6 +831,7 @@ public class JRDBHelperForWebservice {
                 pdt.satellite = rspd.getString("satellite") ;
                 pdt.sensor = rspd.getString("sensor") ;
                 pdt.productname = rspd.getString("productname") ;
+                pdt.subtitle = rspd.getString("subtitle");
                 pdt.productdescription = rspd.getString("productdescription") ;
                 pdt.thumb = rspd.getString("thumb") ;
                 pdt.visible = rspd.getInt("visible") ;
@@ -1004,6 +1075,30 @@ public class JRDBHelperForWebservice {
             result.add(di) ;
         }
         return result ;
+    }
+
+    //输入hcol，在dataitem表中找到小于等于hcol的最近的值
+    public JProductDataItem rdbGetLowerEqualNearestHCol(int pid,Long hcol,int timeType)
+    {
+        try{
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            String sqlstr = String.format("SELECT * FROM tbproductdataitem "
+                            +"WHERE pid=%d AND hcol<=%d Order by hcol DESC LIMIT 1",
+                    pid,hcol ) ;
+            ResultSet rs = stmt.executeQuery(sqlstr );
+            if (rs.next()){
+                JProductDataItem di = new JProductDataItem() ;
+                di.fid = rs.getInt("fid");
+                di.pid = rs.getInt("pid") ;
+                di.hcol = rs.getLong("hcol") ;
+                di.convertShowValRealVal(timeType);
+                return di;
+            }else{
+                return null;
+            }
+        }catch (SQLException ex){
+            return null;
+        }
     }
 
     //通过父节点编码查找子节点的数组
@@ -1270,4 +1365,8 @@ public class JRDBHelperForWebservice {
             return null ;
         }
     }
+
+
+
+
 }

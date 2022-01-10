@@ -43,6 +43,13 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.11.3h h 修改了全部产品接口，xyz图层增加自定义变量.2021-6-23");
 		System.out.println("v2.12.0 task7config.json can config local or hbase. 2021-8-2.") ;//not finished, very sleepy.
 		System.out.println("v2.12.1 use local tile data. 2021-8-22.") ;//
+		System.out.println("v2.13.0 2021-11-28.") ;
+		System.out.println("v2.14.0 2022-1-11. add datetime api for getting lowerequal datetime.") ; //版本号a表示开发中，不能发布，一旦完成去掉a
+		//1.pe系统直接产品的wmts服务，增加datetime自定义Dimension字段，该字段值给dataitem表中该产品对应hcol最大的值，如果dataitem表里没有记录，给0.
+		//2.pe系统直接产品的wmts服务，增加styleid自定义Dimension字段，styleid从数据库读取
+
+
+
 
 		if( args.length != 1 )
 		{

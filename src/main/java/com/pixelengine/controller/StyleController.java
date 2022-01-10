@@ -4,6 +4,8 @@ package com.pixelengine.controller;
 import com.pixelengine.DAO.StyleDAO;
 import com.pixelengine.DTO.StyleDTO;
 import com.pixelengine.DataModel.RestResult;
+import com.pixelengine.JPeStyle;
+import com.pixelengine.JRDBHelperForWebservice;
 import com.pixelengine.JUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -85,10 +87,11 @@ public class StyleController {
     @GetMapping(value="/detail/{styleid}")
     public RestResult styleGet(@PathVariable("styleid") String styleid)
     {
-        Optional<StyleDTO> newStyle = styleDao.findById( Long.parseLong(styleid)) ;
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+        StyleDTO styleobj = rdb.rdbGetStyle2(Integer.parseInt(styleid));
         RestResult result = new RestResult() ;
         result.setState(0);
-        result.setData(newStyle);
+        result.setData(styleobj);
         return result;
     }
 
