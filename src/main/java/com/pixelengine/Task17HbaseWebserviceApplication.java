@@ -48,6 +48,8 @@ public class Task17HbaseWebserviceApplication {
 		//1.pe系统直接产品的wmts服务，增加datetime自定义Dimension字段，该字段值给dataitem表中该产品对应hcol最大的值，如果dataitem表里没有记录，给0.
 		//2.pe系统直接产品的wmts服务，增加styleid自定义Dimension字段，styleid从数据库读取
 
+		System.out.println("v2.14.1 2022-1-31. init v8 in the app startup.") ;
+		//v2.14.1 Task17调用后先启动v8运行个空脚本，避免瓦片计算程序直接崩溃。
 
 
 
@@ -65,7 +67,10 @@ public class Task17HbaseWebserviceApplication {
 		//show pixelengine core version
 		HBasePeHelperCppConnector cc = new HBasePeHelperCppConnector();
 		System.out.println("pe core version: " + cc.GetVersion() );
-
+		//try to init v8 2022-1-31
+		System.out.println("try to init v8 ...");
+		TileComputeResult notUsedResult = cc.RunScriptForTileWithoutRender("com/pixelengine/HBasePixelEngineHelper", "function main(){return null;}", 0,0,0,0) ;
+		System.out.println("init v8 done.");
 
 		//test debug
 		ArrayList<JProduct> productlist = JProduct.getSharedList() ;
