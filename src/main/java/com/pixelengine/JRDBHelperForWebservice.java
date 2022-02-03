@@ -40,6 +40,13 @@ public class JRDBHelperForWebservice {
         return Long.parseLong(formattedDate);
     }
 
+    public static String getCurrentDatetimeStr(){
+        LocalDateTime myDateObj = LocalDateTime.now();
+        DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+        String formattedDate = myDateObj.format(myFormatObj);
+        return formattedDate;
+    }
+
     public static void init(WConfig twconfig)
     {
         wconfig = twconfig;
@@ -1367,6 +1374,173 @@ public class JRDBHelperForWebservice {
     }
 
 
+    //获取全部系统Roi分类
+    public ArrayList<JRoiCategory> rdbGetSysRoiCategories() {
+        try{
+            //
+            String query2 = "SELECT * FROM tbroicat WHERE visible=1 Order by iorder ASC";
+            Statement stmt2 = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt2.executeQuery(query2 );
+            ArrayList<JRoiCategory> res = new ArrayList<>() ;
+            while (rs.next()) {
+                JRoiCategory rcat = new JRoiCategory();
+                rcat.rcid = rs.getInt(1) ;
+                rcat.name = rs.getString(2) ;
+                rcat.iorder = rs.getInt(3);
+                rcat.visible = rs.getInt(4) ;
+                res.add(rcat);
+            }
+            return res ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbGetSysRoiCategories exception , " + ex.getMessage() ) ;
+            return null ;
+        }
+    }
+
+    //分页获取系统ROI
+    public ArrayList<JRoi2> rdbGetSysRoiItemes(int catid,int offset) {
+        try{
+            //
+            String query2 = "SELECT * FROM tbroisys WHERE rcid="+String.valueOf(catid)+" Order by rid ASC LIMIT "+String.valueOf(offset)+",20";
+            Statement stmt2 = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt2.executeQuery(query2 );
+            ArrayList<JRoi2> res = new ArrayList<>() ;
+            while (rs.next()) {
+                JRoi2 roi2 = new JRoi2();
+                roi2.rid = rs.getInt(1) ;
+                roi2.rcid = rs.getInt(2);
+                roi2.name = rs.getString(3);
+                roi2.name2 = rs.getString(4);
+                roi2.geojson = rs.getString(5) ;
+                res.add(roi2);
+            }
+            return res ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbGetSysRoiItemes exception , " + ex.getMessage() ) ;
+            return null ;
+        }
+    }
+
+    //获取系统ROI数量
+    public int rdbGetSysRoiItemesCount(int catid) {
+        try{
+            //
+            String query2 = "SELECT count(rid) FROM tbroisys WHERE rcid="+String.valueOf(catid) ;
+            Statement stmt2 = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt2.executeQuery(query2 );
+            int count = 0 ;
+            if( rs.next() ){
+                count = rs.getInt(1);
+            }
+            return count ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbGetSysRoiItemes exception , " + ex.getMessage() ) ;
+            return 0 ;
+        }
+    }
+
+    //分页获取User - ROI
+    public ArrayList<JRoi2> rdbGetUserRoiItemes(int uid) {
+        try{
+            //
+            String query2 = "SELECT * FROM tbroiuser WHERE uid="+String.valueOf(uid)+" Order by rid ASC ";
+            Statement stmt2 = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt2.executeQuery(query2 );
+            ArrayList<JRoi2> res = new ArrayList<>() ;
+            while (rs.next()) {
+                JRoi2 roi2 = new JRoi2();
+                roi2.rid = rs.getInt(1) ;
+                roi2.name = rs.getString(2);
+                roi2.shp = rs.getString(3) ;
+                roi2.geojson = rs.getString(4) ;
+                roi2.uid = uid ;//column 5
+                roi2.ctime = rs.getDate(6) ;
+                res.add(roi2);
+            }
+            return res ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbGetUserRoiItemes exception , " + ex.getMessage() ) ;
+            return null ;
+        }
+    }
+
+    // 获取User - ROI
+    public JRoi2 rdbGetUserRoiItem(int rid) {
+        try{
+            //
+            String query2 = "SELECT * FROM tbroiuser WHERE rid="+String.valueOf(rid) ;
+            Statement stmt2 = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt2.executeQuery(query2 );
+            if (rs.next()) {
+                JRoi2 roi2 = new JRoi2();
+                roi2.rid = rs.getInt(1) ;
+                roi2.name = rs.getString(2);
+                roi2.shp = rs.getString(3) ;
+                roi2.geojson = rs.getString(4) ;
+                roi2.uid = rs.getInt(5) ;//column 5
+                roi2.ctime = rs.getDate(6) ;
+                return  roi2;
+            }
+            return null ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbGetUserRoiItem exception , " + ex.getMessage() ) ;
+            return null ;
+        }
+    }
+
+
+    //感兴趣区入库 insert
+    public int rdbNewRoi2( String name, String shpRelPath, String geojsonRelPath , int uid) {
+        try
+        {
+            String query = " insert into tbroiuser (name,shp,geojson,uid,ctime)"
+                    + " values (?, ?, ?, ?, ?)";
+            // create the mysql insert preparedstatement
+            PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            preparedStmt.setString (1, name );
+            preparedStmt.setString (2, shpRelPath);
+            preparedStmt.setString   (3, geojsonRelPath);
+            preparedStmt.setInt    (4, uid);
+            preparedStmt.setString    (5, getCurrentDatetimeStr() );
+            // execute the preparedstatement
+            preparedStmt.executeUpdate();
+            ResultSet rs = preparedStmt.getGeneratedKeys();
+            int last_inserted_id = -1 ;
+            if(rs.next())
+            {
+                last_inserted_id = rs.getInt(1);
+            }
+            return last_inserted_id;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbNewRoi2 exception , " + ex.getMessage() ) ;
+            return -1 ;
+        }
+    }
+
+
+
+    //remove roi from tbroiuser
+    public boolean rdbRemoveUserRoi(int rid) {
+        try
+        {
+            String query = "delete from tbroiuser where rid=?" ;
+            // create the mysql insert preparedstatement
+            PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query);
+            preparedStmt.setInt      (1, rid);
+            preparedStmt.executeUpdate();
+            return true ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbRemoveUserRoi exception , " + ex.getMessage() ) ;
+            return false ;
+        }
+    }
 
 
 }

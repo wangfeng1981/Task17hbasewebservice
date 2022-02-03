@@ -51,6 +51,10 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.14.1 2022-1-31. init v8 in the app startup.") ;
 		//v2.14.1 Task17调用后先启动v8运行个空脚本，避免瓦片计算程序直接崩溃。
 
+		System.out.println("v2.15.0 2022-2-2. 使用RoiController替换之前的感兴趣区接口.") ;
+		System.out.println("v2.15.1 2022-2-3. upload shp ROI.") ;
+		System.out.println("v2.15.2 2022-2-3. upload geojson ROI, delete ROI.") ;
+
 
 
 		if( args.length != 1 )

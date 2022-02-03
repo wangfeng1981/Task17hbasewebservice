@@ -24,6 +24,7 @@ public class StyleController {
 
 
     @PostMapping(value="/new2")
+    @CrossOrigin(origins = "*")
     public RestResult styleNew(@RequestHeader("token") String token,
                                String stylecontent , String description )
     {
@@ -49,6 +50,8 @@ public class StyleController {
     }
 
     @PostMapping(value="/new")
+    @CrossOrigin(origins = "*")
+    @ResponseBody
     public RestResult styleNewOld( String userid,
                                String stylecontent , String description )
     {
@@ -70,6 +73,7 @@ public class StyleController {
     }
 
     @PostMapping(value="/edit")
+    @CrossOrigin(origins = "*")
     public RestResult styleEdit(String styleid,
                                 String stylecontent,
                                 String description )
@@ -85,6 +89,7 @@ public class StyleController {
     }
 
     @GetMapping(value="/detail/{styleid}")
+    @CrossOrigin(origins = "*")
     public RestResult styleGet(@PathVariable("styleid") String styleid)
     {
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
@@ -96,6 +101,7 @@ public class StyleController {
     }
 
     @GetMapping(value="/remove/{styleid}")
+    @CrossOrigin(origins = "*")
     public RestResult styleRemove(@PathVariable("styleid") String styleid)
     {
         styleDao.deleteById( Long.parseLong(styleid));
@@ -105,6 +111,7 @@ public class StyleController {
     }
 
     @GetMapping(value="/list/{userid}")
+    @CrossOrigin(origins = "*")
     public RestResult styleList(@PathVariable("userid") String userid)
     {
         List<StyleDTO> allstyle = styleDao.findAllByUserid( Long.parseLong(userid)) ;
