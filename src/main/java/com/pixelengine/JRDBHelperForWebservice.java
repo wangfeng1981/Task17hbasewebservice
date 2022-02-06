@@ -367,6 +367,7 @@ public class JRDBHelperForWebservice {
         }
     }
 
+    //updated 2022-2-5 wf
     public String rdbGetUserScriptListJson(int uid)
     {
         try {
@@ -381,9 +382,10 @@ public class JRDBHelperForWebservice {
                 jscript.sid = rs.getInt("sid");
                 jscript.uid = rs.getInt("uid");
                 jscript.title = rs.getString("title");
-                jscript.scriptContent = "...";
-                jscript.updateTime = rs.getLong("updateTime");
-                jscript.type = rs.getInt("type");
+                jscript.scriptContent = "";
+                jscript.utime = rs.getDate("utime");
+                jscript.state = rs.getInt("state");
+                jscript.jsfile = rs.getString("jsfile");
 
                 String onejson = gson.toJson(jscript, JScript.class) ;
                 if( nrec>0 ){
@@ -402,7 +404,7 @@ public class JRDBHelperForWebservice {
     }
 
 
-
+    //updated 2022-2-5 wf
     public JScript rdbGetUserScript(int sid)
     {
         try {
@@ -414,9 +416,35 @@ public class JRDBHelperForWebservice {
                 jscript.sid = rs.getInt("sid");
                 jscript.uid = rs.getInt("uid");
                 jscript.title = rs.getString("title");
-                jscript.scriptContent = rs.getString("scriptContent");
-                jscript.updateTime = rs.getLong("updateTime");
-                jscript.type = rs.getInt("type");
+                jscript.scriptContent ="";
+                jscript.utime = rs.getDate("utime");
+                jscript.state = rs.getInt("state");
+                jscript.jsfile = rs.getString("jsfile");
+                return jscript;
+            }
+            return null;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return null ;
+        }
+    }
+
+    //2022-2-5 wf
+    public JScript rdbGetScript(int sid)
+    {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * "
+                    +" FROM tbscript WHERE sid="+sid ) ;
+            if (rs.next()) {
+                JScript jscript = new JScript();
+                jscript.sid = rs.getInt("sid");
+                jscript.uid = rs.getInt("uid");
+                jscript.title = rs.getString("title");
+                jscript.scriptContent = "";
+                jscript.utime = rs.getDate("utime");
+                jscript.state = rs.getInt("state");
+                jscript.jsfile = rs.getString("jsfile") ;
                 return jscript;
             }
             return null;

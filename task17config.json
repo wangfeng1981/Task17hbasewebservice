@@ -5,14 +5,14 @@
 "user":"big",
 "pwd":"Big123456",
 "hbaseuserfiletable":"sparkv8out" ,
-  "productwmts":"/home/hadoop/IdeaProjects/Task17hbasewebservice/productwmts-template.xml",
-  "host": "192.168.56.103",
-  "port": "15900" ,
-  "pedir": "/var/www/html/pe/" , 
-  "userhtable":"sparkv8out", 
-  "userhfami":"tiles",
-  "userhpidblen":4,
-  "useryxblen":2,
-
-  "tilelocalrootdir":"/home/hadoop/tempdata/tileroot/"
+"productwmts":"/home/hadoop/IdeaProjects/Task17hbasewebservice/productwmts-template.xml",
+"scriptwmts":"/home/hadoop/IdeaProjects/Task17hbasewebservice/scriptwmts-template.xml",
+"host": "192.168.56.103",
+"port": "15900" ,
+"pedir": "/var/www/html/pe/" , 
+"userhtable":"sparkv8out", 
+"userhfami":"tiles",
+"userhpidblen":4,
+"useryxblen":2,
+"tilelocalrootdir":"/home/hadoop/tempdata/tileroot/"
 }

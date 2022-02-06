@@ -1,14 +1,19 @@
 package com.pixelengine.controller;
 
 import com.google.gson.Gson;
+import com.pixelengine.DataModel.RestResult;
 import com.pixelengine.JRDBHelperForWebservice;
 import com.pixelengine.JScript;
+import com.pixelengine.WConfig;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Optional;
 
 @RestController
@@ -53,25 +58,44 @@ public class ScriptsController {
         return new ResponseEntity<byte[]>( outjson.getBytes(), headers, HttpStatus.OK);
     }
 
+
+    //获取js脚本中的内容 relPath 是相对路径 scrips/...
+    private String getScriptContent( String relPath )
+    {
+        String fullpath = WConfig.sharedConfig.pedir + relPath ;
+        String data = "";
+        try{
+            data = new String(Files.readAllBytes(Paths.get(fullpath)));
+        }catch (Exception ex){
+            System.out.println("getScriptContent exception:"+ex.getMessage());
+        }
+        return data;
+    }
+
+
+    //update 2022-2-5
     @ResponseBody
     @RequestMapping(value="/scripts/{sid}",method= RequestMethod.GET)
     @CrossOrigin(origins = "*")
-    public ResponseEntity<byte[]> scriptdetail(@PathVariable String sid)
+    public RestResult scriptdetail(@PathVariable String sid)
     {
-        System.out.println("/scripts/{sid}");
+        System.out.println("/scripts/" + sid);
         JRDBHelperForWebservice rdb =new JRDBHelperForWebservice();
-        JScript sc = rdb.rdbGetUserScript(Integer.parseInt(sid)) ;
+        JScript sc = rdb.rdbGetScript(Integer.parseInt(sid)) ;
         if( sc==null ){
-            final HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            return new ResponseEntity<byte[]>( "{}".getBytes(), headers, HttpStatus.OK);
+            RestResult rr = new RestResult();
+            rr.setData(null);
+            rr.setState(9);
+            rr.setMessage("not find script by sid "+sid);
+            return rr;
         }else
         {
-            Gson gson = new Gson();
-            String outjson = gson.toJson(sc,JScript.class);
-            final HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            return new ResponseEntity<byte[]>( outjson.getBytes(), headers, HttpStatus.OK);
+            sc.scriptContent = getScriptContent( sc.jsfile) ;
+            RestResult rr = new RestResult();
+            rr.setData(sc);
+            rr.setState(0);
+            rr.setMessage("");
+            return rr;
         }
     }
 

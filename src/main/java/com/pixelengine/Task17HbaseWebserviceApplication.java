@@ -54,6 +54,7 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.15.0 2022-2-2. 使用RoiController替换之前的感兴趣区接口.") ;
 		System.out.println("v2.15.1 2022-2-3. upload shp ROI.") ;
 		System.out.println("v2.15.2 2022-2-3. upload geojson ROI, delete ROI.") ;
+		System.out.println("v2.15.3 2022-2-5. add get script api.") ;
 
 
 
