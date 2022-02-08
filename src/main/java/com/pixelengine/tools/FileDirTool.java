@@ -6,6 +6,8 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -89,6 +91,26 @@ public class FileDirTool {
         }catch (IOException e){
             e.printStackTrace();
             return false ;
+        }
+    }
+
+    static public  String readFileAsString(String fileName)throws Exception
+    {
+        String data = "";
+        data = new String(Files.readAllBytes(Paths.get(fileName)));
+        return data;
+    }
+
+    /**
+     * 判断文件夹是否存在,如果不存在创建他
+     * @param dirPathStr
+     */
+    static public boolean checkDirExistsOrCreate(String dirPathStr) {
+        File file = new File(dirPathStr) ;
+        if (file.exists()) {
+            return true ;
+        } else {
+            return file.mkdir();
         }
     }
 }

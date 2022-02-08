@@ -189,7 +189,7 @@
             </TileMatrix>
             <TileMatrix>
                 <ows:Identifier>14</ows:Identifier>
-                <ScaleDenominator>68247.34551902</ScaleDenominator>
+                <ScaleDenominator>34123.67275951</ScaleDenominator>
                 <TopLeftCorner>-180 90</TopLeftCorner>
                 <TileWidth>256</TileWidth>
                 <TileHeight>256</TileHeight>

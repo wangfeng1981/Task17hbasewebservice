@@ -1571,4 +1571,40 @@ public class JRDBHelperForWebservice {
     }
 
 
+
+    //将订单信息写入tbofftask 2022-2-8
+    public int rdbNewOffTask(int uid,int mode,String orderRelFilePath,
+                             String resultRelFilePath ) {
+        try
+        {
+            String query = " insert into tbofftask (mode,uid,orderfile,resultfile,ctime,utime,status,tag,msg)"
+                    + " values (?, ?, ?,   ?, ?, ? ,  ? ,? ,?)";
+            // create the mysql insert preparedstatement
+            PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            preparedStmt.setInt (1, mode );
+            preparedStmt.setInt (2, uid);
+            preparedStmt.setString   (3, orderRelFilePath);
+            preparedStmt.setString    (4, resultRelFilePath);
+            preparedStmt.setString    (5, getCurrentDatetimeStr() );//ctime
+            preparedStmt.setString    (6, getCurrentDatetimeStr() );//utime
+            preparedStmt.setInt    (7, 0 );//
+            preparedStmt.setString    (8, "" );//
+            preparedStmt.setString    (9, "");//
+            // execute the preparedstatement
+            preparedStmt.executeUpdate();
+            ResultSet rs = preparedStmt.getGeneratedKeys();
+            int last_inserted_id = -1 ;
+            if(rs.next())
+            {
+                last_inserted_id = rs.getInt(1);
+            }
+            return last_inserted_id;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbNewOffTask exception , " + ex.getMessage() ) ;
+            return -1 ;
+        }
+    }
+
+
 }

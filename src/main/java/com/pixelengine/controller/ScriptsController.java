@@ -1,19 +1,27 @@
 package com.pixelengine.controller;
 
 import com.google.gson.Gson;
+import com.pixelengine.*;
+import com.pixelengine.DataModel.JProduct;
 import com.pixelengine.DataModel.RestResult;
-import com.pixelengine.JRDBHelperForWebservice;
-import com.pixelengine.JScript;
-import com.pixelengine.WConfig;
+import com.pixelengine.tools.FileDirTool;
+import com.pixelengine.tools.ScriptsGetterTool;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Optional;
 
 @RestController
@@ -99,6 +107,148 @@ public class ScriptsController {
         }
     }
 
+    //create 2022-2-5
+    @ResponseBody
+    @RequestMapping(value="/scripts/{sid}/wmts/WMTSCapabilities.xml",method= RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public ResponseEntity<byte[]> scriptWMTSCaps(@PathVariable String sid)
+    {
+        System.out.println("/scripts/" + sid + "/wmts/WMTSCapabilities.xml");
+        String scriptWmtsTemplate = WConfig.sharedConfig.scriptwmts ;
+        try{
+            JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+            JScript scriptObj = rdb.rdbGetScript( Integer.valueOf(sid)) ;
+            if( scriptObj!=null )
+            {
+                String xmlContent = FileDirTool.readFileAsString(scriptWmtsTemplate) ;
+                String xmlContent2 = xmlContent.replace("{sid}",sid);
+                //host
+                xmlContent2 = xmlContent2.replace("{host}", WConfig.sharedConfig.host );
+                //port
+                xmlContent2 = xmlContent2.replace("{port}", WConfig.sharedConfig.port);
+                //script-utime
+                xmlContent2 = xmlContent2.replace("{utime}",  String.valueOf(scriptObj.utime.getTime()) ) ;
+                //return xml
+                final HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.TEXT_XML);
+                return new ResponseEntity<byte[]>(xmlContent2.getBytes(), headers, HttpStatus.OK);
+            }
+            else{
+                System.out.println("Error : not found script for "+sid );
+                final HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.TEXT_PLAIN);
+                return new ResponseEntity<byte[]>((" not found script for sid: "+sid).getBytes(), headers, HttpStatus.NOT_FOUND ) ;
+            }
+        }catch (Exception ex ){
+            System.out.println("Error : script wmts exception .");
+            final HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.TEXT_PLAIN);
+            return new ResponseEntity<byte[]>(("scriptWMTSCaps exception "+ex.getMessage()).getBytes(), headers, HttpStatus.NOT_FOUND ) ;
+        }
+    }
+
+
+    //获取瓦片数据的具体接口 getTile /scripts/{sid}/wmts/WMTSCapabilities.xml
+    @ResponseBody
+    @RequestMapping(value="/scripts/{sid}/wmts/",method= RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public ResponseEntity<byte[]> wmtsGetTiles(@PathVariable String sid,
+                                               HttpServletRequest request,
+                                               ModelMap model) {
+
+        System.out.println("ScriptsController.wmtsGetTiles sid:"+sid);
+        StringBuilder requestURL = new StringBuilder(request.getRequestURL().toString());
+        String queryString = request.getQueryString();
+        if (queryString == null) {
+            System.out.println( requestURL.toString() );
+        } else {
+            System.out.println( requestURL.append('?').append(queryString).toString());
+        }
+        Enumeration<String> params = request.getParameterNames();
+        HashMap<String,String> lowerParams = new HashMap<String,String>();
+        while (params.hasMoreElements())
+        {
+            String name1 = params.nextElement();
+            String value1 = request.getParameter(name1) ;
+            lowerParams.put( name1.toLowerCase() , value1) ;
+        }
+        String requeststr = lowerParams.get("request") ;//
+        String servicestr = lowerParams.get("service")  ;//
+        String zstr = lowerParams.get("tilematrix")  ;//
+        String ystr = lowerParams.get("tilerow")  ;//
+        String xstr = lowerParams.get("tilecol")  ;//
+        String dtstr = lowerParams.get("datetime")  ;//
+        String utimeStr = lowerParams.get("utime") ;
+        String styleId = lowerParams.get("styleid") ;
+        String sduiJsonStr = lowerParams.get("sdui") ;
+
+        String jsText = ScriptsGetterTool.getSharedInstance().getScriptContent( Integer.valueOf(sid) , Long.valueOf(utimeStr)) ;
+        /// String outputText = "sdui=" + sdui + "\n\n" + jsText;
+        /// final HttpHeaders headers = new HttpHeaders();
+        /// headers.setContentType(MediaType.TEXT_PLAIN);
+        /// return new ResponseEntity<byte[]>(outputText.getBytes() , headers, HttpStatus.OK);
+
+        //从数据库通过pid获取产品信息
+        try{
+            JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+            //get render style content
+            String styleText = "" ;
+            if( styleId!=null && styleId!="" ){
+                styleText = rdb.rdbGetStyleText( Integer.parseInt(styleId) ) ;
+            }
+
+            //2022-2-7
+            //检查js脚本中是否有 sdui 的声明，然后在检查GET中的sdui参数，检查GET[sdui]是否为null或者空字符串或者{}空对象
+            // 前面描述的GET[sdui]均是无效的sdui，不要在js代码中附加这个sdui对象，
+            // 反之，如果GET[sdui]有效的化，就把sdui={...} 写在 function main函数前面 ，后续使用AST分析进行精准替换
+            String jsText2 = jsText ;
+            if( jsText.contains("sdui={") == true ){
+                if( sduiJsonStr.compareTo("null") != 0 && sduiJsonStr.compareTo("") != 0 && sduiJsonStr.compareTo("{}")!=0 ){
+                    String sduiJsonStr2 = "\nsdui=" + sduiJsonStr + ";\n" ;
+                    jsText2 = jsText.replace("function main(" , sduiJsonStr2 + "function main(") ;
+                }
+            }
+
+            if( false ){//debug
+                final HttpHeaders debugheaders = new HttpHeaders();
+                debugheaders.setContentType(MediaType.TEXT_PLAIN);
+                return new ResponseEntity<byte[]>(jsText2.getBytes() , debugheaders, HttpStatus.OK);
+            }
+
+            
+            String extraStr = "{\"datetime\":"+dtstr+"}" ;
+            HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
+            TileComputeResult res1 = cv8.RunScriptForTileWithRenderWithExtra(
+                    "com/pixelengine/HBasePixelEngineHelper",
+                    jsText2,
+                    styleText,
+                    extraStr,
+                    Integer.parseInt(zstr),
+                    Integer.parseInt(ystr),
+                    Integer.parseInt(xstr)
+            ) ;
+            if( res1.status==0 )
+            {//ok
+                System.out.println("Info : tile compute ok.");
+                final HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.IMAGE_PNG);
+                return new ResponseEntity<byte[]>(res1.binaryData, headers, HttpStatus.OK);
+            }else
+            {
+                System.out.println("Error : script wmts bad compute.");
+                final HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.TEXT_PLAIN);
+                return new ResponseEntity<byte[]>( "script wmts bad compute".getBytes(), headers, HttpStatus.NOT_FOUND);
+            }
+
+        }catch (Exception ex){
+            System.out.println("Error : script wmtsGetTiles exception "  + ex.getMessage() );
+            final HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.TEXT_PLAIN);
+            return new ResponseEntity<byte[]>( "product wmts exception".getBytes(), headers, HttpStatus.NOT_FOUND);
+        }
+    }
+
     @ResponseBody
     @RequestMapping(value="/scripts/update/{sid}",method= RequestMethod.POST)
     @CrossOrigin(origins = "*")
@@ -124,4 +274,7 @@ public class ScriptsController {
         headers.setContentType(MediaType.APPLICATION_JSON);
         return new ResponseEntity<byte[]>( "{\"status\":0}".getBytes(), headers, HttpStatus.OK);
     }
+
+
+
 }

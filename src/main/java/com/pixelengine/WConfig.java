@@ -30,5 +30,8 @@ public class WConfig {
 
     public String tilelocalrootdir ;//本地瓦片数据根目录
 
+    //2022-2-6
+    public String scriptwmts ;
+
 
 }

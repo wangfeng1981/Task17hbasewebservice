@@ -10,4 +10,5 @@ public class JScript {
     public Date utime;//更新时间
     public int uid;
     public int state;//new
+
 }

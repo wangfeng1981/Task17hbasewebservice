@@ -102,7 +102,7 @@ public class ProductWMTSController {
         {
             String name1 = params.nextElement();
             String value1 = request.getParameter(name1) ;
-            System.out.println( name1 + ":" + value1    );
+            //System.out.println( name1 + ":" + value1    );
             lowerParams.put( name1.toLowerCase() , value1) ;
         }
         String requeststr = lowerParams.get("request") ;//
@@ -113,13 +113,13 @@ public class ProductWMTSController {
         String dtstr = lowerParams.get("datetime")  ;//req.get_param_value("dt");
         String styleId = lowerParams.get("styleid") ;
 
-        System.out.println("request:"+request) ;
-        System.out.println("service:" + servicestr ) ;
-        System.out.println("tilematrix:" + zstr) ;
-        System.out.println("tilerow:" + ystr) ;
-        System.out.println("tilecol:" + xstr) ;
-        System.out.println("datetime:" + dtstr ) ;
-        System.out.println("styleid:" + styleId) ;
+//        System.out.println("request:"+request) ;
+//        System.out.println("service:" + servicestr ) ;
+//        System.out.println("tilematrix:" + zstr) ;
+//        System.out.println("tilerow:" + ystr) ;
+//        System.out.println("tilecol:" + xstr) ;
+//        System.out.println("datetime:" + dtstr ) ;
+//        System.out.println("styleid:" + styleId) ;
 
 
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
