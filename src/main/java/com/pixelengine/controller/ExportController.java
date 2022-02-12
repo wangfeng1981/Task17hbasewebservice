@@ -215,6 +215,8 @@ public class ExportController {
         int ofid =  rdb.rdbNewOffTask(  Integer.parseInt(uid) , exportMode , orderJsonRelFilepath,
                 resultRelFilepath ) ;
         if( ofid>0 ){
+            //here 这里添加zeromq调用
+
             result.setState(0);
             result.setMessage("");
             result.setData("{\"ofid\":" + String.valueOf(ofid) + "}");

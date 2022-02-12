@@ -2,6 +2,7 @@ package com.pixelengine.controller;
 //实现系统预定义产品的wmts服务
 import com.google.gson.Gson;
 import com.pixelengine.*;
+import com.pixelengine.DataModel.JDsNameArrayResult;
 import com.pixelengine.DataModel.JProduct;
 import com.pixelengine.DataModel.JProductDataItem;
 import com.pixelengine.DataModel.RestResult;

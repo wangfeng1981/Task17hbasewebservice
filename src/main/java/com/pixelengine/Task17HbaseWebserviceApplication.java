@@ -57,6 +57,7 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.15.3 2022-2-5. add get script api.") ;
 		System.out.println("v2.15.4 2022-2-6. add script wmts api.") ;
 		System.out.println("v2.15.5 2022-2-8. add ExportController.exportNew2 ") ;
+		System.out.println("v2.16.0 2022-2-12. add HBasePeHelperCppConnector.GetDatasetNameArray ") ;
 
 
 
