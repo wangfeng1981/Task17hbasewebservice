@@ -1,6 +1,9 @@
 package com.pixelengine;
 
+import com.pixelengine.DataModel.JOfftaskOrderSender;
 import com.pixelengine.DataModel.JProduct;
+import com.pixelengine.DataModel.WConfig;
+import com.pixelengine.controller.OfftaskCollector;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -58,6 +61,8 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.15.4 2022-2-6. add script wmts api.") ;
 		System.out.println("v2.15.5 2022-2-8. add ExportController.exportNew2 ") ;
 		System.out.println("v2.16.0 2022-2-12. add HBasePeHelperCppConnector.GetDatasetNameArray ") ;
+		System.out.println("v2.17.1 2022-2-13. update WConfig ") ;
+		System.out.println("v2.17.4 2022-2-13. use 0mq for offtask export") ;
 
 
 
@@ -70,18 +75,30 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("Info : loading " + configfile) ;
 		WConfig.init(configfile);
 
-		JRDBHelperForWebservice.init(WConfig.sharedConfig);
+		JRDBHelperForWebservice.init(
+				WConfig.getSharedInstance().connstr,
+				WConfig.getSharedInstance().user,
+				WConfig.getSharedInstance().pwd);
 
 		//show pixelengine core version
 		HBasePeHelperCppConnector cc = new HBasePeHelperCppConnector();
 		System.out.println("pe core version: " + cc.GetVersion() );
-		//try to init v8 2022-1-31
+		//try to init v8 2022-1-31 使用空脚本初始化调用一次v8以免后面瓦片计算导致task17崩溃
 		System.out.println("try to init v8 ...");
-		TileComputeResult notUsedResult = cc.RunScriptForTileWithoutRender("com/pixelengine/HBasePixelEngineHelper", "function main(){return null;}", 0,0,0,0) ;
+		TileComputeResult notUsedResult = cc.RunScriptForTileWithoutRender(
+				"com/pixelengine/HBasePixelEngineHelper",
+				"function main(){return null;}", 0,0,0,0) ;
 		System.out.println("init v8 done.");
 
-		//test debug
+		//load products
 		ArrayList<JProduct> productlist = JProduct.getSharedList() ;
+
+		//启动一个0mq线程作为offtask结果搜集器
+		OfftaskCollector offtaskCollector = new OfftaskCollector() ;
+		offtaskCollector.start();
+
+		//启动离线任务发送者socket
+		JOfftaskOrderSender.getSharedInstance() ;//do nothing , only startup the socket.
 
 		SpringApplication.run(Task17HbaseWebserviceApplication.class, args);
 	}

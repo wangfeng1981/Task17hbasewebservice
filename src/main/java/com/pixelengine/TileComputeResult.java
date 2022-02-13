@@ -1,5 +1,11 @@
 package com.pixelengine;
-
+////////////////////////////////////////////////////////
+//
+//
+//这个类的位置不能变，要在com/pixelengine/ 下，否则c++会找不到这个类
+//update 2022-2-13 1020
+//
+/////////////////////////////////////////////////////////
 import java.nio.ByteBuffer;
 
 public class TileComputeResult {

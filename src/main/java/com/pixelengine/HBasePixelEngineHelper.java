@@ -1,9 +1,13 @@
 package com.pixelengine;
+////////////////////////////////////////////////////////
+//
+//
+// 这个接口是C++回调Java进程的
+//update 2022-2-13 1020
+//
+/////////////////////////////////////////////////////////
 
-import com.pixelengine.DataModel.JHBaseTable;
-import com.pixelengine.DataModel.JProduct;
-import com.pixelengine.DataModel.JProductBand;
-import com.pixelengine.DataModel.JProductDataItem;
+import com.pixelengine.DataModel.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
@@ -43,7 +47,7 @@ public class HBasePixelEngineHelper {
     public static Connection getHBaseConnection() throws IOException {
         if( zookeeper==null )
         {
-            zookeeper = WConfig.sharedConfig.zookeeper;
+            zookeeper = WConfig.getSharedInstance().zookeeper;
         }
         if( hbaseConn==null || hbaseConn.isClosed() || hbaseConn.isAborted() )
         {
@@ -258,7 +262,7 @@ public class HBasePixelEngineHelper {
                                           int z,int y,int x )
     {
         try{
-            String cellfilepath = WConfig.sharedConfig.tilelocalrootdir
+            String cellfilepath = WConfig.getSharedInstance().tilelocalrootdir
                     + "/"
                     + htablename + "/"
                     + String.valueOf(hpid) + "/"
@@ -713,7 +717,7 @@ public class HBasePixelEngineHelper {
     }
 
     //JPeStyle used to substitute ColorRamp
-    public JPeStyle getStyle( String styleid ){
+    public JPeStyle getStyle(String styleid ){
         System.out.println("in java getStyle styleid: "+styleid) ;
 
         JPeStyle style = new JPeStyle() ;

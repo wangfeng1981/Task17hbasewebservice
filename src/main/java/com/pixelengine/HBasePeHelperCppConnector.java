@@ -1,5 +1,12 @@
 //com_pixelengine_HBasePeHelperCppConnector
 package com.pixelengine;
+////////////////////////////////////////////////////////
+//
+//
+//这个接口是java主动调用C++ so的
+//update 2022-2-13 1020
+//
+/////////////////////////////////////////////////////////
 
 //Java离线计算与C++接口。
 //// -Djava.library.path="/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/HBasePeHelperCppConnector"
@@ -15,7 +22,7 @@ public class HBasePeHelperCppConnector {
     public native String GetDatasetNameArray(String javaHelperClassName, String script ) ;
 
 
-    public native TileComputeResult RunScriptForTileWithoutRender(String javaHelperClassName, String script, long datetime, int z , int y , int x) ;    
+    public native TileComputeResult RunScriptForTileWithoutRender(String javaHelperClassName, String script, long datetime, int z , int y , int x) ;
     public native TileComputeResult RunScriptForTileWithRender(String javaHelperClassName,String script,String styleJson,long datetime,int z,int y,int x) ;
 
     public native TileComputeResult RunScriptForTileWithoutRenderWithExtra(String javaHelperClassName, String script, String extraJsonText , int z , int y , int x) ;

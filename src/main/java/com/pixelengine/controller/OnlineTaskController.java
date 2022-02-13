@@ -3,23 +3,18 @@ package com.pixelengine.controller;
 
 import com.google.gson.Gson;
 import com.pixelengine.*;
-import com.pixelengine.DataModel.JProduct;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
+import com.pixelengine.DataModel.*;
+import com.pixelengine.TileComputeResult;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
-import sun.applet.Main;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.*;
-import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 public class OnlineTaskController {

@@ -14,5 +14,11 @@
 "userhfami":"tiles",
 "userhpidblen":4,
 "useryxblen":2,
-"tilelocalrootdir":"/home/hadoop/tempdata/tileroot/"
+"tilelocalrootdir":"/home/hadoop/tempdata/tileroot/",
+"gdaltranslate":"/usr/bin/gdal_translate" ,
+"gdalwarp":"/usr/bin/gdalwarp",
+
+  "offtask_result_collector": "tcp://127.0.0.1:5500" ,
+  "offtask_export_producer": "tcp://127.0.0.1:5510"
+
 }

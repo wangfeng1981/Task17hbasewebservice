@@ -7,20 +7,17 @@ import com.pixelengine.DAO.ZonalStatDAO;
 import com.pixelengine.DTO.ZonalStatDTO;
 import com.pixelengine.DataModel.*;
 import com.pixelengine.JRDBHelperForWebservice;
-import com.pixelengine.JScript;
-import com.pixelengine.WConfig;
+import com.pixelengine.DataModel.JScript;
+import com.pixelengine.DataModel.WConfig;
 import com.pixelengine.tools.FileDirTool;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Random;
-import java.util.jar.JarException;
 
 @RestController
 public class ExportController {
@@ -38,7 +35,7 @@ public class ExportController {
             String right,
             String top,
             String bottom
-    ) {
+    ) {//不再维护 2022-2-13 请使用new2
         System.out.println("/offtask/export/new") ;
 
         RestResult result = new RestResult() ;
@@ -75,10 +72,10 @@ public class ExportController {
             ep.bottom = Double.valueOf(bottom) ;
             ep.level = product.maxZoom ;
             ep.filldata = (int) product.bandList.get(0).noData;
-            String[] outdirArr = FileDirTool.checkAndMakeCurrentYearDateDir(WConfig.sharedConfig.pedir,"export");
+            String[] outdirArr = FileDirTool.checkAndMakeCurrentYearDateDir(WConfig.getSharedInstance().pedir,"export");
             ep.outfilename = outdirArr[0] + "export-u" + userid + "-" + FileDirTool.dateTimeString() + ".tif" ;
             ep.outfilenamedb = outdirArr[1] + "export-u" + userid + "-" + FileDirTool.dateTimeString() + ".tif" ;
-            ep.zookeeper = WConfig.sharedConfig.zookeeper ;
+            ep.zookeeper = WConfig.getSharedInstance().zookeeper ;
             ep.datatype = product.dataType ;
 
             Gson gson = new Gson() ;
@@ -133,7 +130,7 @@ public class ExportController {
         String randStr = String.format("%04d",new Random().nextInt(9999)) ;
         String newFileNameNoExtension = hhmmssStr+"-"+randStr ;
 
-        String exportDir = WConfig.sharedConfig.pedir + "/export/" ;
+        String exportDir = WConfig.getSharedInstance().pedir + "/export/" ;
         boolean dirok1 = FileDirTool.checkDirExistsOrCreate(exportDir) ;
         if( dirok1==false ){
             result.setState(9);
@@ -141,7 +138,7 @@ public class ExportController {
             return result ;
         }
 
-        String exportYmdDir = WConfig.sharedConfig.pedir + "/export/"+yyyyMMddStr+"/" ;
+        String exportYmdDir = WConfig.getSharedInstance().pedir + "/export/"+yyyyMMddStr+"/" ;
         boolean dirok2 = FileDirTool.checkDirExistsOrCreate(exportYmdDir) ;
         if( dirok2==false ){
             result.setState(9);
@@ -151,7 +148,7 @@ public class ExportController {
 
         String orderJsonFilepath = exportYmdDir + newFileNameNoExtension + ".json" ;
         String orderJsonRelFilepath = "export/" + yyyyMMddStr + "/" + newFileNameNoExtension + ".json" ;
-        String resultRelFilepath = "export/" + yyyyMMddStr + "/" + newFileNameNoExtension + ".tif" ;
+        String resultRelFilepath = "export/" + yyyyMMddStr + "/" + newFileNameNoExtension + "-result.json" ;//2022-2-13
 
         JExportOrder theOrder = new JExportOrder() ;
         theOrder.datetime = Long.parseLong(datetime) ;
@@ -215,8 +212,11 @@ public class ExportController {
         int ofid =  rdb.rdbNewOffTask(  Integer.parseInt(uid) , exportMode , orderJsonRelFilepath,
                 resultRelFilepath ) ;
         if( ofid>0 ){
-            //here 这里添加zeromq调用
-
+            //这里添加zeromq调用 这里传递两个值 一个order主键和order json文件的相对路径
+            JOfftaskOrderMsg msg=new JOfftaskOrderMsg() ;
+            msg.ofid = ofid ;
+            msg.orderRelFilepath = orderJsonRelFilepath ;
+            JOfftaskOrderSender.getSharedInstance().send(msg);
             result.setState(0);
             result.setMessage("");
             result.setData("{\"ofid\":" + String.valueOf(ofid) + "}");

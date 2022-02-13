@@ -1,14 +1,11 @@
 package com.pixelengine.controller;
 /// 新版ROI接口，用于取代RegionController和AreaController 2022-2-2
 
-import com.pixelengine.DTO.RegionDTO;
-import com.pixelengine.DTO.StyleDTO;
 import com.pixelengine.DataModel.JRoi2;
 import com.pixelengine.DataModel.JRoiCategory;
-import com.pixelengine.DataModel.ROI;
 import com.pixelengine.DataModel.RestResult;
 import com.pixelengine.JRDBHelperForWebservice;
-import com.pixelengine.WConfig;
+import com.pixelengine.DataModel.WConfig;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -175,7 +172,7 @@ public class RoiController {
             }
 
             //check roi/ dir ok
-            String roidirPathStr = WConfig.sharedConfig.pedir + "/roi/" ;
+            String roidirPathStr = WConfig.getSharedInstance().pedir + "/roi/" ;
             boolean roidirOk = checkDirExistsOrCreate(roidirPathStr) ;
             if( roidirOk==false ){
                 returnT.setState(9);
@@ -184,7 +181,7 @@ public class RoiController {
             }
 
             //check roi/user dir ok
-            String roiUserDirPathStr = WConfig.sharedConfig.pedir + "/roi/user/" ;
+            String roiUserDirPathStr = WConfig.getSharedInstance().pedir + "/roi/user/" ;
             boolean roiUserDirOk = checkDirExistsOrCreate(roiUserDirPathStr) ;
             if( roiUserDirOk==false ){
                 returnT.setState(9);
@@ -193,7 +190,7 @@ public class RoiController {
             }
 
             //check roi/user/yyyyMMdd dir ok
-            String roiUserYmdDirPathStr = WConfig.sharedConfig.pedir + "/roi/user/"+yyyyMMddStr+"/" ;
+            String roiUserYmdDirPathStr = WConfig.getSharedInstance().pedir + "/roi/user/"+yyyyMMddStr+"/" ;
             boolean dir3Ok = checkDirExistsOrCreate(roiUserYmdDirPathStr) ;
             if( dir3Ok==false ){
                 returnT.setState(9);
@@ -301,7 +298,7 @@ public class RoiController {
         String newFileName = hhmmssStr+"-"+randStr ;
 
         //check roi/ dir ok
-        String roidirPathStr = WConfig.sharedConfig.pedir + "/roi/" ;
+        String roidirPathStr = WConfig.getSharedInstance().pedir + "/roi/" ;
         boolean roidirOk = checkDirExistsOrCreate(roidirPathStr) ;
         if( roidirOk==false ){
             result.setState(9);
@@ -310,7 +307,7 @@ public class RoiController {
         }
 
         //check roi/user dir ok
-        String roiUserDirPathStr = WConfig.sharedConfig.pedir + "/roi/user/" ;
+        String roiUserDirPathStr = WConfig.getSharedInstance().pedir + "/roi/user/" ;
         boolean roiUserDirOk = checkDirExistsOrCreate(roiUserDirPathStr) ;
         if( roiUserDirOk==false ){
             result.setState(9);
@@ -319,7 +316,7 @@ public class RoiController {
         }
 
         //check roi/user/yyyyMMdd dir ok
-        String roiUserYmdDirPathStr = WConfig.sharedConfig.pedir + "/roi/user/"+yyyyMMddStr+"/" ;
+        String roiUserYmdDirPathStr = WConfig.getSharedInstance().pedir + "/roi/user/"+yyyyMMddStr+"/" ;
         boolean dir3Ok = checkDirExistsOrCreate(roiUserYmdDirPathStr) ;
         if( dir3Ok==false ){
             result.setState(9);
@@ -367,7 +364,7 @@ public class RoiController {
         if( roi!=null ){
             //删除物理文件
             if( roi.shp!=null && roi.shp.length() > 1 ){
-                String shpfilepath = WConfig.sharedConfig.pedir + roi.shp ;
+                String shpfilepath = WConfig.getSharedInstance().pedir + roi.shp ;
                 File file = new File(shpfilepath) ; file.delete() ;
                 String shxfilepath = shpfilepath.substring(0, shpfilepath.length()-3 ) + "shx" ;
                 File file1 = new File(shxfilepath) ; file1.delete() ;
@@ -377,7 +374,7 @@ public class RoiController {
                 File file3 = new File(prjfilepath) ; file3.delete() ;
             }
             if( roi.geojson!=null && roi.geojson.length()>1 ){
-                String geojsonfilepath = WConfig.sharedConfig.pedir + roi.geojson ;
+                String geojsonfilepath = WConfig.getSharedInstance().pedir + roi.geojson ;
                 File file = new File(geojsonfilepath) ;
                 file.delete() ;
             }

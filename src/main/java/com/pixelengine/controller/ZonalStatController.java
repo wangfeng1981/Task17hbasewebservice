@@ -2,18 +2,14 @@ package com.pixelengine.controller;
 
 
 import com.pixelengine.DAO.ZonalStatDAO;
-import com.pixelengine.DTO.RegionDTO;
-import com.pixelengine.DTO.StyleDTO;
 import com.pixelengine.DTO.ZonalStatDTO;
 import com.pixelengine.DataModel.JOfftaskResult;
 import com.pixelengine.DataModel.JProduct;
 import com.pixelengine.DataModel.JZonalStatParams;
 import com.pixelengine.DataModel.RestResult;
-import com.pixelengine.JOfflineTask;
 import com.pixelengine.JRDBHelperForWebservice;
-import com.pixelengine.WConfig;
+import com.pixelengine.DataModel.WConfig;
 import com.pixelengine.tools.FileDirTool;
-import jdk.nashorn.internal.scripts.JO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -158,7 +154,7 @@ public class ZonalStatController<tbStyle> {
 
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
         JProduct pdt = rdb.rdbGetProductForAPI(params.pid ) ;
-        params.regfile = rdb.rdbGetGeoJsonFilePath(params.rtype,params.rid) ;
+        params.regfile =WConfig.getSharedInstance().pedir+ rdb.rdbGetGeoJsonFilePath(params.rtype,params.rid) ;//2022-2-13
         params.zlevel = pdt.maxZoom ;
         params.hTableName = pdt.hTableName ;
         params.hPid = pdt.bandList.get(params.bandindex).hPid ;
@@ -172,7 +168,7 @@ public class ZonalStatController<tbStyle> {
         params.bandNodata = pdt.bandList.get(params.bandindex).noData ;
         params.method=method;
         params.offsetdt=offsetdt ;
-        String[] outdirArr = FileDirTool.checkAndMakeCurrentYearDateDir(WConfig.sharedConfig.pedir,"offtask");
+        String[] outdirArr = FileDirTool.checkAndMakeCurrentYearDateDir(WConfig.getSharedInstance().pedir,"offtask");//2022-2-13
         params.outfilename = outdirArr[0] + "xl-u" + userid + "-" + FileDirTool.dateTimeString() + ".json" ;
         params.outfilenamedb = outdirArr[1] + "xl-u" + userid + "-" + FileDirTool.dateTimeString() + ".json" ;
 

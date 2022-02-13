@@ -1,11 +1,5 @@
 package com.pixelengine.DataModel;
 
-import com.pixelengine.DTO.RegionDTO;
-
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import java.util.Date;
 
 public class ROI {
@@ -39,20 +33,20 @@ public class ROI {
     }
 
 
-    public static ROI convertRegionDTO2ROI(RegionDTO region )
+    public static ROI convertRegionDTO2ROI(JRegionDbObject region )
     {
         ROI roi = new ROI() ;
-        roi.rid = Integer.parseInt( region.getRid().toString() ) ;
-        roi.shp = region.getShp();
-        roi.uid = region.getUid() ;
+        roi.rid =   region.rid ;
+        roi.shp = region.shp ;
+        roi.uid = region.uid ;
         roi.children = 0 ;
         roi.code = "0" ;
         roi.parentCode = "0" ;
-        roi.geojson = region.getGeojson() ;
-        roi.name = region.getName() ;
+        roi.geojson = region.geojson  ;
+        roi.name = region.name ;
         roi.rtype = "roi" ;
-        roi.createtime = region.getCreatetime() ;
-        roi.updatetime = region.getUpdatetime() ;
+        roi.createtime = region.createtime ;
+        roi.updatetime = region.updatetime ;
         return roi ;
     }
 }

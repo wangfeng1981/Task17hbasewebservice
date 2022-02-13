@@ -1,11 +1,10 @@
 package com.pixelengine.controller;
 
-import com.google.gson.Gson;
 import com.pixelengine.*;
-import com.pixelengine.DataModel.JProduct;
-import com.pixelengine.DataModel.RestResult;
+import com.pixelengine.DataModel.*;
 import com.pixelengine.tools.FileDirTool;
 import com.pixelengine.tools.ScriptsGetterTool;
+import com.pixelengine.TileComputeResult;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -14,10 +13,6 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Enumeration;
@@ -70,7 +65,7 @@ public class ScriptsController {
     //获取js脚本中的内容 relPath 是相对路径 scrips/...
     private String getScriptContent( String relPath )
     {
-        String fullpath = WConfig.sharedConfig.pedir + relPath ;
+        String fullpath = WConfig.getSharedInstance().pedir + relPath ;
         String data = "";
         try{
             data = new String(Files.readAllBytes(Paths.get(fullpath)));
@@ -114,7 +109,7 @@ public class ScriptsController {
     public ResponseEntity<byte[]> scriptWMTSCaps(@PathVariable String sid)
     {
         System.out.println("/scripts/" + sid + "/wmts/WMTSCapabilities.xml");
-        String scriptWmtsTemplate = WConfig.sharedConfig.scriptwmts ;
+        String scriptWmtsTemplate = WConfig.getSharedInstance().scriptwmts ;
         try{
             JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
             JScript scriptObj = rdb.rdbGetScript( Integer.valueOf(sid)) ;
@@ -123,9 +118,9 @@ public class ScriptsController {
                 String xmlContent = FileDirTool.readFileAsString(scriptWmtsTemplate) ;
                 String xmlContent2 = xmlContent.replace("{sid}",sid);
                 //host
-                xmlContent2 = xmlContent2.replace("{host}", WConfig.sharedConfig.host );
+                xmlContent2 = xmlContent2.replace("{host}", WConfig.getSharedInstance().host );
                 //port
-                xmlContent2 = xmlContent2.replace("{port}", WConfig.sharedConfig.port);
+                xmlContent2 = xmlContent2.replace("{port}", WConfig.getSharedInstance().port);
                 //script-utime
                 xmlContent2 = xmlContent2.replace("{utime}",  String.valueOf(scriptObj.utime.getTime()) ) ;
                 //return xml

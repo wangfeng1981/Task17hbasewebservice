@@ -1,12 +1,8 @@
 package com.pixelengine.tools;
 
 import com.pixelengine.JRDBHelperForWebservice;
-import com.pixelengine.JScript;
-import com.pixelengine.WConfig;
-
-import javax.script.ScriptContext;
-import java.sql.Date;
-import java.util.ArrayList;
+import com.pixelengine.DataModel.JScript;
+import com.pixelengine.DataModel.WConfig;
 
 //缓存脚本内容
 // 2022-2-6 假设每个脚本不超过2KB字符，缓存1000个脚本（大约2MB），如果缓存脚本utime变化了那么从文件里重新读取，
@@ -38,7 +34,7 @@ public class ScriptsGetterTool {
         // not in buffer or utime is not ok.
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
         JScript scriptObj = rdb.rdbGetScript(sid) ;
-        String jsfile = WConfig.sharedConfig.pedir + scriptObj.jsfile ;
+        String jsfile = WConfig.getSharedInstance().pedir + scriptObj.jsfile ;
         try{
             SciptContent sc = new SciptContent();
             sc.sid = sid ;

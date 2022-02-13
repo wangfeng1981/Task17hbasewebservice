@@ -1,11 +1,8 @@
 package com.pixelengine.controller;
 //实现系统预定义产品的wmts服务
-import com.google.gson.Gson;
 import com.pixelengine.*;
-import com.pixelengine.DataModel.JDsNameArrayResult;
-import com.pixelengine.DataModel.JProduct;
-import com.pixelengine.DataModel.JProductDataItem;
-import com.pixelengine.DataModel.RestResult;
+import com.pixelengine.DataModel.*;
+import com.pixelengine.TileComputeResult;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -13,11 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 
-import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageOutputStream;
 import javax.servlet.http.HttpServletRequest;
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -52,7 +45,7 @@ public class ProductWMTSController {
         headers.setContentType(MediaType.TEXT_XML);
 
         //read template
-        String xmlfile = WConfig.sharedConfig.productwmts ;
+        String xmlfile = WConfig.getSharedInstance().productwmts ;
         //Resource resource = new ClassPathResource("resources:productwmts-template.xml");
         java.io.InputStream instream0 = new FileInputStream(xmlfile);
         InputStreamReader  reader0 = new InputStreamReader(instream0, "UTF-8");
@@ -68,9 +61,9 @@ public class ProductWMTSController {
         //replace ms_{zlevel} with real zlevel.
         xmlContent2 = xmlContent2.replace("{maxZoom}", String.valueOf(pdt.maxZoom) );
         //host
-        xmlContent2 = xmlContent2.replace("{host}", WConfig.sharedConfig.host );
+        xmlContent2 = xmlContent2.replace("{host}", WConfig.getSharedInstance().host );
         //port
-        xmlContent2 = xmlContent2.replace("{port}", WConfig.sharedConfig.port);
+        xmlContent2 = xmlContent2.replace("{port}", WConfig.getSharedInstance().port);
         //datetime
         xmlContent2 = xmlContent2.replace("{datetime}", String.valueOf(dataItem.hcol) );
         //styleid

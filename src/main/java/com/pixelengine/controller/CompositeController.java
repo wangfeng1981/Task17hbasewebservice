@@ -5,17 +5,14 @@ import com.pixelengine.DAO.ZonalStatDAO;
 import com.pixelengine.DTO.ZonalStatDTO;
 import com.pixelengine.DataModel.JCompositeParams;
 import com.pixelengine.DataModel.JProduct;
-import com.pixelengine.DataModel.JZonalStatParams;
 import com.pixelengine.DataModel.RestResult;
 import com.pixelengine.JRDBHelperForWebservice;
-import com.pixelengine.WConfig;
+import com.pixelengine.DataModel.WConfig;
 import com.pixelengine.tools.FileDirTool;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -163,7 +160,7 @@ public class CompositeController {
                 .replace("{{{vmax}}}",  String.valueOf(params.vmax) )
                 .replace("{{{filldata}}}",  String.valueOf(params.filldata) )
                 .replace("{{{methodfunc}}}",  methodfunc) ;
-        String tempDir = WConfig.sharedConfig.pedir + "/temp/" ;
+        String tempDir = WConfig.getSharedInstance().pedir + "/temp/" ;
         String scriptfilename = FileDirTool.makeDatetimeFilename( tempDir,"co",".js") ;
         boolean writeOk = FileDirTool.writeToFile(scriptfilename , scriptcontent) ;
        if( writeOk==false ){
@@ -222,12 +219,12 @@ public class CompositeController {
 
         //其他参数
         params.scriptfilename = scriptfilename ;
-        params.outhtable = WConfig.sharedConfig.userhtable ;
-        params.outhfami = WConfig.sharedConfig.userhfami ;
+        params.outhtable = WConfig.getSharedInstance().userhtable ;
+        params.outhfami = WConfig.getSharedInstance().userhfami ;
         params.outpid = rdb.rdbNewEmptyUserProduct( userFileName , Integer.parseInt(userid)) ;
         params.outhpid = params.outpid ;//目前让输出产品的hpid与输出的tbproduct.pid一致。2021-4-6
-        params.outhpidblen = WConfig.sharedConfig.userhpidblen ;
-        params.outyxblen = WConfig.sharedConfig.useryxblen ;
+        params.outhpidblen = WConfig.getSharedInstance().userhpidblen ;
+        params.outyxblen = WConfig.getSharedInstance().useryxblen ;
         params.outhcol = 1 ;
         params.usebound = Integer.parseInt(usebound);
         params.left = Double.parseDouble(left);
@@ -237,7 +234,7 @@ public class CompositeController {
         params.zmin = product.minZoom ;
         params.zmax = product.maxZoom ;
 
-        String[] outdirArr = FileDirTool.checkAndMakeCurrentYearDateDir(WConfig.sharedConfig.pedir,"offtask");
+        String[] outdirArr = FileDirTool.checkAndMakeCurrentYearDateDir(WConfig.getSharedInstance().pedir,"offtask");
         params.outfilename = outdirArr[0] + "co-u" + userid + "-" + FileDirTool.dateTimeString() + ".json" ;
         params.outfilenamedb = outdirArr[1] + "co-u" + userid + "-" + FileDirTool.dateTimeString() + ".json" ;
 

@@ -3,17 +3,15 @@ package com.pixelengine.controller;
 
 import com.pixelengine.DAO.StyleDAO;
 import com.pixelengine.DTO.StyleDTO;
+import com.pixelengine.DataModel.JStyleDbObject;
 import com.pixelengine.DataModel.RestResult;
-import com.pixelengine.JPeStyle;
 import com.pixelengine.JRDBHelperForWebservice;
-import com.pixelengine.JUser;
+import com.pixelengine.DataModel.JUser;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Calendar;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping(value="/style")
@@ -93,7 +91,7 @@ public class StyleController {
     public RestResult styleGet(@PathVariable("styleid") String styleid)
     {
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
-        StyleDTO styleobj = rdb.rdbGetStyle2(Integer.parseInt(styleid));
+        JStyleDbObject styleobj = rdb.rdbGetStyle2(Integer.parseInt(styleid));
         RestResult result = new RestResult() ;
         result.setState(0);
         result.setData(styleobj);

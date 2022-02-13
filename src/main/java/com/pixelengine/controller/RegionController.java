@@ -2,25 +2,22 @@ package com.pixelengine.controller;
 
 
 import com.pixelengine.DAO.RegionDAO;
-import com.pixelengine.DAO.StyleDAO;
 import com.pixelengine.DTO.RegionDTO;
 import com.pixelengine.DataModel.Area;
 import com.pixelengine.DataModel.ROI;
 import com.pixelengine.DataModel.RestResult;
 import com.pixelengine.JRDBHelperForWebservice;
-import com.pixelengine.JUser;
-import com.pixelengine.WConfig;
+import com.pixelengine.DataModel.JUser;
+import com.pixelengine.DataModel.WConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.swing.plaf.synth.Region;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -43,7 +40,7 @@ public class RegionController {
         ArrayList<ROI> roilist = new ArrayList<>() ;
         for(int i = 0 ; i<rlist.size();++i )
         {
-            roilist.add( ROI.convertRegionDTO2ROI(rlist.get(i))) ;
+            roilist.add(  rlist.get(i).convert2ROI() ) ;
         }
 
         RestResult returnT = new RestResult();
@@ -65,7 +62,7 @@ public class RegionController {
         ArrayList<ROI> roilist = new ArrayList<>() ;
         for(int i = 0 ; i<rlist.size();++i )
         {
-            roilist.add( ROI.convertRegionDTO2ROI(rlist.get(i))) ;
+            roilist.add(  rlist.get(i).convert2ROI() ) ;
         }
 
 
@@ -88,7 +85,7 @@ public class RegionController {
         RestResult returnT = new RestResult();
         returnT.setState(0);
         returnT.setMessage("");
-        returnT.setData( ROI.convertRegionDTO2ROI(newregion) );
+        returnT.setData(  newregion.convert2ROI() );
         return returnT ;
     }
 
@@ -157,13 +154,13 @@ public class RegionController {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
             String datestr = sdf.format(date);
 
-            String roiRootDir = WConfig.sharedConfig.pedir + "/roi/" ;
+            String roiRootDir = WConfig.getSharedInstance().pedir + "/roi/" ;
             File roiRootDirFileObj = new File(roiRootDir) ;
             if( roiRootDirFileObj.exists()==false ){
                 roiRootDirFileObj.mkdir() ;
             }
             String relativeUploadDateDir = "/roi/" + datestr + "/" ;
-            String absUploadDateDir = WConfig.sharedConfig.pedir + relativeUploadDateDir ;
+            String absUploadDateDir = WConfig.getSharedInstance().pedir + relativeUploadDateDir ;
 
             String shpFileNameOnlyInServer = "" ;
             String shpFilePathInServer = "" ;
@@ -203,11 +200,11 @@ public class RegionController {
                     String shpFileNameWithoutExtName = shpFileNameOnlyInServer.split(".shp")[0];
 
                     String dbFilePath = relativeUploadDateDir + shpFileNameWithoutExtName +".geojson" ;
-                    String geojsonFilePath = WConfig.sharedConfig.pedir + dbFilePath ;
+                    String geojsonFilePath = WConfig.getSharedInstance().pedir + dbFilePath ;
                     int itry = 1;
                     while( (new File(geojsonFilePath)).exists()==true ){
                         dbFilePath = relativeUploadDateDir + shpFileNameWithoutExtName + "-" + itry +".geojson" ;
-                        geojsonFilePath = WConfig.sharedConfig.pedir + dbFilePath ;
+                        geojsonFilePath = WConfig.getSharedInstance().pedir + dbFilePath ;
                         ++itry ;
                     }
                     System.out.println("used geojson file:" + geojsonFilePath);
@@ -226,7 +223,7 @@ public class RegionController {
                         region1.setUid( tempUser.uid );//
 
                         RegionDTO newregion = dao.save(region1) ;
-                        returnT.setData( ROI.convertRegionDTO2ROI(newregion) );
+                        returnT.setData( newregion.convert2ROI() );
                     }
                 }else{
                     System.out.println("lack of some files:");
@@ -264,13 +261,13 @@ public class RegionController {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
             String datestr = sdf.format(date);
 
-            String roiRootDir = WConfig.sharedConfig.pedir + "/roi/" ;
+            String roiRootDir = WConfig.getSharedInstance().pedir + "/roi/" ;
             File roiRootDirFileObj = new File(roiRootDir) ;
             if( roiRootDirFileObj.exists()==false ){
                 roiRootDirFileObj.mkdir() ;
             }
             String relativeUploadDateDir = "/roi/" + datestr + "/" ;
-            String absUploadDateDir = WConfig.sharedConfig.pedir + relativeUploadDateDir ;
+            String absUploadDateDir = WConfig.getSharedInstance().pedir + relativeUploadDateDir ;
 
             String shpFileNameOnlyInServer = "" ;
             String shpFilePathInServer = "" ;
@@ -311,11 +308,11 @@ public class RegionController {
                     String shpFileNameWithoutExtName = shpFileNameOnlyInServer.split(".shp")[0];
 
                     String dbFilePath = relativeUploadDateDir + shpFileNameWithoutExtName +".geojson" ;
-                    String geojsonFilePath = WConfig.sharedConfig.pedir + dbFilePath ;
+                    String geojsonFilePath = WConfig.getSharedInstance().pedir + dbFilePath ;
                     int itry = 1;
                     while( (new File(geojsonFilePath)).exists()==true ){
                         dbFilePath = relativeUploadDateDir + shpFileNameWithoutExtName + "-" + itry +".geojson" ;
-                        geojsonFilePath = WConfig.sharedConfig.pedir + dbFilePath ;
+                        geojsonFilePath = WConfig.getSharedInstance().pedir + dbFilePath ;
                         ++itry ;
                     }
                     System.out.println("used geojson file:" + geojsonFilePath);
@@ -334,7 +331,7 @@ public class RegionController {
                         region1.setUid( Integer.valueOf(userid) );//
 
                         RegionDTO newregion = dao.save(region1) ;
-                        returnT.setData( ROI.convertRegionDTO2ROI(newregion) );
+                        returnT.setData( newregion.convert2ROI() );
                     }
                 }else{
                     System.out.println("lack of some files:");
@@ -468,7 +465,7 @@ public class RegionController {
             SimpleDateFormat sdf1 = new SimpleDateFormat("yyyyMMddhhmmss");
             String datestr1 = sdf1.format(date);
 
-            String roiRootDir = WConfig.sharedConfig.pedir + "/roi/" ;
+            String roiRootDir = WConfig.getSharedInstance().pedir + "/roi/" ;
             File roiRootDirFileObj = new File(roiRootDir) ;
             if( roiRootDirFileObj.exists()==false ){
                 roiRootDirFileObj.mkdir() ;
@@ -476,11 +473,11 @@ public class RegionController {
             String dbroidir =  "/roi/" +datestr +"/";
             String gjFileNameWithoutExtName = (new String()).format("roi-%d-%s",tempUser.uid , datestr1);
             String dbFilePath = dbroidir + gjFileNameWithoutExtName +".geojson" ;
-            String geojsonFilePath = WConfig.sharedConfig.pedir +dbFilePath ;
+            String geojsonFilePath = WConfig.getSharedInstance().pedir +dbFilePath ;
             int itry = 1;
             while( (new File(geojsonFilePath)).exists()==true ){
                 dbFilePath = dbroidir + gjFileNameWithoutExtName +"-" +itry+".geojson" ;
-                geojsonFilePath =WConfig.sharedConfig.pedir + dbFilePath ;
+                geojsonFilePath =WConfig.getSharedInstance().pedir + dbFilePath ;
                 ++itry ;
             }
             System.out.println("used geojson file:" + geojsonFilePath);
@@ -494,7 +491,7 @@ public class RegionController {
             region1.setUid(  tempUser.uid );//
 
             RegionDTO newregion = dao.save(region1) ;
-            returnT.setData( ROI.convertRegionDTO2ROI(newregion) );
+            returnT.setData( newregion.convert2ROI() );
 
             return returnT;
         }
@@ -521,7 +518,7 @@ public class RegionController {
             SimpleDateFormat sdf1 = new SimpleDateFormat("yyyyMMddhhmmss");
             String datestr1 = sdf1.format(date);
 
-            String roiRootDir = WConfig.sharedConfig.pedir + "/roi/" ;
+            String roiRootDir = WConfig.getSharedInstance().pedir + "/roi/" ;
             File roiRootDirFileObj = new File(roiRootDir) ;
             if( roiRootDirFileObj.exists()==false ){
                 roiRootDirFileObj.mkdir() ;
@@ -529,11 +526,11 @@ public class RegionController {
             String dbroidir =  "/roi/" +datestr +"/";
             String gjFileNameWithoutExtName = (new String()).format("roi-%s-%s", userid , datestr1);
             String dbFilePath = dbroidir + gjFileNameWithoutExtName +".geojson" ;
-            String geojsonFilePath = WConfig.sharedConfig.pedir +dbFilePath ;
+            String geojsonFilePath = WConfig.getSharedInstance().pedir +dbFilePath ;
             int itry = 1;
             while( (new File(geojsonFilePath)).exists()==true ){
                 dbFilePath = dbroidir + gjFileNameWithoutExtName +"-" +itry+".geojson" ;
-                geojsonFilePath =WConfig.sharedConfig.pedir + dbFilePath ;
+                geojsonFilePath =WConfig.getSharedInstance().pedir + dbFilePath ;
                 ++itry ;
             }
             System.out.println("used geojson file:" + geojsonFilePath);
@@ -547,7 +544,7 @@ public class RegionController {
             region1.setUid(  Integer.valueOf(userid) );//
 
             RegionDTO newregion = dao.save(region1) ;
-            returnT.setData( ROI.convertRegionDTO2ROI(newregion));
+            returnT.setData( newregion.convert2ROI() );
 
             return returnT;
         }
@@ -582,7 +579,7 @@ public class RegionController {
                 RegionDTO newregion = dao.save(region1) ;
                 returnT.setState(0);
                 returnT.setMessage("");
-                returnT.setData( ROI.convertRegionDTO2ROI(newregion));
+                returnT.setData( newregion.convert2ROI() );
                 return returnT;
             }else{
                 returnT.setState(2);

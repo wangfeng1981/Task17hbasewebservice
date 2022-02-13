@@ -2,6 +2,8 @@ package com.pixelengine.DTO;
 
 
 
+import com.pixelengine.DataModel.ROI;
+
 import javax.persistence.*;
 import java.util.Date;
 
@@ -91,5 +93,22 @@ public class RegionDTO {
 
     public void setUpdatetime(Date updatetime) {
         this.updatetime = updatetime;
+    }
+
+    //
+    public ROI convert2ROI(){
+        ROI roi = new ROI () ;
+        roi.rid = Math.toIntExact( this.getRid() ) ;
+        roi.shp = this.shp ;
+        roi.uid = this.uid ;
+        roi.children = 0 ;
+        roi.code = "0" ;
+        roi.parentCode = "0" ;
+        roi.geojson = this.geojson  ;
+        roi.name = this.name ;
+        roi.rtype = "roi" ;
+        roi.createtime = this.createtime ;
+        roi.updatetime = this.updatetime ;
+        return roi ;
     }
 }

@@ -1,15 +1,18 @@
 package com.pixelengine;
+////////////////////////////////////////////////////////
+//
+//
+/// 这个接口是Java与关系数据库MYSQL交互的
+//update 2022-2-13 2310
+//
+/////////////////////////////////////////////////////////
+
 
 import com.google.gson.Gson;
-import com.pixelengine.DTO.RegionDTO;
-import com.pixelengine.DTO.StyleDTO;
+
 import com.pixelengine.DataModel.*;
 
 
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -19,9 +22,9 @@ import java.util.*;
 import java.util.Date;
 
 
-/// 关系数据库交互
+
 public class JRDBHelperForWebservice {
-    public static WConfig wconfig =null ;
+    private static String connstr,user,pwd ;
     public static Connection connection = null ;
     private static Hashtable<String,JProduct> productInfoPool =new Hashtable<String,JProduct>() ;
     private static Hashtable<Integer,String> productPidNamePool =new Hashtable<Integer,String>() ;
@@ -47,21 +50,21 @@ public class JRDBHelperForWebservice {
         return formattedDate;
     }
 
-    public static void init(WConfig twconfig)
+    public static void init(String connstr1,String user1,String pwd1)
     {
-        wconfig = twconfig;
-
+        JRDBHelperForWebservice.connstr = connstr1 ;
+        JRDBHelperForWebservice.user = user1 ;
+        JRDBHelperForWebservice.pwd = pwd1 ;
     }
 
-    private static WConfig getWConfig() {
-        return wconfig;
-    }
     private static Connection getConnection() {
         try{
             if( connection==null || connection.isClosed() ){
-                System.out.println("create connection ..." );
+                System.out.println("create mysql connection ..." );
                 connection = DriverManager
-                        .getConnection( getWConfig().connstr, getWConfig().user, getWConfig().pwd);
+                        .getConnection( JRDBHelperForWebservice.connstr,
+                                JRDBHelperForWebservice.user,
+                                JRDBHelperForWebservice.pwd);
                 System.out.println("create connection ok." );
             }
             return connection;
@@ -291,39 +294,39 @@ public class JRDBHelperForWebservice {
     public int rdbNewOffTask1( String script, String uid,String path,String dt) {
         try
         {
-            String query = " insert into tbOfflineTask (scriptContent, outProductId, outDatetime,"
-                    +" startTime, uid, stype,"
-                    + "path, htable, hpid, "
-                    +" hcol, hfami, hpidlen, hxylen, status )"
-                    + " values (?,?,?, ?,?,?, ?,?,?, ?, ?,?,?,? )";
-            // create the mysql insert preparedstatement
-            PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-            preparedStmt.setString (1, script);
-            preparedStmt.setInt (2, 0);
-            preparedStmt.setLong    (3, Long.parseLong(dt));
-            long starttime = this.getCurrentDatetime();
-            preparedStmt.setLong(4,starttime);
-            preparedStmt.setInt(5, Integer.parseInt(uid)) ;
-            preparedStmt.setInt(6,1);//script-type=1
-
-            preparedStmt.setString(7, path);
-            preparedStmt.setString( 8, WConfig.sharedConfig.hbaseuserfiletable) ;//hbase table name
-            preparedStmt.setInt( 9, 1);//hbase pid
-            preparedStmt.setLong( 10 , starttime);// hbase column name.
-
-            preparedStmt.setString(11 , "tiles");
-            preparedStmt.setInt(12,1);
-            preparedStmt.setInt(13,2);
-            preparedStmt.setInt(14,0);
-
-            preparedStmt.executeUpdate();
-            ResultSet rs = preparedStmt.getGeneratedKeys();
-            int last_inserted_id = -1 ;
-            if(rs.next())
-            {
-                last_inserted_id = rs.getInt(1);
-            }
-            return last_inserted_id;
+//            String query = " insert into tbOfflineTask (scriptContent, outProductId, outDatetime,"
+//                    +" startTime, uid, stype,"
+//                    + "path, htable, hpid, "
+//                    +" hcol, hfami, hpidlen, hxylen, status )"
+//                    + " values (?,?,?, ?,?,?, ?,?,?, ?, ?,?,?,? )";
+//            // create the mysql insert preparedstatement
+//            PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+//            preparedStmt.setString (1, script);
+//            preparedStmt.setInt (2, 0);
+//            preparedStmt.setLong    (3, Long.parseLong(dt));
+//            long starttime = this.getCurrentDatetime();
+//            preparedStmt.setLong(4,starttime);
+//            preparedStmt.setInt(5, Integer.parseInt(uid)) ;
+//            preparedStmt.setInt(6,1);//script-type=1
+//
+//            preparedStmt.setString(7, path);
+//            preparedStmt.setString( 8, WConfig.sharedConfig.hbaseuserfiletable) ;//hbase table name
+//            preparedStmt.setInt( 9, 1);//hbase pid
+//            preparedStmt.setLong( 10 , starttime);// hbase column name.
+//
+//            preparedStmt.setString(11 , "tiles");
+//            preparedStmt.setInt(12,1);
+//            preparedStmt.setInt(13,2);
+//            preparedStmt.setInt(14,0);
+//
+//            preparedStmt.executeUpdate();
+//            ResultSet rs = preparedStmt.getGeneratedKeys();
+//            int last_inserted_id = -1 ;
+//            if(rs.next())
+//            {
+//                last_inserted_id = rs.getInt(1);
+//            }
+            return -1;
         }catch (Exception ex )
         {
             System.out.println("Error : rdbNewRenderTask exception , " + ex.getMessage() ) ;
@@ -809,19 +812,18 @@ public class JRDBHelperForWebservice {
 
 
     //获取一个渲染方案
-    public StyleDTO rdbGetStyle2(int styleid)   {
+    public JStyleDbObject rdbGetStyle2(int styleid)   {
         try{
-            StyleDTO styleobj = new StyleDTO();
+            JStyleDbObject styleobj = new JStyleDbObject();
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
             ResultSet rspd = stmt.executeQuery("SELECT * FROM tbstyle WHERE styleid="+styleid+" limit 1");
             if (rspd.next()) {
-                styleobj.setStyleid(rspd.getLong("styleid") );
-                styleobj.setStyleContent( rspd.getString("styleContent"));
-                styleobj.setDescription( rspd.getString("description"));
-                styleobj.setUserid( rspd.getLong("userid"));
-                styleobj.setCreatetime( rspd.getTime("createtime"));
-                styleobj.setUpdatetime( rspd.getTime("updatetime"));
-
+                styleobj.styleid = rspd.getInt("styleid") ;
+                styleobj.styleContent =  rspd.getString("styleContent") ;
+                styleobj.description =  rspd.getString("description");
+                styleobj.userid =  rspd.getInt("userid");
+                styleobj.createtime =  rspd.getTime("createtime") ;
+                styleobj.updatetime = rspd.getTime("updatetime");
             }
             return styleobj ;
         }catch(Exception ex){
@@ -1178,17 +1180,18 @@ public class JRDBHelperForWebservice {
     }
 
     //通过ID获取一个Region对象
-    public RegionDTO rdbGetRegion(int theid) throws SQLException {
+    //will not update 2022-2-13
+    public JRegionDbObject rdbGetRegion(int theid) throws SQLException {
         Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
         String sqlstr = String.format("SELECT * FROM tbregion WHERE rid='%s' ",theid) ;
         ResultSet rs = stmt.executeQuery(sqlstr );
         if (rs.next()) {
-            RegionDTO result = new RegionDTO() ;
-            result.setRid( rs.getLong("rid"));
-            result.setName( rs.getString("name"));
-            result.setShp( rs.getString("shp"));
-            result.setGeojson( rs.getString("geojson"));
-            result.setUid( rs.getInt("uid"));
+            JRegionDbObject result = new JRegionDbObject() ;
+            result.rid =  rs.getInt("rid") ;
+            result.name =  rs.getString("name");
+            result.shp =  rs.getString("shp") ;
+            result.geojson =  rs.getString("geojson") ;
+            result.uid =  rs.getInt("uid") ;
             return result ;
         }else
         {
@@ -1216,6 +1219,7 @@ public class JRDBHelperForWebservice {
     }
 
     //获取感兴趣区或者行政区的geojson路径
+    //will not updated 2022-2-13
     public String rdbGetGeoJsonFilePath(String rtype,Long rid) {
         try{
             String sqlstr = "" ;
@@ -1228,7 +1232,7 @@ public class JRDBHelperForWebservice {
             ResultSet rs = stmt.executeQuery(sqlstr );
             if (rs.next()) {
                 String result = rs.getString(1) ;
-                result = WConfig.sharedConfig.pedir + result ;
+                // result = WConfig.sharedConfig.pedir + result ; //removed 2022-2-13
                 return result ;
             }else{
                 System.out.println("rdbGetGeoJsonFilePath no record for "+rtype+","+rid);
@@ -1247,7 +1251,7 @@ public class JRDBHelperForWebservice {
                 Area aa = this.rdbGetArea(rid) ;
                 return ROI.convertArea2ROI(aa) ;
             }else{
-                RegionDTO rr = this.rdbGetRegion(rid) ;
+                JRegionDbObject rr = this.rdbGetRegion(rid) ;
                 return ROI.convertRegionDTO2ROI(rr) ;
             }
         }catch(Exception ex){
@@ -1603,6 +1607,25 @@ public class JRDBHelperForWebservice {
         {
             System.out.println("Error : rdbNewOffTask exception , " + ex.getMessage() ) ;
             return -1 ;
+        }
+    }
+
+    public boolean updateOfftaskByWorkerResult ( JOfftaskWorkerResult workerRes){
+        try{
+            //
+            int status = 3 ;//0-not start; 1-running; 2-done; 3-failed.
+            if(workerRes.state==0) status = 2 ;
+            String query2 = "UPDATE tbofftask SET utime=? , status=? WHERE ofid=?";
+            PreparedStatement preparedStmt2 = JRDBHelperForWebservice.getConnection().prepareStatement(query2);
+            preparedStmt2.setString(1 , getCurrentDatetimeStr());
+            preparedStmt2.setInt      (2, status);
+            preparedStmt2.setInt      (3, workerRes.ofid);
+            preparedStmt2.executeUpdate();
+            return true ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : updateOfftaskByWorkerResult exception , " + ex.getMessage() ) ;
+            return false ;
         }
     }
 

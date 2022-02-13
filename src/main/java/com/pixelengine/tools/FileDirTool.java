@@ -1,7 +1,5 @@
 package com.pixelengine.tools;
 
-import com.pixelengine.WConfig;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;

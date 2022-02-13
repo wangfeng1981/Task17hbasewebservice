@@ -1,17 +1,6 @@
 package com.pixelengine.controller;
 //这个还没想好怎么改 2021-4-1 这个不再使用，请使用ZonalStatController，或者参考ZonalStatController修改。
-import com.pixelengine.DataModel.RestResult;
-import com.pixelengine.HBasePeHelperCppConnector;
-import com.pixelengine.JRDBHelperForWebservice;
-import com.pixelengine.WConfig;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 
 @RestController
 public class OffTaskController {
