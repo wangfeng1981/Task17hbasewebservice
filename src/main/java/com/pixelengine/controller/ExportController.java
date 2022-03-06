@@ -190,7 +190,30 @@ public class ExportController {
             JScript scriptObj = rdb.rdbGetScript( Integer.parseInt(sid) ) ;
             theOrder.scriptRelFilepath = scriptObj.jsfile ;
         }else{
-            theOrder.scriptRelFilepath = "" ;
+            //pe mode ,use a system script for export
+            JProduct pdt = rdb.rdbGetProductForAPI(Integer.parseInt(pid)) ;
+            if( pdt==null ){
+                result.setState(9);
+                result.setMessage("no product for pid "+pid);
+            }
+            String sysPeScript =
+                    "function main(){ "
+                    +"let ds=pe.Dataset('" + pdt.name+ "',"+ datetime + ");"
+                    +"return ds;"
+                    +"}" ;
+            //write into temp js file
+            String tempRelJsFilepath = "export/" + yyyyMMddStr + "/" + newFileNameNoExtension + "_pe.js" ;
+            String tempJsFilepath = exportYmdDir + newFileNameNoExtension + "_pe.js" ;//absolute path
+            try{
+                OutputStream outputStream = new FileOutputStream(tempJsFilepath);
+                outputStream.write(sysPeScript.getBytes());
+                outputStream.close();
+                theOrder.scriptRelFilepath = tempRelJsFilepath ;
+            }catch (Exception ex ){
+                result.setState(9);
+                result.setMessage("write temp pe js file failed.");
+                return result ;
+            }
         }
 
         Gson gson = new Gson() ;

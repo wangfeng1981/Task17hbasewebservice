@@ -63,6 +63,8 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.16.0 2022-2-12. add HBasePeHelperCppConnector.GetDatasetNameArray ") ;
 		System.out.println("v2.17.1 2022-2-13. update WConfig ") ;
 		System.out.println("v2.17.4 2022-2-13. use 0mq for offtask export") ;
+		System.out.println("v2.17.5 2022-2-15. use script for export pe data.") ;
+		System.out.println("v2.18.1 2022-3-5. uploaded shp/geojson will be converted to hseg.tlv and write into HBase. helper support read roi.hseg.tlv") ;
 
 
 

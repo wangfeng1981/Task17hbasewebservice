@@ -4,8 +4,15 @@ package com.pixelengine.controller;
 import com.pixelengine.DataModel.JRoi2;
 import com.pixelengine.DataModel.JRoiCategory;
 import com.pixelengine.DataModel.RestResult;
+import com.pixelengine.HBasePeHelperCppConnector;
+import com.pixelengine.HBasePixelEngineHelper;
 import com.pixelengine.JRDBHelperForWebservice;
 import com.pixelengine.DataModel.WConfig;
+import com.pixelengine.tools.FileDirTool;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.Table;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -108,7 +115,7 @@ public class RoiController {
 
     //使用ogr2ogr转shp到geojson格式 增加转换到wgs84的参数
     private boolean convertShp2Geojson(String shpfile,String geojsonfile){
-        System.out.println("debug try to convert "+shpfile+" --> "+geojsonfile);
+        System.out.println("debug convertShp2Geojson try to convert "+shpfile+" --> "+geojsonfile);
         try
         {
             // Command to create an external process
@@ -130,6 +137,59 @@ public class RoiController {
         }else{
             System.out.println("convert geojson failed.");
             return false ;
+        }
+    }
+
+    //使用 shpgeojson2hsegtlv 转 geojson (wgs84) 到 hseg.tlv 格式
+    private boolean convertGeojson2HSegTlv(String geojsonfile,String tlvfilename){
+        System.out.println("debug convertGeojson2HSegTlv try to convert "+geojsonfile+" --> "+tlvfilename);
+        try
+        {
+            // Command to create an external process
+            String command = WConfig.getSharedInstance().shpgeojson2hsegtlv + " " + geojsonfile +" " + tlvfilename;
+            System.out.println("debug " + command);
+            // Running the above command
+            Runtime run  = Runtime.getRuntime();
+            Process proc = run.exec(command);
+            proc.waitFor() ;
+        }
+        catch (IOException | InterruptedException e)
+        {
+            e.printStackTrace();
+            return false ;
+        }
+        File gjFile = new File(geojsonfile) ;
+        if( gjFile.exists()==true ){
+            return true ;
+        }else{
+            System.out.println("convert hseg.tlv failed.");
+            return false ;
+        }
+    }
+
+    //读取二进制 hseg.tlv 数据文件，写入HBase ROI表
+    private boolean writeHSegTlvIntoHBase( String tlvfilename ,
+                                           boolean useSysRoiTable ,
+                                           Integer mysqlRid )
+    {
+        try {
+            //read binary data
+            byte[] tlvdata = FileDirTool.readFileAsBytes(tlvfilename) ;
+            if( tlvdata==null ){
+                return false ;
+            }
+            //write hbase
+            HBasePixelEngineHelper hhh = new HBasePixelEngineHelper() ;
+            String tabname = "sys_roi" ;
+            if( useSysRoiTable==false ) tabname = "user_roi" ;
+            byte[] qualifier = new byte[1] ;
+            qualifier[0] = 1 ;
+            boolean writeOk = hhh.writeBinaryDataIntoHBase( tlvdata , tabname, "hseg.tlv" , qualifier , Bytes.toBytes(mysqlRid) );
+            return writeOk ;
+        }catch (Exception ex)
+        {
+            System.out.println("writeHSegTlvIntoHBase exception:" + ex.getMessage());
+            return false;
         }
     }
 
@@ -236,7 +296,7 @@ public class RoiController {
             }
 
             //new geojson filepath
-            String newGeojsonfilepath = roiUserYmdDirPathStr+newFileName+".geojson" ;
+            String newGeojsonfilepath = roiUserYmdDirPathStr+newFileName+".geojson" ;//fullpath
             boolean geojsonOk = convertShp2Geojson(theShpFilepath,newGeojsonfilepath) ;
 
             //convert failed
@@ -245,6 +305,16 @@ public class RoiController {
                 returnT.setMessage("convert geojson failed.");
                 return returnT ;
             }
+
+            //Convert and write hseg.tlv
+            String tlvfilename = roiUserYmdDirPathStr+newFileName+".hseg.tlv" ;//fullpath
+            boolean tlvOk = convertGeojson2HSegTlv( newGeojsonfilepath, tlvfilename );
+            if( tlvOk==false ){
+                returnT.setState(9);
+                returnT.setMessage("failed to write to hseg.tlv.");
+                return returnT ;
+            }
+
 
             //write info to db //数据入库
             if( name.compareTo("")==0 ){
@@ -260,9 +330,27 @@ public class RoiController {
             if( newRid< 0 ){
                 //bad
                 returnT.setState(9);
-                returnT.setMessage("failed to write to db.");
+                returnT.setMessage("failed to write to mysql.");
                 return returnT ;
             }
+
+
+
+            //read tlv and write into HBase
+            boolean tlvHbaseOk = writeHSegTlvIntoHBase( tlvfilename , false , newRid) ;
+            if( tlvHbaseOk==false ){
+                returnT.setState(9);
+                returnT.setMessage("failed to write hseg.tlv into HBase.");
+
+                //这里需要删除mysql中的记录，以后有时间在加 2022-3-6
+                //...
+
+                return returnT ;
+            }else{
+                //写入Hbase成功以后应该删除tlv文件，以后有时间在加 2022-3-6
+                //...
+            }
+
 
             JRoi2 newRoiObj = rdb.rdbGetUserRoiItem(newRid);
             if( newRoiObj==null ){
@@ -277,7 +365,7 @@ public class RoiController {
         }
     }
 
-
+    // 上传用户手绘Geojson感兴趣区
     // save a geojson into storage
     @PostMapping(value="/newgeojson")
     @CrossOrigin(origins = "*")
@@ -327,9 +415,19 @@ public class RoiController {
         if( name.length()>20 ) name = name.substring(0,20) ;
         String absfilepath = roiUserYmdDirPathStr + newFileName + ".geojson" ;
         try{
+            //将geojson对象写入文件
             PrintWriter out = new PrintWriter(absfilepath);
             out.print(geojson) ;
             out.close();
+
+            //转换tlv //Convert and write hseg.tlv
+            String tlvfilename = roiUserYmdDirPathStr+newFileName+".hseg.tlv" ;//fullpath
+            boolean tlvOk = convertGeojson2HSegTlv( absfilepath, tlvfilename );
+            if( tlvOk==false ){
+                throw new Exception("failed to write hseg.tlv.") ;
+            }
+
+
             String relfilepath = "roi/user/"+yyyyMMddStr+"/"+newFileName+".geojson" ;
             JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
             int newRid = rdb.rdbNewRoi2(name,"",relfilepath,uid) ;
@@ -338,6 +436,19 @@ public class RoiController {
                 result.setState(9);
                 result.setMessage("failed to write db.");
             }else{
+
+                //读取tlv 写入HBase
+                boolean tlvHbaseOk = writeHSegTlvIntoHBase( tlvfilename , false , newRid) ;
+                if( tlvHbaseOk==false ){
+                    throw new Exception("failed to write hseg.tlv into HBase.");
+
+                    //这里需要删除mysql中的记录，以后有时间在加 2022-3-6
+                    //...
+                }else{
+                    //写入Hbase成功以后应该删除tlv文件，以后有时间在加 2022-3-6
+                    //...
+                }
+
                 result.setState(0);
                 result.setMessage("");
                 JRoi2 newRoi = rdb.rdbGetUserRoiItem(newRid);

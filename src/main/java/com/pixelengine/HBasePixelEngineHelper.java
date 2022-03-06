@@ -757,5 +757,70 @@ public class HBasePixelEngineHelper {
     }
 
 
+    //2022-3-5 二进制数据写入HBase
+    public boolean writeBinaryDataIntoHBase(byte[] bytesData ,
+                                            String hbaseTableName,
+                                            String fami,
+                                            byte[] qualifier,
+                                            byte[] rowkey )
+    {
+        try {
+            Connection conn = getHBaseConnection();
+            Table table = conn.getTable(TableName.valueOf(hbaseTableName));
+            Put put = new Put(  rowkey ) ;
+            put.addColumn( fami.getBytes() ,  qualifier , bytesData ) ;
+            table.put(put);
+            table.close();
+            return true ;
+        }catch (Exception ex)
+        {
+            errorMessage = "Error : writeBinaryDataIntoHBase write cell data exception :" + ex.getMessage() ;
+            return false;
+        }
+    }
+
+    //2022-3-5 二进制数据读取HBase
+    public byte[] readBinaryDataIntoHBase(  String hbaseTableName,
+                                            String fami,
+                                            byte[] qualifier,
+                                            byte[] rowkey )
+    {
+        try {
+            Connection conn = getHBaseConnection();
+            Table table = conn.getTable(TableName.valueOf(hbaseTableName));
+            Get get1 = new Get(rowkey);
+            get1.addColumn( fami.getBytes() ,  qualifier ) ;
+            Result getResult = table.get(get1) ;
+            table.close();
+            return getResult.getValue( fami.getBytes() , qualifier) ;
+        }catch (Exception ex)
+        {
+            errorMessage = "Error : readBinaryDataIntoHBase get cell data exception :" + ex.getMessage() ;
+            return null;
+        }
+    }
+
+
+
+    //获取ROI的HSEG.TLV二进制数据 成功返回完整二进制数组，反之返回空指针
+    public byte[] getRoiHsegTlv( int isUserRoi, //0-sys_roi, 1-user_roi
+                                 int rid        //primarykey in roi mysql table
+    )
+    {
+        System.out.println("in java getRoiHsegTlv "+isUserRoi+","+rid ) ;
+        String hbaseTableName = "sys_roi" ;
+        if( isUserRoi==1 ){
+            //user_roi
+            hbaseTableName = "user_roi" ;
+        }
+        byte[] qualifier = new byte[1] ;
+        qualifier[0] = 1 ;
+        HBasePixelEngineHelper hbaseHelper = new HBasePixelEngineHelper() ;
+        byte[] tlvdata = hbaseHelper.readBinaryDataIntoHBase(hbaseTableName,"hseg.tlv",qualifier,Bytes.toBytes(rid)) ;
+        if(tlvdata==null){
+            System.out.println("Failed, hbaseHelper.readBinaryDataIntoHBase return a null byte array.");
+        }
+        return tlvdata ;
+    }
 }
 

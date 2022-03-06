@@ -2,6 +2,7 @@ package com.pixelengine.DataModel;
 //update 2022-2-13 1118
 //update 2022-2-13 1854
 //update 2022-2-13 2116
+//update 2022-3-5 2121
 
 import com.google.gson.Gson;
 
@@ -54,5 +55,8 @@ public class WConfig {
     //2022-2-13 2116
     public String offtask_result_collector ;
     public String offtask_export_producer ;
+
+    //2022-3-5 2121 ROI geojson和shp文件转换成hseg.tlv格式数据，然后写入HBase
+    public String shpgeojson2hsegtlv ;
 
 }

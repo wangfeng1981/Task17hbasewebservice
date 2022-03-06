@@ -1,4 +1,6 @@
 package com.pixelengine.tools;
+/// 2022-3-5 2210
+
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -97,6 +99,16 @@ public class FileDirTool {
         String data = "";
         data = new String(Files.readAllBytes(Paths.get(fileName)));
         return data;
+    }
+
+    static public byte[] readFileAsBytes(String fileName)
+    {
+        try{
+            return Files.readAllBytes(Paths.get(fileName));
+        }catch (Exception ex){
+            System.out.println("readFileAsBytes exception:" + ex.getMessage());
+            return null ;
+        }
     }
 
     /**
