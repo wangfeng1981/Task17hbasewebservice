@@ -182,9 +182,8 @@ public class RoiController {
             HBasePixelEngineHelper hhh = new HBasePixelEngineHelper() ;
             String tabname = "sys_roi" ;
             if( useSysRoiTable==false ) tabname = "user_roi" ;
-            byte[] qualifier = new byte[1] ;
-            qualifier[0] = 1 ;
-            boolean writeOk = hhh.writeBinaryDataIntoHBase( tlvdata , tabname, "hseg.tlv" , qualifier , Bytes.toBytes(mysqlRid) );
+            int qualifier = 1;//2022-3-19 use int32 1 as qualifier
+            boolean writeOk = hhh.writeBinaryDataIntoHBase( tlvdata , tabname, "hseg.tlv" , Bytes.toBytes(qualifier) , Bytes.toBytes(mysqlRid) );
             return writeOk ;
         }catch (Exception ex)
         {

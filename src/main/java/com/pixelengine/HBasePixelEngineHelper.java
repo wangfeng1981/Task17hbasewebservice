@@ -813,10 +813,9 @@ public class HBasePixelEngineHelper {
             //user_roi
             hbaseTableName = "user_roi" ;
         }
-        byte[] qualifier = new byte[1] ;
-        qualifier[0] = 1 ;
+        int qualifier = 1 ;//2022-3-19
         HBasePixelEngineHelper hbaseHelper = new HBasePixelEngineHelper() ;
-        byte[] tlvdata = hbaseHelper.readBinaryDataIntoHBase(hbaseTableName,"hseg.tlv",qualifier,Bytes.toBytes(rid)) ;
+        byte[] tlvdata = hbaseHelper.readBinaryDataIntoHBase(hbaseTableName,"hseg.tlv",Bytes.toBytes(qualifier),Bytes.toBytes(rid)) ;
         if(tlvdata==null){
             System.out.println("Failed, hbaseHelper.readBinaryDataIntoHBase return a null byte array.");
         }

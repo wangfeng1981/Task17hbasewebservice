@@ -3,10 +3,13 @@ package com.pixelengine.DataModel;
 //update 2022-2-13 1854
 //update 2022-2-13 2116
 //update 2022-3-5 2121
+//update 2022-3-18 0930 add initWithInStream method
+//2022-01-01
 
 import com.google.gson.Gson;
 
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
@@ -35,6 +38,23 @@ public class WConfig {
             System.exit(11);
         }
     }
+
+    //2022-3-18
+    public static void initWithInStream(InputStream ins){
+        try
+        {
+            Reader reader0 = new InputStreamReader(ins, "UTF-8");
+            Gson gson0 = new Gson() ;
+            sharedInstance = new WConfig() ;
+            sharedInstance = gson0.fromJson(reader0 , WConfig.class) ;
+        }catch(Exception ex )
+        {
+            System.out.println("WConfig.init Error : failed to init wconfig:"+ex.getMessage() );
+            System.exit(11);
+        }
+    }
+
+
     public String zookeeper,sparkmaster;
     public String connstr,user,pwd;//mysql
     public String hbaseuserfiletable;

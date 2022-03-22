@@ -1,12 +1,13 @@
 package com.pixelengine.DataModel;
-
+//2021-3
+//2022-01-01
 import com.pixelengine.JRDBHelperForWebservice;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 
 
-//2021-3
+
 public class JProduct {
     public int pid ;
     public String name,proj;

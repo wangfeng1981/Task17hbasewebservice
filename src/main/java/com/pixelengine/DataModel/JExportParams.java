@@ -1,5 +1,5 @@
 package com.pixelengine.DataModel;
-
+//2022-01-01
 public class JExportParams {
     public int inpid ;//mysql pid
     public long dt ;//hcol

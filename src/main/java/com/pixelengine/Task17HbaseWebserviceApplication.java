@@ -65,8 +65,8 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.17.4 2022-2-13. use 0mq for offtask export") ;
 		System.out.println("v2.17.5 2022-2-15. use script for export pe data.") ;
 		System.out.println("v2.18.1 2022-3-5. uploaded shp/geojson will be converted to hseg.tlv and write into HBase. helper support read roi.hseg.tlv") ;
-
-
+		System.out.println("v2.18.2 2022-3-19. sys_roi, user_roi中hcol改为int32, the value still use 1.");
+		System.out.println("v2.18.3 2022-3-22 change some class package into DataModel.") ;
 
 		if( args.length != 1 )
 		{

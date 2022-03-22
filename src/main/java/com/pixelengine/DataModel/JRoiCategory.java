@@ -1,4 +1,6 @@
 package com.pixelengine.DataModel;
+//2022-01-01
+
 // 系统ROI分类对象
 public class JRoiCategory {
     public int rcid = 0 ;
