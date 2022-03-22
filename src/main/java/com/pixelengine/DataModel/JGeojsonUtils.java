@@ -1,4 +1,5 @@
 package com.pixelengine.DataModel;
+//2022-3-22 1406
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.geojson.*;
@@ -7,7 +8,7 @@ import java.util.List;
 
 public class JGeojsonUtils {
     public class WExtent {
-        double left,right,top,bottom ; // in longlat
+        public double left,right,top,bottom ; // in longlat
     }
 
     public boolean validateExtent(WExtent e){
