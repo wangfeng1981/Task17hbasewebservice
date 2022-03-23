@@ -1,9 +1,10 @@
 package com.pixelengine.tools;
 //2022-2-13
+//2022-3-23 1716 bugfixed for compute ytilenum
+
+
 //maxZoom constrained into 21
 //use long lat to compute tile range
-
-
 public class JTileRangeTool {
     public static class TileXY {
         public int x=0;
@@ -33,7 +34,7 @@ public class JTileRangeTool {
                 theReso = theReso/2 ;
             }
             int xtilenum = (int)Math.pow(2,zlevel) ;
-            int ytilenum = xtilenum/2 ;
+            int ytilenum = Math.max(1, xtilenum/2) ;//bugfixed 2022-3-23
 
             int pixelx = (int)((lon + 180.0) / theReso) ;
             int pixely = (int)((90.0-lat)/theReso) ;

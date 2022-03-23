@@ -4,6 +4,7 @@ package com.pixelengine.DataModel;
 //update 2022-2-13 2116
 //update 2022-3-5 2121
 //update 2022-3-18 0930 add initWithInStream method
+//update 2022-3-23 1647 add initWithString method
 
 
 import com.google.gson.Gson;
@@ -35,6 +36,20 @@ public class WConfig {
         }catch(Exception ex )
         {
             System.out.println("WConfig.init Error : failed to init wconfig:"+ex.getMessage() );
+            System.exit(11);
+        }
+    }
+
+    public static void initWithString(String jsontext)
+    {
+        try
+        {
+            Gson gson0 = new Gson() ;
+            sharedInstance = new WConfig() ;
+            sharedInstance = gson0.fromJson(jsontext , WConfig.class) ;
+        }catch(Exception ex )
+        {
+            System.out.println("WConfig.init Error : failed to initWithString wconfig:"+ex.getMessage() );
             System.exit(11);
         }
     }
