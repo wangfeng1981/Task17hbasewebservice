@@ -1,9 +1,11 @@
 package com.pixelengine;
 
+import com.google.gson.Gson;
 import com.pixelengine.DataModel.JOfftaskOrderSender;
 import com.pixelengine.DataModel.JProduct;
 import com.pixelengine.DataModel.WConfig;
 import com.pixelengine.controller.OfftaskCollector;
+import com.pixelengine.tools.FileDirTool;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -67,6 +69,7 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.18.1 2022-3-5. uploaded shp/geojson will be converted to hseg.tlv and write into HBase. helper support read roi.hseg.tlv") ;
 		System.out.println("v2.18.2 2022-3-19. sys_roi, user_roi中hcol改为int32, the value still use 1.");
 		System.out.println("v2.18.3 2022-3-22 change some class package into DataModel.") ;
+		System.out.println("v2.19.0 2022-3-27 add statistic methods.") ;
 
 		if( args.length != 1 )
 		{
@@ -85,6 +88,8 @@ public class Task17HbaseWebserviceApplication {
 		//show pixelengine core version
 		HBasePeHelperCppConnector cc = new HBasePeHelperCppConnector();
 		System.out.println("pe core version: " + cc.GetVersion() );
+
+
 		//try to init v8 2022-1-31 使用空脚本初始化调用一次v8以免后面瓦片计算导致task17崩溃
 		System.out.println("try to init v8 ...");
 		TileComputeResult notUsedResult = cc.RunScriptForTileWithoutRender(
@@ -101,6 +106,37 @@ public class Task17HbaseWebserviceApplication {
 
 		//启动离线任务发送者socket
 		JOfftaskOrderSender.getSharedInstance() ;//do nothing , only startup the socket.
+
+
+		//2022-3-27 尝试一些单元测试的代码，用后注释掉
+//		{
+//			System.out.println("██╗   ██╗███╗   ██╗██╗████████╗    ████████╗███████╗███████╗████████╗");
+//			System.out.println("██║   ██║████╗  ██║██║╚══██╔══╝    ╚══██╔══╝██╔════╝██╔════╝╚══██╔══╝");
+//			System.out.println("██║   ██║██╔██╗ ██║██║   ██║          ██║   █████╗  ███████╗   ██║   ");
+//			System.out.println("██║   ██║██║╚██╗██║██║   ██║          ██║   ██╔══╝  ╚════██║   ██║   ");
+//			System.out.println("╚██████╔╝██║ ╚████║██║   ██║          ██║   ███████╗███████║   ██║   ");
+//			System.out.println(" ╚═════╝ ╚═╝  ╚═══╝╚═╝   ╚═╝          ╚═╝   ╚══════╝╚══════╝   ╚═╝   ");
+//
+//			byte[] tlvdata = FileDirTool.readFileAsBytes("/var/www/html/pe/roi/test-1100.geojson.hseg.tlv");
+//			TileComputeResult tcr = new TileComputeResult() ;
+//			tcr.status=0;
+//			tcr.nbands=3 ;
+//			tcr.outType= 1;
+//			tcr.dataType=1 ;
+//			byte[] tempdata = new byte[256*256*3] ;
+//			for(int i = 0 ; i<256*256;++i) tempdata[i] = 1 ;
+//			for(int i = 256*256 ; i<256*256*2 ; ++ i ) tempdata[i] = 10 ;
+//			for(int i = 256*256*2 ; i<256*256*3 ; ++ i ) tempdata[i] = 13 ;
+//			tcr.binaryData = tempdata ;
+//			tcr.width = 256 ;
+//			tcr.height = 256 ;
+//			tcr.x = 26 ;
+//			tcr.y = 4 ;
+//			tcr.z = 5 ;
+//			HBasePeHelperCppConnector cctest = new HBasePeHelperCppConnector() ;
+//			JStatisticData[] statdataArr = cctest.ComputeStatisticTileComputeResultByHsegTlv("",tcr,tlvdata,0,1,100);
+//			System.out.println( (new Gson()).toJson(statdataArr,JStatisticData[].class) ) ;
+//		}
 
 		SpringApplication.run(Task17HbaseWebserviceApplication.class, args);
 	}

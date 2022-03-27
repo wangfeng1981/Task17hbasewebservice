@@ -8,6 +8,7 @@ package com.pixelengine;
 //update 2022-3-22 2155
 //update 2022-3-23 1127 增加hsegtlv 计算经纬度范围的方法 UtilsComputeHsegTlvExtent
 //update 2022-3-24 0352 增加tlv直接裁剪功能，不依赖v8和js
+//update 2022-3-27 1029 增加tlv对瓦片计算统计值功能，不依赖v8和js
 //
 /////////////////////////////////////////////////////////
 
@@ -54,6 +55,14 @@ public class HBasePeHelperCppConnector {
     //2022-3-24 使用tlv直接裁剪dataset功能，不依赖v8和js代码
     public native TileComputeResult ClipTileComputeResultByHsegTlv(String javaHelperClassName,TileComputeResult srcTCR,byte[] tlvData,double fillData);
 
+    //2022-3-27 use tlv to compute statistic data without using v8 or js
+    //returned values are bands.
+    public native JStatisticData[] ComputeStatisticTileComputeResultByHsegTlv(String javaHelperClassName,
+                                                                              TileComputeResult tcr,
+                                                                              byte[] tlvdata,
+                                                                              double filldata,
+                                                                              double validminInc,
+                                                                              double validmaxInc) ;
 }
 
 
