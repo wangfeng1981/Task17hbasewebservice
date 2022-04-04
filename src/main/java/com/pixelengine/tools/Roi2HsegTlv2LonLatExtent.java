@@ -1,7 +1,7 @@
 package com.pixelengine.tools;
 //2022-3-23 created
 //2022-3-24 update use JRoi2Loader
-//2022-3-25 update remove import scala.reflect.io.File;
+//2022-3-27
 
 import com.pixelengine.DataModel.JRoi2;
 import com.pixelengine.DataModel.WConfig;
@@ -53,7 +53,7 @@ public class Roi2HsegTlv2LonLatExtent {
             if( roi2array[i].length()==0 ){
                 continue; //empty string
             }else{
-                byte[] roi2data = JRoi2Loader.loadData(roi2array[i] , WConfig.getSharedInstance().pedir ) ;//2022-3-24
+                byte[] roi2data = JRoi2Loader.loadData(roi2array[i]) ;//2022-3-27
                 if( roi2data==null ){
                     System.out.println("bad roi2data for "+roi2array[i]);
                     return null ;

@@ -70,6 +70,7 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.18.2 2022-3-19. sys_roi, user_roi中hcol改为int32, the value still use 1.");
 		System.out.println("v2.18.3 2022-3-22 change some class package into DataModel.") ;
 		System.out.println("v2.19.0 2022-3-27 add statistic methods.") ;
+		System.out.println("v2.19.1 2022-4-4 update some java files from task16.") ;
 
 		if( args.length != 1 )
 		{

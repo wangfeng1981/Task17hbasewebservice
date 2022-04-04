@@ -5,6 +5,10 @@ package com.pixelengine;
 /// 这个接口是Java与关系数据库MYSQL交互的
 //update 2022-2-13 2310
 //update 2022-3-24 0459
+//update 2022-3-29 2206
+//update 2022-3-31 0328
+//udpate 2022-4-3 2010
+//update 2022-4-4 use String.equals replace String.==
 //
 /////////////////////////////////////////////////////////
 
@@ -12,6 +16,7 @@ package com.pixelengine;
 import com.google.gson.Gson;
 
 import com.pixelengine.DataModel.*;
+import org.apache.commons.lang.ArrayUtils;
 
 
 import java.sql.*;
@@ -1799,6 +1804,182 @@ public class JRDBHelperForWebservice {
         {
             System.out.println("Error : updateProductNameAndInfo exception , " + ex.getMessage() ) ;
             return false ;
+        }
+    }
+
+
+    //查询tbproductdataitem 构造 JDtCollection[] 结果 2022-3-30
+    public JDtCollection[] buildDtCollection( String dsname, JDtCollectionBuilder builder){
+        JProduct pdt = this.rdbGetProductInfoByName(dsname) ;
+        if( pdt==null ){
+            System.out.println("buildDtCollection error, pdt is null for dsname:" + dsname);
+            return null ;
+        }
+        return buildDtCollectionByPid(pdt.pid, builder) ;
+    }
+    //2022-3-31
+    private boolean isPeriodOk(long startdt,boolean startinc,long stopdt,boolean stopinc,long xdt)
+    {
+        if( startinc==true && stopinc==true)
+        {
+            if( xdt >= startdt && xdt <= stopdt ){
+                return true ;
+            }
+            return false ;
+        }
+        if(startinc==false && stopinc==true){
+            if( xdt > startdt && xdt <= stopdt ){
+                return true ;
+            }
+            return false ;
+        }else if(startinc==true && stopinc==false){
+            if( xdt >= startdt && xdt < stopdt ){
+                return true ;
+            }
+            return false ;
+        }else  {//both false
+            if( xdt > startdt && xdt < stopdt ){
+                return true ;
+            }
+            return false ;
+        }
+    }
+    //2022-3-31
+    public JDtCollection[] buildDtCollectionByPid( int pid, JDtCollectionBuilder builder){
+
+        try{
+            if( builder.repeatType == null ){
+
+            }else if( builder.repeatType.compareTo("m") ==0 ){
+                builder.wholePeriod.startDt = (builder.wholePeriod.startDt/100000000L)*100000000L ;//use yyyyMM00000000
+                builder.wholePeriod.stopDt =  (builder.wholePeriod.stopDt /100000000L)*100000000L ;
+            }else if( builder.repeatType.compareTo("y")==0){
+                builder.wholePeriod.startDt = (builder.wholePeriod.startDt/10000000000L)*10000000000L ;//use yyyy0000000000
+                builder.wholePeriod.stopDt =  (builder.wholePeriod.stopDt /10000000000L)*10000000000L ;
+            }
+
+            if( builder.repeatType == null || builder.repeatType.equals("") || builder.repeatType.equals("m") )//2022-4-4
+            {
+                String dtcondition1 = " hcol >= "+builder.wholePeriod.startDt  ;
+                String dtcondition2 = " hcol <= "+builder.wholePeriod.stopDt ;
+                if( builder.wholePeriod.startInclusive==false ){
+                    dtcondition1 = " hcol > " + builder.wholePeriod.startDt ;
+                }
+                if( builder.wholePeriod.stopInclusive==false ){
+                    dtcondition2 = " hcol < " + builder.wholePeriod.stopDt ;
+                }
+                String sql = "SELECT hcol FROM tbproductdataitem WHERE pid="+pid
+                        + " AND " + dtcondition1 + " AND " + dtcondition2
+                        + " ORDER BY hcol ASC"  ;
+                Statement stmt2 = JRDBHelperForWebservice.getConnection().createStatement();
+                ResultSet rs = stmt2.executeQuery(sql );
+                ArrayList<Long> dtlist = new ArrayList<Long>();
+                while (rs.next()) {
+                    dtlist.add( rs.getLong(1) ) ;
+                }
+                if( builder.repeatType == null || builder.repeatType.equals("") )//2022-4-4
+                {
+                    JDtCollection[] dtcolArray = new JDtCollection[1];
+                    dtcolArray[0] = new JDtCollection() ;
+                    dtcolArray[0].key = "" ;
+                    dtcolArray[0].datetimes = ArrayUtils.toPrimitive( dtlist.toArray(new Long[0]) );//2022-4-3
+                    return dtcolArray ;
+                }else //if( builder.repeatType.equals("m") )
+                {
+                    long periodstartval = builder.repeatPeriod.startDt % 100000000L ;
+                    long periodstopval = builder.repeatPeriod.stopDt   % 100000000L ;
+                    int lastYearMonth = -1 ;
+                    ArrayList<JDtCollection> collectionList = new ArrayList<>() ;
+                    ArrayList<Long> tempDtList = null ;
+                    for (Long aval : dtlist) {
+                        int yearMonth = (int)(aval / 100000000L) ;
+                        long compareVal = aval % 100000000L ;// ddHHmmss
+                        if( yearMonth == lastYearMonth ){
+                            if( isPeriodOk(periodstartval,builder.repeatPeriod.startInclusive
+                                    ,periodstopval,builder.repeatPeriod.stopInclusive
+                                    ,compareVal)
+                            ) tempDtList.add(aval) ;
+                        }else{
+                            if( tempDtList != null && tempDtList.size()>0 ){
+                                JDtCollection collection1 = new JDtCollection() ;
+                                collection1.key = String.valueOf(lastYearMonth) ;
+                                collection1.datetimes = ArrayUtils.toPrimitive( tempDtList.toArray(new Long[0]) );//2022-4-3
+                                collectionList.add( collection1 ) ;
+                            }
+                            lastYearMonth = yearMonth ;
+                            tempDtList = new ArrayList<>() ;
+                            if( isPeriodOk(periodstartval,builder.repeatPeriod.startInclusive
+                                    ,periodstopval,builder.repeatPeriod.stopInclusive
+                                    ,compareVal)
+                            ) tempDtList.add(aval) ;
+                        }
+                    }
+                    if( tempDtList != null && tempDtList.size()>0 ){
+                        JDtCollection collection1 = new JDtCollection() ;
+                        collection1.key = String.valueOf(lastYearMonth) ;
+                        collection1.datetimes = ArrayUtils.toPrimitive( tempDtList.toArray(new Long[0]) );//2022-4-3 tempDtList.toArray(new Long[1]) ;
+                        collectionList.add( collection1 ) ;
+                    }
+                    return collectionList.toArray(new JDtCollection[1]) ;
+                }
+            }else if( builder.repeatType.equals("y" ) )//2022-4-4
+            {
+                int startyear = (int)(builder.wholePeriod.startDt / 10000000000L) ;
+                int stopyear  = (int)(builder.wholePeriod.stopDt  / 10000000000L) ;
+                if( builder.wholePeriod.startInclusive==false ){
+                    startyear += 1 ;
+                }
+                if( builder.wholePeriod.stopInclusive==false ){
+                    stopyear -= 1 ;
+                }
+
+                long MMddhhmmss0 = builder.repeatPeriod.startDt % 10000000000L ;
+                long MMddhhmmss1 = builder.repeatPeriod.stopDt  % 10000000000L ;
+
+                ArrayList<JDtCollection> collectionList = new ArrayList<>() ;
+
+                for(int xyear = startyear ; xyear <= stopyear ; ++ xyear )
+                {
+                    int year0 = xyear ;
+                    int year1 = xyear + builder.repeatPeriod.stopInNextYear;
+
+                    long dt0 = year0*10000000000L + MMddhhmmss0 ;
+                    long dt1 = year1*10000000000L + MMddhhmmss1 ;
+
+                    String dtcondition1 = " hcol >= "+dt0 ;
+                    String dtcondition2 = " hcol <= "+dt1 ;
+                    if( builder.repeatPeriod.startInclusive==false ){
+                        dtcondition1 = " hcol > " + dt0 ;
+                    }
+                    if( builder.repeatPeriod.stopInclusive==false ){
+                        dtcondition2 = " hcol < " + dt1 ;
+                    }
+                    String sql = "SELECT hcol FROM tbproductdataitem WHERE pid="+pid
+                            + " AND " + dtcondition1 + " AND " + dtcondition2
+                            + " ORDER BY hcol ASC"  ;
+                    Statement stmt2 = JRDBHelperForWebservice.getConnection().createStatement();
+                    ResultSet rs = stmt2.executeQuery(sql );
+                    ArrayList<Long> dtlist = new ArrayList<Long>();
+                    while (rs.next()) {
+                        dtlist.add( rs.getLong(1) ) ;
+                    }
+
+                    if( dtlist.size()>0 ){
+                        JDtCollection collection = new JDtCollection() ;
+                        collection.key = String.valueOf(xyear) ;
+                        collection.datetimes = ArrayUtils.toPrimitive( dtlist.toArray(new Long[0]) );//2022-4-3
+                        collectionList.add(collection);
+                    }
+                }
+                return collectionList.toArray(new JDtCollection[1]) ;
+            }else{
+                System.out.println("buildDtCollectionByPid error, bad builder.repeatType:" + builder.repeatType);
+                return null ;
+            }
+        }catch (Exception ex )
+        {
+            System.out.println("Error : buildDtCollectionByPid exception , " + ex.getMessage() ) ;
+            return null ;
         }
     }
 
