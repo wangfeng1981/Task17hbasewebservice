@@ -1,5 +1,6 @@
 package com.pixelengine.controller;
 //离线任务数据导出
+//update 2022-4-5
 
 
 import com.google.gson.Gson;
@@ -238,6 +239,7 @@ public class ExportController {
             //这里添加zeromq调用 这里传递两个值 一个order主键和order json文件的相对路径
             JOfftaskOrderMsg msg=new JOfftaskOrderMsg() ;
             msg.ofid = ofid ;
+            msg.mode = 5 ;//2022-4-5
             msg.orderRelFilepath = orderJsonRelFilepath ;
             JOfftaskOrderSender.getSharedInstance().send(msg);
             result.setState(0);

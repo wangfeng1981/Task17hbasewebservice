@@ -13,13 +13,18 @@
   "userhtable":"sparkv8out", 
   "userhfami":"tiles",
   "userhpidblen":4,
-  "useryxblen":2,
+  "useryxblen":4,
   "tilelocalrootdir":"/home/hadoop/tempdata/tileroot/",
   "gdaltranslate":"/usr/bin/gdal_translate" ,
   "gdalwarp":"/usr/bin/gdalwarp",
 
   "offtask_result_collector": "tcp://127.0.0.1:5500" ,
   "offtask_export_producer": "tcp://127.0.0.1:5510" ,
+  "offtask_cppspark_order_recv_socket": "tcp://127.0.0.1:5520" ,
+  "offtask_export_0mq_service":"/home/hadoop/IdeaProjects/Task15ExportHbase2GeoTiff2/out/artifacts/Task15ExportHbase2GeoTiff2_jar/Task15ExportHbase2GeoTiff2.jar" , 
+  "offtask_cppspark_0mq_service":"" , 
+  "offtask_sparkv8tilecompute_jar": "/home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar" ,
+  "sparksubmit": "/usr/local/spark/bin/spark-submit",
 
   "shpgeojson2hsegtlv":"/home/hadoop/IdeaProjects/zonalstat_commands/shpgeojson2hegbinary/shpgeojson2hegbinary",
   "binaryfile2hbase":"/home/hadoop/IdeaProjects/Task24BinaryFile2HBase/out/artifacts/Task24BinaryFile2HBase_jar/Task24BinaryFile2HBase.jar"
