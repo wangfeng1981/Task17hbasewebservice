@@ -10,6 +10,9 @@ package com.pixelengine;
 //udpate 2022-4-3 2010
 //update 2022-4-4 use String.equals replace String.==
 //update 2022-4-5 updateProductInfo updateOfftaskByWorkerResult
+//update 2022-4-6 user with img
+//update 2022-4-7 rdbGetOfftaskList
+//
 //
 /////////////////////////////////////////////////////////
 
@@ -468,13 +471,14 @@ public class JRDBHelperForWebservice {
     {
         try {
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT uid,uname,password "
+            ResultSet rs = stmt.executeQuery("SELECT uid,uname,password,img "
                     +" FROM tbuser WHERE uname='"+uname+"' LIMIT 1") ;
             if (rs.next()) {
                 JUser user = new JUser();
                 user.uid = rs.getInt("uid");
                 user.uname = rs.getString("uname");
                 user.password = rs.getString("password") ;
+                user.img = rs.getString("img") ;
                 return user;
             }
             return null;
@@ -2034,6 +2038,59 @@ public class JRDBHelperForWebservice {
         {
             System.out.println("Error : buildDtCollectionByPid exception , " + ex.getMessage() ) ;
             return null ;
+        }
+    }
+
+
+    /// 2022-4-7
+    public ArrayList<JOfftask> rdbGetOfftaskList(int uid,
+                                                 int ipage,//zero based
+                                                 int pagesize)
+    {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            int offset = ipage * pagesize ;
+            ResultSet rs = stmt.executeQuery("SELECT * "
+                    +" FROM tbofftask WHERE uid="+uid
+                    +" ORDER BY ofid DESC "
+                    +" LIMIT "+offset + "," + pagesize ) ;
+            ArrayList<JOfftask> retlist = new ArrayList<>() ;
+            while (rs.next()) {
+                JOfftask ot = new JOfftask() ;
+                ot.ofid = rs.getInt(1) ;
+                ot.mode = rs.getInt(2) ;
+                ot.uid = rs.getInt(3) ;
+                ot.orderfile = rs.getString(4) ;
+                ot.resultfile = rs.getString(5) ;
+                ot.ctime = rs.getString(6) ;
+                ot.utime = rs.getString(7) ;
+                ot.status = rs.getInt(8) ;
+                ot.tag = rs.getString(9) ;
+                ot.msg = rs.getString(10) ;
+                retlist.add(ot) ;
+            }
+            return retlist;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return null;
+        }
+    }
+    /// 2022-4-7
+    public int rdbGetOfftaskCountByUid(int uid){
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT count(ofid) "
+                    +" FROM tbofftask WHERE uid="+uid
+                    ) ;
+            int ressult = 0 ;
+            if( rs.next() )
+            {
+                ressult = rs.getInt(1) ;
+            }
+            return ressult;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return -1;
         }
     }
 

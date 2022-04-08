@@ -13,9 +13,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 @RestController
 @RequestMapping("/offtask")
@@ -481,6 +479,43 @@ public class OffTaskController {
             result.setMessage("bad mysql offtask record.");
             return result ;
         }
+    }
+
+
+    //离线任务列表
+    @CrossOrigin(origins = "*")
+    @GetMapping("/list")
+    @ResponseBody
+    public RestResult getlist(
+            String uid,
+            String ipage,  //base 0
+            String pagesize
+    ){
+        RestResult result = new RestResult() ;
+
+        int iuid = Integer.valueOf(uid) ;
+        int iiPage = Integer.valueOf(ipage) ;
+        int iPagesize = Integer.valueOf(pagesize) ;
+
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+        int allcount = rdb.rdbGetOfftaskCountByUid( iuid ) ;
+
+        Dictionary<String,Object> map = new Hashtable<>() ;
+        map.put("allcount" , allcount) ;
+        if( allcount>0 ){
+            ArrayList<JOfftask> tlist = rdb.rdbGetOfftaskList(iuid ,iiPage , iPagesize)  ;
+            if( tlist == null ){
+                result.setState(9);
+                result.setMessage("failed to get offtask list.");
+                return result ;
+            }
+            map.put("list" , tlist.toArray(new JOfftask[0]) ) ;
+        }else{
+            map.put("list" , new JOfftask[0] ) ;
+        }
+        result.setState(0);
+        result.setData(map);
+        return result ;
     }
 
 }

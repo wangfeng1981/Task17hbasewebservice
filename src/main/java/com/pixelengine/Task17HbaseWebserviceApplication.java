@@ -72,6 +72,7 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.19.0 2022-3-27 add statistic methods.") ;
 		System.out.println("v2.19.1 2022-4-4 update some java files from task16.") ;
 		System.out.println("v2.20.1 2022-4-5 composite new2.") ;
+		System.out.println("v2.21.1 2022-4-6 user offtask list.") ;
 
 		if( args.length != 1 )
 		{

@@ -1,5 +1,5 @@
 package com.pixelengine.DataModel;
-//2022-01-01
+//2022-01-01 deprecated, use JOfftask
 import java.io.Serializable;
 
 public class JOfflineTask implements Serializable {
