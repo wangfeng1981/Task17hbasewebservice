@@ -1,6 +1,7 @@
 package com.pixelengine.controller;
 //离线任务数据导出
 //update 2022-4-5
+//update 2022-4-9 use pid replace pe in New2 mode
 
 
 import com.google.gson.Gson;
@@ -110,7 +111,7 @@ public class ExportController {
     @CrossOrigin(origins = "*")
     public RestResult exportNew2(
             String uid,
-            String mode , //pe or script
+            String mode , //pid or script
             String datetime,//yyyyMMddhhmmss 14digits
             String geojson, //relative path or {...} a real geojson string
             String pid,   //used in pe mode
@@ -154,7 +155,7 @@ public class ExportController {
         JExportOrder theOrder = new JExportOrder() ;
         theOrder.datetime = Long.parseLong(datetime) ;
         theOrder.fillvalue = Double.parseDouble(fillvalue) ;
-        theOrder.mode = mode ;
+        theOrder.mode = mode ;//pid or script
         theOrder.pid = Integer.parseInt(pid) ;
         theOrder.sdui = sdui ;
         theOrder.resultRelFilepath = resultRelFilepath ;
@@ -191,7 +192,7 @@ public class ExportController {
             JScript scriptObj = rdb.rdbGetScript( Integer.parseInt(sid) ) ;
             theOrder.scriptRelFilepath = scriptObj.jsfile ;
         }else{
-            //pe mode ,use a system script for export
+            //pid mode ,use a system script for export
             JProduct pdt = rdb.rdbGetProductForAPI(Integer.parseInt(pid)) ;
             if( pdt==null ){
                 result.setState(9);

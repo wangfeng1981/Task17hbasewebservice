@@ -14,6 +14,7 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+//update 2022-4-9
 
 //获取全部产品信息
 @RestController
@@ -222,4 +223,32 @@ public class ProductController {
         return rr;
     }
 
+
+    //获取一个产品信息 2022-4-9
+    @ResponseBody
+    @RequestMapping(value="/product/info",method=RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public RestResult oneProductInfo(String pid) {
+        RestResult rr = new RestResult() ;
+        rr.setState(0);
+        rr.setMessage("");
+
+        try {
+            JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+            JProduct oneinfo = rdb.rdbGetOneProductLayerInfoById( Integer.valueOf(pid)) ;
+            if( oneinfo==null ){
+                rr.setState(2);
+                rr.setMessage("failed, ProductController.oneProductInfo no product info exception.");
+                return rr ;
+            }else{
+                rr.setState(0);
+                rr.setData(oneinfo);
+                return rr ;
+            }
+        }catch (Exception ex){
+            rr.setState(1);
+            rr.setMessage("failed, ProductController.oneProductInfo exception:"+ex.getMessage());
+            return rr;
+        }
+    }
 }

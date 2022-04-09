@@ -1,7 +1,7 @@
 package com.pixelengine.tools;
 /// 2022-3-5 2210
 /// 2022-4-4 add writeBinaryFile method.
-
+/// udpate 2022-4-9
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -130,8 +130,12 @@ public class FileDirTool {
     static public  String readFileAsString(String fileName)throws Exception
     {
         String data = "";
-        data = new String(Files.readAllBytes(Paths.get(fileName)));
-        return data;
+        try{
+            data = new String(Files.readAllBytes(Paths.get(fileName)));
+            return data;
+        }catch (Exception ex){
+            return null ;
+        }
     }
 
     static public byte[] readFileAsBytes(String fileName)

@@ -73,6 +73,8 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.19.1 2022-4-4 update some java files from task16.") ;
 		System.out.println("v2.20.1 2022-4-5 composite new2.") ;
 		System.out.println("v2.21.1 2022-4-6 user offtask list.") ;
+		System.out.println("v2.22.4 2022-4-9 add one product info api; stat support script product; delete offtask.") ;
+		System.out.println("v2.22.4r 2022-4-9") ;
 
 		if( args.length != 1 )
 		{

@@ -1,5 +1,6 @@
 package com.pixelengine.controller;
 /// 新版ROI接口，用于取代RegionController和AreaController 2022-2-2
+/// 2022-4-9 delete hbase data when remove
 
 import com.pixelengine.DataModel.JRoi2;
 import com.pixelengine.DataModel.JRoiCategory;
@@ -9,8 +10,11 @@ import com.pixelengine.HBasePixelEngineHelper;
 import com.pixelengine.JRDBHelperForWebservice;
 import com.pixelengine.DataModel.WConfig;
 import com.pixelengine.tools.FileDirTool;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.Delete;
+import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.springframework.web.bind.annotation.*;
@@ -471,6 +475,7 @@ public class RoiController {
         RestResult result = new RestResult() ;
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
         JRoi2 roi = rdb.rdbGetUserRoiItem(rid) ;
+        boolean hbasedelok = false ;
         if( roi!=null ){
             //删除物理文件
             if( roi.shp!=null && roi.shp.length() > 1 ){
@@ -488,10 +493,32 @@ public class RoiController {
                 File file = new File(geojsonfilepath) ;
                 file.delete() ;
             }
+            //remove hbase data
+
+            {
+                try {
+                    Connection conn = HBasePixelEngineHelper.getHBaseConnection();
+                    Table table = conn.getTable(TableName.valueOf("user_roi"));
+                    Delete del = new Delete( Bytes.toBytes(rid) ) ;
+                    table.delete(del);
+                    table.close();
+                    hbasedelok = true ;
+                    System.out.println("delete roi in hbase ok:" + rid ) ;
+                }catch (Exception ex)
+                {
+                    System.out.println("Error : removeRoi for hbase data failed :" + ex.getMessage() ) ;
+                }
+            }
+
         }
-        rdb.rdbRemoveUserRoi(rid) ;
-        result.setState(0);
-        result.setMessage("");
+        if( hbasedelok == true ){
+            rdb.rdbRemoveUserRoi(rid) ;
+            result.setState(0);
+            result.setMessage("");
+        }else{
+            result.setState(1);
+            result.setMessage("delete roi data in hbase failed.");//2022-4-9
+        }
         return result ;
     }
 }

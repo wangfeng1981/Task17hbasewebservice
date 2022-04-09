@@ -203,6 +203,14 @@ public class ScriptsController {
                     jsText2 = jsText.replace("function main(" , sduiJsonStr2 + "function main(") ;
                 }
             }
+            int tilez = Integer.parseInt(zstr) ;
+            int tiley = Integer.parseInt(ystr) ;
+            int tilex = Integer.parseInt(xstr) ;
+
+            if( tilez==0 && tiley==0 && tilex==0 ){
+                System.out.println("debug at 0,0,0 scriptWithSDUI:");
+                System.out.println(jsText2);
+            }
 
             if( false ){//debug
                 final HttpHeaders debugheaders = new HttpHeaders();
@@ -218,9 +226,9 @@ public class ScriptsController {
                     jsText2,
                     styleText,
                     extraStr,
-                    Integer.parseInt(zstr),
-                    Integer.parseInt(ystr),
-                    Integer.parseInt(xstr)
+                    tilez,
+                    tiley,
+                    tilex
             ) ;
             if( res1.status==0 )
             {//ok

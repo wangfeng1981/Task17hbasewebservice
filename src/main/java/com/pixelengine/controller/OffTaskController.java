@@ -1,17 +1,28 @@
 package com.pixelengine.controller;
 //这个还没想好怎么改 2021-4-1 这个不再使用，请使用ZonalStatController，或者参考ZonalStatController修改。
 //2022-4-5 使用该Controller 作为新版 离线任务 区域统计，序列分析，数据合成 接口
+//2022-4-9 实现离线任务与数据的删除功能
+
 
 import com.google.gson.Gson;
 import com.pixelengine.DTO.ZonalStatDTO;
 import com.pixelengine.DataModel.*;
+import com.pixelengine.HBasePixelEngineHelper;
 import com.pixelengine.JRDBHelperForWebservice;
 import com.pixelengine.tools.FileDirTool;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.Delete;
+import org.apache.hadoop.hbase.client.Table;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Array;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -515,6 +526,172 @@ public class OffTaskController {
         }
         result.setState(0);
         result.setData(map);
+        return result ;
+    }
+
+
+    ///删除离线任务，及其对应的数据文件和数据库记录包括HBase和Mysql中的 2022-4-9
+    @CrossOrigin(origins = "*")
+    @PostMapping("/remove")
+    @ResponseBody
+    public RestResult remove(
+            String ofid
+    ){
+        RestResult result = new RestResult() ;
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+        JOfftask offtask1 = rdb.rdbGetOfftask( Integer.valueOf(ofid) ) ;
+        if( offtask1==null ){
+            result.setState(9);
+            result.setMessage("no recored for " + ofid);
+            return result ;
+        }
+
+        String orderfile = WConfig.getSharedInstance().pedir + offtask1.orderfile ;
+        String resultfile = WConfig.getSharedInstance().pedir + offtask1.resultfile ;
+
+        boolean clean = false ;
+        if( offtask1.mode== 0 ){
+            File file1 = new File(orderfile) ;
+            file1.delete() ;
+            File file2 = new File(resultfile) ;
+            file2.delete() ;
+            File file3 = new File(orderfile.replace(".json","-roi.geojson")) ;
+            file3.delete() ;
+            File file4 = new File(orderfile.replace(".json","-roi.hseg.tlv")) ;
+            file4.delete() ;
+
+            clean = true ;
+        }else if( offtask1.mode==1 || offtask1.mode==2 )
+        {
+            File file1 = new File(orderfile) ;
+            file1.delete() ;
+            File file2 = new File(resultfile) ;
+            file2.delete() ;
+            File file3 = new File(orderfile.replace(".json","-roi.geojson")) ;
+            file3.delete() ;
+            File file4 = new File(orderfile.replace(".json","-roi.hseg.tlv")) ;
+            file4.delete() ;
+            File file5 = new File(resultfile.replace(".json",".json.csv")) ;
+            file5.delete() ;
+            clean = true ;
+        }else if( offtask1.mode==5 ){
+            File file1 = new File(orderfile) ;
+            file1.delete() ;
+            File file2 = new File(resultfile) ;
+            file2.delete() ;
+            File file3 = new File(orderfile.replace(".json",".geojson")) ;
+            file3.delete() ;
+
+
+
+            File file6 = new File(orderfile.replace(".json","_pe.js")) ;
+            file6.delete() ;
+            File file7 = new File(resultfile.replace("-result.json","-result_tiled.tif")) ;
+            file7.delete() ;
+            File file8 = new File(resultfile.replace("-result.json","-result.tif")) ;
+            file8.delete() ;
+
+            clean = true ;
+        }else if( offtask1.mode==4 ){
+            int mypid = 0 ;
+            try{
+                JTileComputing2HBaseOrder tc2hbOrder = null;
+                String orderjsontext = FileDirTool.readFileAsString(orderfile) ;
+                if( orderjsontext!=null ){
+                    tc2hbOrder = new Gson()
+                            .fromJson(orderjsontext,JTileComputing2HBaseOrder.class);
+                    mypid = tc2hbOrder.mpid_hpid ;
+                }
+                if( mypid<=0 ){
+                    //there is no order json file , so just go following codes without hbase staff.
+                }
+                else
+                {
+                    //delete data in hbase
+                    JProduct temppdtinfo = rdb.rdbGetProductForAPI(mypid) ;
+                    if( temppdtinfo!=null )
+                    {
+                        Connection conn = HBasePixelEngineHelper.getHBaseConnection();
+                        Table table = conn.getTable(TableName.valueOf(tc2hbOrder.out_htable));
+                        ArrayList<Delete> dellist = new ArrayList<>() ;
+                        for(int iz = 0 ; iz <= temppdtinfo.maxZoom; ++ iz )
+                        {
+                            int tilexnum = (int)Math.pow(2,iz) ;
+                            int tileynum = tilexnum/2 ;
+                            for(int iy = 0 ; iy < tileynum; ++ iy )
+                            {
+                                for(int ix = 0 ; ix < tilexnum; ++ ix )
+                                {
+                                    byte[] rowkey = WHBaseUtil.GenerateRowkey( tc2hbOrder.out_hpidlen,
+                                            mypid ,
+                                            tc2hbOrder.out_xylen ,
+                                            iz, iy , ix ) ;
+                                    dellist.add(new Delete(rowkey)) ;
+                                    if( dellist.size()> 1000 ){
+                                        table.delete(dellist);
+                                        dellist.clear();
+                                    }
+                                }
+                            }
+                        }
+                        if( dellist.size()>0 ) table.delete(dellist);
+                        table.close();
+                        System.out.println("delete data in hbase ok for mypid:" + mypid )  ;
+                    }else{
+                        System.out.println("warning tc2hb mypid "+mypid+" order ok, " +
+                                "but no product info. that's ok, we clean other staffs.");
+                    }
+                }
+
+            }catch(Exception ex)
+            {
+                result.setState(9);
+                result.setMessage("Error : failed to parse order json for mypid:" + orderfile );
+                return result ;
+            }
+
+            File file1 = new File(orderfile) ;
+            file1.delete() ;
+            File file2 = new File(resultfile) ;
+            file2.delete() ;
+
+            File file3 = new File(orderfile.replace(".json","-roi.geojson")) ;
+            file3.delete() ;
+            File file4 = new File(orderfile.replace(".json","-roi.hseg.tlv")) ;
+            file4.delete() ;
+
+            File file6 = new File(orderfile.replace(".json",".js")) ;
+            file6.delete() ;
+
+            if( mypid>0 ){
+                boolean myok = rdb.rdbRemoveProductRecords(mypid) ;
+                if( myok==false )
+                {
+                    result.setState(9);
+                    result.setMessage("Error : failed to mysql records for mypid:" + mypid );
+                    return result ;
+                }
+            }
+
+            clean = true ;
+        }
+        else{
+            result.setState(9);
+            result.setMessage("unknown offtask mode for " + offtask1.mode );
+            return result ;
+        }
+
+        if( clean==false ){
+            result.setState(9);
+            result.setMessage("remove operation is not clean.");
+            return result ;
+        }
+
+        //delete offtask records
+        rdb.rdbRemoveOfftaskRecords( Integer.valueOf(ofid)) ;
+        result.setState(0);
+        result.setData(ofid);
+
         return result ;
     }
 

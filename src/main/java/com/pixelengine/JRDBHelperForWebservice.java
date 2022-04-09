@@ -12,7 +12,7 @@ package com.pixelengine;
 //update 2022-4-5 updateProductInfo updateOfftaskByWorkerResult
 //update 2022-4-6 user with img
 //update 2022-4-7 rdbGetOfftaskList
-//
+//update 2022-4-9 new offtask not write utime; getOfftask
 //
 /////////////////////////////////////////////////////////
 
@@ -197,6 +197,7 @@ public class JRDBHelperForWebservice {
         }
     }
 
+    //deprecated 2022-4-9
     public String rdbGetOffTaskJson(int oftid)   {
         try {
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
@@ -1592,8 +1593,8 @@ public class JRDBHelperForWebservice {
                              String resultRelFilePath ) {
         try
         {
-            String query = " insert into tbofftask (mode,uid,orderfile,resultfile,ctime,utime,status,tag,msg)"
-                    + " values (?, ?, ?,   ?, ?, ? ,  ? ,? ,?)";
+            String query = " insert into tbofftask (mode,uid,orderfile,resultfile,ctime,status,tag,msg)"
+                    + " values (?, ?, ?,   ?, ?, ? ,  ? ,? )";
             // create the mysql insert preparedstatement
             PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             preparedStmt.setInt (1, mode );
@@ -1601,10 +1602,10 @@ public class JRDBHelperForWebservice {
             preparedStmt.setString   (3, orderRelFilePath);
             preparedStmt.setString    (4, resultRelFilePath);
             preparedStmt.setString    (5, getCurrentDatetimeStr() );//ctime
-            preparedStmt.setString    (6, getCurrentDatetimeStr() );//utime
-            preparedStmt.setInt    (7, 0 );//
-            preparedStmt.setString    (8, "" );//
-            preparedStmt.setString    (9, "");//
+            //preparedStmt.setString    (6, getCurrentDatetimeStr() );//utime
+            preparedStmt.setInt    (6, 0 );//
+            preparedStmt.setString    (7, "" );//
+            preparedStmt.setString    (8, "");//
             // execute the preparedstatement
             preparedStmt.executeUpdate();
             ResultSet rs = preparedStmt.getGeneratedKeys();
@@ -2091,6 +2092,96 @@ public class JRDBHelperForWebservice {
         } catch (SQLException e) {
             System.out.println(e.getMessage()) ;
             return -1;
+        }
+    }
+
+    //2022-4-9
+    public JOfftask rdbGetOfftask(int ofid)
+    {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery(
+                    "SELECT * FROM tbofftask WHERE ofid="+String.valueOf(ofid)
+            );
+            if (rs.next()) {
+                JOfftask offtask = new JOfftask();
+                offtask.ofid = rs.getInt(1) ;
+                offtask.mode = rs.getInt(2) ;
+                offtask.uid = rs.getInt(3) ;
+                offtask.orderfile = rs.getString(4) ;
+                offtask.resultfile = rs.getString(5) ;
+                offtask.ctime = rs.getString(6) ;
+                offtask.utime = rs.getString(7) ;
+                offtask.status = rs.getInt(8) ;
+                offtask.tag = rs.getString(9) ;
+                offtask.msg = rs.getString(10) ;
+                return offtask;
+            }else{
+                System.out.println("Error : no recored for "+ ofid);
+                return null ;
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return null ;
+        }
+    }
+
+    /// 2022-4-9
+    /// remove product related records in tbproduct,
+    /// tbproductband, tbproductdataitem,
+    /// tbproductdisplay
+    public boolean rdbRemoveProductRecords(int pid) {
+        try
+        {
+            {
+                String query = "delete from tbproduct where pid=?" ;
+                PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query);
+                preparedStmt.setInt      (1, pid);
+                preparedStmt.executeUpdate();
+            }
+            {
+                String query = "delete from tbproductband where pid=?" ;
+                PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query);
+                preparedStmt.setInt      (1, pid);
+                preparedStmt.executeUpdate();
+            }
+            {
+                String query = "delete from tbproductdataitem where pid=?" ;
+                PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query);
+                preparedStmt.setInt      (1, pid);
+                preparedStmt.executeUpdate();
+            }
+            {
+                String query = "delete from tbproductdisplay where pid=?" ;
+                PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query);
+                preparedStmt.setInt      (1, pid);
+                preparedStmt.executeUpdate();
+            }
+
+            return true ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbRemoveProductRecords exception , " + ex.getMessage() ) ;
+            return false ;
+        }
+    }
+
+
+    /// 2022-4-9
+    public boolean rdbRemoveOfftaskRecords(int ofid) {
+        try
+        {
+            {
+                String query = "delete from tbofftask where ofid=?" ;
+                PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query);
+                preparedStmt.setInt      (1, ofid);
+                preparedStmt.executeUpdate();
+            }
+            return true ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbRemoveOfftaskRecords exception , " + ex.getMessage() ) ;
+            return false ;
         }
     }
 
