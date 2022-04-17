@@ -1,5 +1,7 @@
 package com.pixelengine.controller;
 //实现系统预定义产品的wmts服务
+//updated 2022-4-17
+
 import com.pixelengine.*;
 import com.pixelengine.DataModel.*;
 import com.pixelengine.TileComputeResult;
@@ -21,6 +23,9 @@ public class ProductWMTSController {
     private String scriptContentTemplate = "function main(){"
             +"var ds=pe.Dataset('{{{name}}}', {{{dt}}} );"
             +"return ds; } " ;
+    private String scriptContentWithRoiTemplate = "function main(){"
+            +"var ds=pe.Dataset('{{{name}}}', {{{dt}}} );"
+            +"return ds.clip2('{{{roiid}}}',{{{nodata}}}); } " ;
 
     // /pe/product/123/wmts/...
     // /pe/uproduct/123/wmts/...
@@ -106,6 +111,8 @@ public class ProductWMTSController {
         String xstr = lowerParams.get("tilecol")  ;// req.get_param_value("TILECOL");
         String dtstr = lowerParams.get("datetime")  ;//req.get_param_value("dt");
         String styleId = lowerParams.get("styleid") ;
+        String roiid = lowerParams.get("roiid") ; // optional , null , "null" , "" are treated as no roi; good value exmaple are user:123 or sys:456.
+
 
 //        System.out.println("request:"+request) ;
 //        System.out.println("service:" + servicestr ) ;
@@ -130,11 +137,32 @@ public class ProductWMTSController {
             }
             System.out.println("style ok") ;
 
+            long dtlongvalue = 0 ;
+            try{
+                dtlongvalue = Long.parseLong(dtstr) ;
+            }catch (Exception ex){
+                //bad long
+                dtlongvalue = 0 ;
+            }
+
+            boolean useRoiClip = true ;
+            if( roiid==null || roiid.equals("") || roiid.equals("null") ){
+                useRoiClip = false ;
+            }
+
             if( pdt.name.equals("") == false )
             {
                 HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
                 String scriptContent = scriptContentTemplate.replace("{{{name}}}", pdt.name) ;
-                scriptContent = scriptContent.replace("{{{dt}}}" , dtstr) ;
+                if( useRoiClip==true ){//2022-4-17
+                    scriptContent=scriptContentWithRoiTemplate.replace("{{{name}}}",pdt.name);
+                    scriptContent=scriptContent.replace("{{{roiid}}}", roiid);
+                    String nodataStr = String.valueOf( pdt.bandList.get(0).noData ) ;
+                    if( nodataStr.equals("") )nodataStr="0";
+                    scriptContent=scriptContent.replace("{{{nodata}}}", nodataStr);
+                }
+
+                scriptContent = scriptContent.replace("{{{dt}}}" , Long.toString(dtlongvalue) ) ;
                 TileComputeResult res1 = cv8.RunScriptForTileWithRenderWithExtra(
                         "com/pixelengine/HBasePixelEngineHelper",
                         scriptContent,

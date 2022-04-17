@@ -10,6 +10,7 @@ package com.pixelengine;
 //update 2022-3-24 0352 增加tlv直接裁剪功能，不依赖v8和js
 //update 2022-3-27 1029 增加tlv对瓦片计算统计值功能，不依赖v8和js
 //update 2022-4-4 这个类名称已经写在C++程序里了，所以这里这个参数没啥用 com/pixelengine/HBasePixelEngineHelper
+//update 2022-4-17
 //
 /////////////////////////////////////////////////////////
 
@@ -24,6 +25,7 @@ public class HBasePeHelperCppConnector {
     public native String ParseScriptForDsDt(String javaHelperClassName, String script ) ;
 
     //2022-2-12 Java_com_pixelengine_HBasePeHelperCppConnector_GetDatasetNameArray
+    //2022-4-17 output is JDsNameArrayResult json {"state":0,"error":"...","data":[...]}
     public native String GetDatasetNameArray(String javaHelperClassName, String script ) ;
 
     /// javaHelperClassName='com/pixelengine/HBasePixelEngineHelper' 下面一样 2022-4-4

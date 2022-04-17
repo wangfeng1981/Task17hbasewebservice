@@ -96,6 +96,8 @@ public class WConfig {
     //2022-3-5 2121 ROI geojson和shp文件转换成hseg.tlv格式数据，然后写入HBase
     public String shpgeojson2hsegtlv ;
 
+    //2022-4-17 example http://localhost:15911/   POST some formdata
+    public String omc_localhost_api  ;
 
 
 }

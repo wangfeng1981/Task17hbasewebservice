@@ -5,6 +5,7 @@ import com.pixelengine.DataModel.JOfftaskOrderSender;
 import com.pixelengine.DataModel.JProduct;
 import com.pixelengine.DataModel.WConfig;
 import com.pixelengine.controller.OfftaskCollector;
+import com.pixelengine.controller.OmcController;
 import com.pixelengine.tools.FileDirTool;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -75,6 +76,7 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.21.1 2022-4-6 user offtask list.") ;
 		System.out.println("v2.22.4 2022-4-9 add one product info api; stat support script product; delete offtask.") ;
 		System.out.println("v2.22.4r 2022-4-9") ;
+        System.out.println("v2.23.0 2022-4-17 OnlineMapComposer APIs.") ;
 
 		if( args.length != 1 )
 		{

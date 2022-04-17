@@ -27,6 +27,15 @@
   "sparksubmit": "/usr/local/spark/bin/spark-submit",
 
   "shpgeojson2hsegtlv":"/home/hadoop/IdeaProjects/zonalstat_commands/shpgeojson2hegbinary/shpgeojson2hegbinary",
-  "binaryfile2hbase":"/home/hadoop/IdeaProjects/Task24BinaryFile2HBase/out/artifacts/Task24BinaryFile2HBase_jar/Task24BinaryFile2HBase.jar"
+  "binaryfile2hbase":"/home/hadoop/IdeaProjects/Task24BinaryFile2HBase/out/artifacts/Task24BinaryFile2HBase_jar/Task24BinaryFile2HBase.jar",
+
+
+
+  "omc_comment":"omc前缀属性表示用于在线制图功能属性",
+  "omc_resdir":"/var/www/html/pe/omc_res/" , 
+  "omc_service":"/home/hadoop/IdeaProjects/build-pe_mapcomposer_service-Desktop-Debug/pe_mapcomposer_service",
+  "omc_port":"15911",
+  "omc_zmqport":"15922" ,
+  "omc_localhost_api": "http://localhost:15911"
 
 }

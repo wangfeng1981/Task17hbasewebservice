@@ -175,7 +175,7 @@ public class ScriptsController {
         String dtstr = lowerParams.get("datetime")  ;//
         String utimeStr = lowerParams.get("utime") ;
         String styleId = lowerParams.get("styleid") ;
-        String sduiJsonStr = lowerParams.get("sdui") ;
+        String sduiJsonStr = lowerParams.get("sdui") ;// '','null','{}' are all treated as no sdui.
 
         String jsText = ScriptsGetterTool.getSharedInstance().getScriptContent( Integer.valueOf(sid) , Long.valueOf(utimeStr)) ;
         /// String outputText = "sdui=" + sdui + "\n\n" + jsText;
@@ -198,7 +198,10 @@ public class ScriptsController {
             // 反之，如果GET[sdui]有效的化，就把sdui={...} 写在 function main函数前面 ，后续使用AST分析进行精准替换
             String jsText2 = jsText ;
             if( jsText.contains("sdui={") == true ){
-                if( sduiJsonStr.compareTo("null") != 0 && sduiJsonStr.compareTo("") != 0 && sduiJsonStr.compareTo("{}")!=0 ){
+                if( sduiJsonStr.compareTo("null") != 0
+                        && sduiJsonStr.compareTo("") != 0
+                        && sduiJsonStr.compareTo("{}")!=0
+                ){
                     String sduiJsonStr2 = "\nsdui=" + sduiJsonStr + ";\n" ;
                     jsText2 = jsText.replace("function main(" , sduiJsonStr2 + "function main(") ;
                 }

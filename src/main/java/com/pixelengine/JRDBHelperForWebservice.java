@@ -13,6 +13,7 @@ package com.pixelengine;
 //update 2022-4-6 user with img
 //update 2022-4-7 rdbGetOfftaskList
 //update 2022-4-9 new offtask not write utime; getOfftask
+//udpate 2022-4-17 omc.
 //
 /////////////////////////////////////////////////////////
 
@@ -2184,5 +2185,75 @@ public class JRDBHelperForWebservice {
             return false ;
         }
     }
+
+
+
+    /// 2022-4-17
+    public ArrayList<OmcFile> rdbGetOmcFileList(int uid,int type)
+    {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * "
+                    +" FROM tbomcfiles WHERE uid="+uid
+                    +" AND type=" + type
+                    +" ORDER BY omcid DESC "
+                    +" LIMIT 100 ") ;
+            ArrayList<OmcFile> retlist = new ArrayList<>() ;
+            while (rs.next()) {
+                OmcFile ot = new OmcFile() ;
+                ot.omcid = rs.getInt(1) ;
+                ot.type = rs.getInt(2) ;
+                ot.type2 = rs.getInt(3) ;
+                ot.file = rs.getString(4) ;
+                ot.uid = rs.getInt(5) ;
+                ot.name = rs.getString(6) ;
+                ot.ctime = rs.getString(7) ;
+                retlist.add(ot) ;
+            }
+            return retlist;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return null;
+        }
+    }
+
+    //2022-4-17
+    public int insertNewOmcFile(int type, //1-qgs,2-img,3-vec
+                            int type2,//1-point,2-line,3-polygon
+                            String file,//relfilepath
+                            int uid,
+                            String name
+                            )
+    {
+        try
+        {
+            String ctime = getCurrentDatetimeStr() ;
+            String query = "INSERT INTO `tbomcfiles`(`type`, `type2`, `file`, `uid`, `name`, `ctime` )"
+                    + " VALUES (?, ?,  ?,  ?,   ?,   ?)";
+            // create the mysql insert preparedstatement
+            PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            preparedStmt.setInt (1, type );
+            preparedStmt.setInt (2, type2);
+            preparedStmt.setString   (3, file );
+            preparedStmt.setInt    (4, uid);
+            preparedStmt.setString    (5, name );
+            preparedStmt.setString    (6, ctime );
+            // execute the preparedstatement
+            preparedStmt.executeUpdate();
+            ResultSet rs = preparedStmt.getGeneratedKeys();
+            int last_inserted_id = -1 ;
+            if(rs.next())
+            {
+                last_inserted_id = rs.getInt(1);
+            }
+            return last_inserted_id;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : insertNewOmcFile exception , " + ex.getMessage() ) ;
+            return -1 ;
+        }
+    }
+
+
 
 }
