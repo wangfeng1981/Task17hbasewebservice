@@ -15,12 +15,19 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.geotools.data.shapefile.ShapefileDataStore;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import scala.reflect.internal.tpe.FindMembers;
 
+import javax.servlet.http.HttpServletRequest;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -53,7 +60,7 @@ public class OmcController {
     }
 
 
-    //
+    //y用户文件列表
     @CrossOrigin(origins = "*")
     @RequestMapping("/filelist")
     @ResponseBody
@@ -79,6 +86,8 @@ public class OmcController {
 
     }
 
+
+    //create a new qgs project and insert into db.
     @CrossOrigin(origins = "*")
     @RequestMapping("/newqgs")
     @ResponseBody
@@ -217,5 +226,272 @@ public class OmcController {
 //        }
     }
 
+
+    //将文件写入上传文件对象file写入系统指定路径fileAbsPath
+    public boolean writeUploadFileToFile(MultipartFile file,String fileAbsPath ){
+        String fileName = file.getOriginalFilename();
+        File targetFile = new File(fileAbsPath);
+        //第三部：通过输出流将文件写入硬盘文件夹并关闭流
+        BufferedOutputStream stream = null;
+        boolean isok = false ;
+        try {
+            stream = new BufferedOutputStream(new FileOutputStream(fileAbsPath));
+            stream.write(file.getBytes());
+            stream.flush();
+            stream.close();
+            stream = null ;
+            isok=true ;
+        }catch (IOException e){
+            e.printStackTrace();
+            isok=false ;
+        }finally {
+            try {
+                if (stream != null) stream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return isok ;
+    }
+
+    //upload image , should be < 1MB, only png or jpg.
+    //upload path in omc_out/{yyyymmdd}/{hhmmss}-{rrrr}.png|jpg
+    @CrossOrigin(origins = "*")
+    @RequestMapping("/uploadimg")
+    @ResponseBody
+    public RestResult uploadImg (
+            String uid,
+            MultipartFile[] files, //only one file once.
+            HttpServletRequest httpServletRequest
+    ){
+        System.out.println("OmcController uploadImg ...");
+        RestResult rr = new RestResult() ;
+        rr.setState(1);
+        rr.setMessage("");
+
+        if( files.length==0 ){
+            rr.setState(2); rr.setMessage("empty files.");
+            return rr ;
+        }
+
+        String tempfilename = files[0].getOriginalFilename() ;
+        String tailname = "" ;
+        if( tempfilename.endsWith(".png") ) tailname = ".png" ;
+        if( tempfilename.endsWith(".jpg") ) tailname = ".jpg" ;
+        if( tailname.equals("") ){
+            rr.setState(3); rr.setMessage("only support .png or .jpg image file.");
+            return rr ;
+        }
+
+        FileDirTool.FileNamerResult fileNameResult = FileDirTool.buildDatetimeSubdirAndFilename(
+                WConfig.getSharedInstance().pedir , "omc_out" , "img-", tailname
+        ) ;
+
+        if( fileNameResult.state!=0 ){
+            rr.setState(2);
+            rr.setMessage(fileNameResult.message);
+            return rr ;
+        }
+
+        //copy file into new file position
+        boolean cpok = writeUploadFileToFile(files[0], fileNameResult.data.absfilename) ;
+        if( cpok==false ){
+            rr.setState(4);
+            rr.setMessage("failed to copy upload image file.");
+            return rr ;
+        }
+
+        if( tempfilename.length()>20 ) tempfilename = tempfilename.substring( tempfilename.length()-20 ) ;
+
+        //insert into db
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+        int newRid = rdb.insertNewOmcFile(2 , 0 ,
+                fileNameResult.data.relfilename, Integer.valueOf(uid) ,
+                tempfilename
+                ) ;
+        if( newRid < 0 ){
+            rr.setState(5); rr.setData("failed to insert db.");
+            return rr ;
+        }
+        rr.setState(0); rr.setData(fileNameResult.data.relfilename);
+        return rr ;
+    }
+
+
+    // this shp only used in omc. this shp will not convert geojson, since qgis can draw shp.
+    @CrossOrigin(origins = "*")
+    @RequestMapping("/uploadshp")
+    @ResponseBody
+    public RestResult uploadShp (
+            String uid,
+            MultipartFile[] files, //
+            HttpServletRequest httpServletRequest
+    ){
+        RestResult rr = new RestResult() ;
+
+        FileDirTool.FileNamerResult fileNamerResult = FileDirTool.buildDatetimeSubdirAndFilename(
+                WConfig.getSharedInstance().pedir,
+                "omc_out",
+                "vec-" ,
+                ""
+        ) ;
+
+        if( fileNamerResult.state!=0 ){
+            rr.setState(1);
+            rr.setMessage(fileNamerResult.message);
+            return rr ;
+        }
+
+        if( files.length < 4 ){
+            rr.setState(2);
+            rr.setMessage("Not enough four files.");
+            return rr ;
+        }
+
+
+        //查询是否够四个文件，够了入库
+        boolean shpBoo = false;
+        boolean dbfBoo = false;
+        boolean prjBoo = false;
+        boolean shxBoo = false;
+        String nameInDb = "" ;
+        for(int ifile = 0 ; ifile < files.length;++ ifile ){
+            String tempfilename = files[ifile].getOriginalFilename() ;
+            if(tempfilename.endsWith(".shp")){
+                String newfilepath = fileNamerResult.data.absfilename +".shp" ;
+                shpBoo = writeUploadFileToFile( files[ifile] , newfilepath );
+                nameInDb = files[ifile].getOriginalFilename() ;
+            }
+            if(tempfilename.endsWith(".dbf")){
+                String newfilepath = fileNamerResult.data.absfilename +".dbf" ;
+                dbfBoo = writeUploadFileToFile( files[ifile] , newfilepath );
+            }
+            if(tempfilename.endsWith(".prj")){
+                String newfilepath = fileNamerResult.data.absfilename +".prj" ;
+                prjBoo = writeUploadFileToFile( files[ifile] , newfilepath );
+            }
+            if(tempfilename.endsWith(".shx")){
+                String newfilepath = fileNamerResult.data.absfilename +".shx" ;
+                shxBoo = writeUploadFileToFile( files[ifile] , newfilepath );
+            }
+        }
+
+        if( !shpBoo || !shxBoo || !prjBoo || !dbfBoo )
+        {
+            rr.setState(3);
+            rr.setMessage("failed to write shp "+shpBoo + ", shx "+shxBoo + ", dbf "+dbfBoo + ", prj "+prjBoo);
+            return rr ;
+        }
+
+        String shpRelPath = fileNamerResult.data.relfilename+".shp";
+        String shpAbsPath = fileNamerResult.data.absfilename+".shp";
+
+        //shape file type
+        int iGeomType = 0 ;
+        try{
+            ShapefileDataStore dataStore =
+                    new ShapefileDataStore(
+                            new File(shpAbsPath).toURI().toURL()
+                    );
+            String t = dataStore.getTypeNames()[0];
+            String geomType = dataStore.getFeatureSource(t)
+                    .getSchema().getGeometryDescriptor()
+                    .getType().getBinding().getName();
+            System.out.println(geomType);
+            if( geomType.contains("Point")  ){
+                iGeomType = 1 ;
+            }else if( geomType.contains("Polygon")  ){
+                iGeomType = 3 ;
+            }else if( geomType.contains("Line")   ){
+                iGeomType = 2 ;
+            }else{
+                rr.setState(4);
+                rr.setMessage("not supported GeomType:" + geomType);
+                return rr ;
+            }
+        }catch(Exception ex){
+            rr.setState(5);
+            rr.setMessage(ex.getMessage());
+            return rr ;
+        }
+
+
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+        int newRid = rdb.insertNewOmcFile(3 , iGeomType , shpRelPath , Integer.valueOf(uid) ,nameInDb );
+        if( newRid < 0 ){
+            rr.setState(5);
+            rr.setMessage("failed to insert db.");
+            return rr ;
+        }
+
+        rr.setState(0);
+        rr.setMessage("");
+        rr.setData(shpRelPath);
+        return rr ;
+    }
+
+
+    // delete some file
+    @CrossOrigin(origins = "*")
+    @RequestMapping("/delfile")
+    @ResponseBody
+    public RestResult delFile (
+            String omcid
+    ){
+        RestResult rr = new RestResult() ;
+
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+        OmcFile ofile = rdb.rdbGetOmcFile( Integer.valueOf(omcid)) ;
+        if( ofile==null ){
+            rr.setState(1);
+            rr.setMessage("can not find omc file.");
+            rr.setData("");
+            return rr ;
+        }
+
+        int lastSlashIndex = ofile.file.lastIndexOf('/') ;
+        int lastDotIndex = ofile.file.lastIndexOf('.') ;
+        String matchingFileName ="" ;
+        if( lastDotIndex>=0 && lastSlashIndex>=0 && lastSlashIndex < lastDotIndex )
+        {
+            //ok
+            matchingFileName = ofile.file.substring(lastSlashIndex+1, lastDotIndex-1 ) ;
+            System.out.println("matchingFileName for delete:"+matchingFileName);
+        }
+        if( matchingFileName.equals("") ){
+            rr.setState(2);
+            rr.setMessage("can not build matching filename for deleting.");
+            rr.setData("");
+            return rr ;
+        }
+
+        String theLastDirPath =
+                WConfig.getSharedInstance().pedir+ofile.file.substring(0,lastSlashIndex);
+        int numdel = 0 ;
+        try{
+            File dirPath = new File(theLastDirPath);
+            File filesList[] = dirPath.listFiles();
+            for(File file : filesList) {
+                if(file.isFile()) {
+                    if( file.getName().contains(matchingFileName) ){
+                        ++numdel ;
+                        file.delete();
+                    }
+                }
+            }
+        }catch (Exception ex){
+            rr.setState(3);
+            rr.setMessage(ex.getMessage());
+            rr.setData("");
+            return rr ;
+        }
+
+        rdb.deleteOmcFile( Integer.valueOf(omcid) ) ;
+
+        rr.setState(0);
+        rr.setMessage("");
+        rr.setData("delcnt:"+numdel);
+        return rr ;
+    }
 
 }

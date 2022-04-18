@@ -76,7 +76,7 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.21.1 2022-4-6 user offtask list.") ;
 		System.out.println("v2.22.4 2022-4-9 add one product info api; stat support script product; delete offtask.") ;
 		System.out.println("v2.22.4r 2022-4-9") ;
-        System.out.println("v2.23.0 2022-4-17 OnlineMapComposer APIs.") ;
+        System.out.println("v2.23.1 2022-4-17 OnlineMapComposer APIs.") ;
 
 		if( args.length != 1 )
 		{

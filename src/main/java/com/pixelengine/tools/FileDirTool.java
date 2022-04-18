@@ -2,6 +2,9 @@ package com.pixelengine.tools;
 /// 2022-3-5 2210
 /// 2022-4-4 add writeBinaryFile method.
 /// udpate 2022-4-9
+/// update 2022-4-18 createYmdHmsFilename 只创建文件路径，如果需要建立子目录，但是不具体创建文件
+
+import com.pixelengine.DataModel.WConfig;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -11,8 +14,86 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Objects;
+import java.util.Random;
 
 public class FileDirTool {
+    public static class FileNamerResult {
+        public int state =99 ;//0-ok, others bad.
+        public String message = "";
+        public FileNamer data = null ;
+    }
+
+    public static class FileNamer {
+        public String relfilename ;//filename under absRootdir
+        public String absfilename ;//absfilename = absRootdir + relfilename.
+    }
+
+    //通过日期和时间建立一个文件路径，只建立路径不写文件 文件名格式为 absRootdir+{yyyyMMdd}/{prefix}{HHmmss}-{rrrr}{tail}
+
+    /**
+     * @param rootdir /var/www/html/pe/
+     * @param sub1name omc_out
+     * @param prefix empty or some-
+     * @param tail empty or .xxx
+     * @return  /var/www/html/pe/{sub1name}/{yyyyMMdd}/{prefix}{HHmmss}-{rrrr}{tail}
+     */
+    static  public  FileNamerResult buildDatetimeSubdirAndFilename(
+            String rootdir,String sub1name,String prefix,String tail){
+
+        FileNamerResult rr = new FileNamerResult() ;
+        if( rootdir.length()==0 ){
+            rr.state = 0 ;
+            rr.message = "empty rootdir." ;
+            return rr ;
+        }
+
+        if( rootdir.charAt(rootdir.length()-1) != '/' ){
+            rootdir+="/" ;
+        }
+
+        Date date = new Date();
+        SimpleDateFormat datetimeFormat1 = new SimpleDateFormat("yyyyMMdd");
+        String yyyyMMddStr = datetimeFormat1.format(date);
+        SimpleDateFormat datetimeFormat2 = new SimpleDateFormat("HHmmss");
+        String hhmmssStr = datetimeFormat2.format(date);
+        String randStr = String.format("%04d",new Random().nextInt(9999)) ;
+        String newFileName = hhmmssStr+"-"+randStr ;
+        //check rootdir ok
+        if( checkDirExistsOrCreate(rootdir) == false){
+            rr.state=2 ;
+            rr.message = "rootdir not exist and failed to make." ;
+            return rr ;
+        }
+
+        String absSub1name = rootdir + sub1name + "/" ;
+        boolean sub1ok = checkDirExistsOrCreate(absSub1name) ;
+        if( sub1ok==false ){
+            rr.state = 3 ;
+            rr.message = "failed to make sub1dir:" + absSub1name ;
+            return rr ;
+        }
+
+        //check sub2dir ok
+        String sub2dir =  absSub1name +  yyyyMMddStr  + "/" ;
+        boolean sub2ok = checkDirExistsOrCreate(sub2dir) ;
+        if( sub2ok==false ){
+            rr.state = 4 ;
+            rr.message = "failed to make sub2dir:" + sub2dir ;
+            return rr;
+        }
+
+        FileNamer fn = new FileNamer() ;
+        fn.absfilename = sub2dir + prefix + newFileName + tail ;
+        fn.relfilename = sub1name + "/" + yyyyMMddStr + "/" + prefix + newFileName + tail ;
+        rr.state = 0 ;
+        rr.message = "" ;
+        rr.data = fn ;
+        return rr ;
+    }
+
+
+
     ///ext: .js .json .xml
     static public String makeDatetimeFilename(String rootdir, String prefix, String ext){
         Date date = new Date();
@@ -160,4 +241,8 @@ public class FileDirTool {
             return file.mkdir();
         }
     }
+
+
+
+
 }

@@ -14,7 +14,7 @@ package com.pixelengine;
 //update 2022-4-7 rdbGetOfftaskList
 //update 2022-4-9 new offtask not write utime; getOfftask
 //udpate 2022-4-17 omc.
-//
+//update 2022-4-18 omc.
 /////////////////////////////////////////////////////////
 
 
@@ -2251,6 +2251,48 @@ public class JRDBHelperForWebservice {
         {
             System.out.println("Error : insertNewOmcFile exception , " + ex.getMessage() ) ;
             return -1 ;
+        }
+    }
+
+
+    //delete omc file in mysql
+    public boolean deleteOmcFile( int omcid  ){
+        try{
+            String query2 = "DELETE FROM tbomcfiles where omcid = ?";
+            PreparedStatement preparedStmt2 = JRDBHelperForWebservice.getConnection().prepareStatement(query2);
+            preparedStmt2.setInt      (1, omcid);
+            preparedStmt2.executeUpdate();
+            return true ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbDeletePreloadlist exception , " + ex.getMessage() ) ;
+            return false ;
+        }
+    }
+
+    /// 2022-4-17
+    public OmcFile rdbGetOmcFile(int omcid)
+    {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * "
+                    +" FROM tbomcfiles WHERE omcid="+omcid
+                    ) ;
+            if (rs.next()) {
+                OmcFile ot = new OmcFile() ;
+                ot.omcid = rs.getInt(1) ;
+                ot.type = rs.getInt(2) ;
+                ot.type2 = rs.getInt(3) ;
+                ot.file = rs.getString(4) ;
+                ot.uid = rs.getInt(5) ;
+                ot.name = rs.getString(6) ;
+                ot.ctime = rs.getString(7) ;
+                return ot ;
+            }
+            return null;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return null;
         }
     }
 
