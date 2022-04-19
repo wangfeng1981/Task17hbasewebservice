@@ -34,7 +34,7 @@
     <Contents>
         <Layer>
             <ows:Title>script_{sid}</ows:Title>
-            <ows:WGS84BoundingBox>
+            <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
                 <ows:LowerCorner>-180 -90</ows:LowerCorner>
                 <ows:UpperCorner>180 90</ows:UpperCorner>
             </ows:WGS84BoundingBox>
