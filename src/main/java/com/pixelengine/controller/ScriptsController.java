@@ -139,6 +139,7 @@ public class ScriptsController {
             data = new String(Files.readAllBytes(Paths.get(fullpath)));
         }catch (Exception ex){
             System.out.println("getScriptContent exception:"+ex.getMessage());
+            return null ;
         }
         return data;
     }
@@ -244,6 +245,24 @@ public class ScriptsController {
         return 0 ;
     }
 
+    ///remove \n \r space \t
+    private String removeAllNoMeansChar(String text){
+        String t1 = text.replace(" ","") ;
+        t1 = t1.replace("\n","") ;
+        t1 = t1.replace("\r","") ;
+        t1 = t1.replace("\t","") ;
+        return t1 ;
+    }
+
+    /// check script text if contains sdui declearation.
+    private boolean hasSduiDeclearation(String jsText){
+        String t1 = removeAllNoMeansChar(jsText) ;
+        if( t1.contains("letsdui={") || t1.contains("varsdui={")){
+            return true ;
+        }else{
+            return false ;
+        }
+    }
 
     //获取瓦片数据的具体接口 getTile /scripts/{sid}/wmts/WMTSCapabilities.xml
     @ResponseBody
@@ -295,7 +314,7 @@ public class ScriptsController {
             if( styleId!=null && styleId!="" ){
                 styleText = rdb.rdbGetStyleText( Integer.parseInt(styleId) ) ;
             }
-            if( styleText.equals("") || styleText==null ){
+            if( styleText==null  || styleText.equals("")  ){
                 //从代码中第一个setStyle函数的return值加载styleid
                 int tempstyleid = getStyleIdFromJsScript(jsText) ;
                 if( tempstyleid>0 ){
@@ -308,7 +327,7 @@ public class ScriptsController {
             // 前面描述的GET[sdui]均是无效的sdui，不要在js代码中附加这个sdui对象，
             // 反之，如果GET[sdui]有效的化，就把sdui={...} 写在 function main函数前面 ，后续使用AST分析进行精准替换
             String jsText2 = jsText ;
-            if( jsText.contains("sdui={") == true ){
+            if( hasSduiDeclearation(jsText) ){
                 if( sduiJsonStr.compareTo("null") != 0
                         && sduiJsonStr.compareTo("") != 0
                         && sduiJsonStr.compareTo("{}")!=0
@@ -321,18 +340,6 @@ public class ScriptsController {
             int tiley = Integer.parseInt(ystr) ;
             int tilex = Integer.parseInt(xstr) ;
 
-            if( tilez==0 && tiley==0 && tilex==0 ){
-                System.out.println("debug at 0,0,0 scriptWithSDUI:");
-                System.out.println(jsText2);
-            }
-
-            if( false ){//debug
-                final HttpHeaders debugheaders = new HttpHeaders();
-                debugheaders.setContentType(MediaType.TEXT_PLAIN);
-                return new ResponseEntity<byte[]>(jsText2.getBytes() , debugheaders, HttpStatus.OK);
-            }
-
-            
             String extraStr = "{\"datetime\":"+dtstr+"}" ;
             HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
             TileComputeResult res1 = cv8.RunScriptForTileWithRenderWithExtra(
@@ -421,6 +428,24 @@ public class ScriptsController {
     }
 
 
+    //2022-5-19 获取脚本内容，避免使用nginx缓存的影响
+    @ResponseBody
+    @RequestMapping(value="/scripts/content/",method= RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public RestResult getContent(
+            String sid ,
+            String utime  //no used in code , only for avoid browser cache.
+    )
+    {
+        RestResult rr = new RestResult() ;
+        System.out.println("/scripts/content/");
+        String sc = ScriptsGetterTool.getSharedInstance().getScriptContent(Integer.valueOf(sid));
+        rr.setState(0);
+        rr.setData(sc);
+        return rr;
+    }
+
+
     //2022-5-15 删除脚本
     @ResponseBody
     @RequestMapping(value="/scripts/delete",method= RequestMethod.POST)
@@ -469,7 +494,7 @@ public class ScriptsController {
 
         //检查js脚本中是否有 sdui 的声明，然后在检查GET中的sdui参数，检查GET[sdui]是否为null或者空字符串或者{}空对象
         String jsText2 = jsText ;
-        if( jsText.contains("sdui={") == true ){
+        if( hasSduiDeclearation(jsText)  ){
             if( sdui.compareTo("null") != 0
                     && sdui.compareTo("") != 0
                     && sdui.compareTo("{}")!=0
