@@ -1,6 +1,7 @@
 package com.pixelengine.controller;
 /// 在线作图java这边相关接口，主要是mysql相关操作 2022-4-17
 /// 2022-4-17 created
+/// 2022-4-25
 
 import com.google.gson.Gson;
 import com.pixelengine.DataModel.*;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import scala.reflect.internal.tpe.FindMembers;
+//import scala.reflect.internal.tpe.FindMembers;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedOutputStream;
@@ -130,7 +131,7 @@ public class OmcController {
         if( ipid > 0 ){
             //http://192.168.56.103:15900/pe/product/1/wmts/WMTSCapabilities.xml
             //layer layer_{pid}
-            capurl = "http://" + c.host + ":" + c.port + "/pe/product/"+pid+"/wmts/WMTSCapabilities.xml" ;
+            capurl = WConfig.getSharedInstance().task17_api_root+ "product/"+pid+"/wmts/WMTSCapabilities.xml" ;
             wmsLayer = "layer_"+pid ;
 
             JProduct pdt1 = rdb.rdbGetProductForAPI(ipid) ;
@@ -143,7 +144,7 @@ public class OmcController {
         }else if( isid > 0 ){
             //http://192.168.56.103:15900/pe/scripts/1/wmts/WMTSCapabilities.xml
             //layer scirpt_{sid}
-            capurl = "http://" + c.host + ":" + c.port + "/pe/scripts/"+sid+"/wmts/WMTSCapabilities.xml" ;
+            capurl = WConfig.getSharedInstance().task17_api_root+"scripts/"+sid+"/wmts/WMTSCapabilities.xml" ;
             wmsLayer = "scirpt_"+sid ;
 
             JScript script1 = rdb.rdbGetScript(isid) ;

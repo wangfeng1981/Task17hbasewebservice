@@ -19,14 +19,14 @@
         <ows:Operation name="GetCapabilities">
             <ows:DCP>
                 <ows:HTTP>
-                    <ows:Get xlink:href="http://{host}:{port}/pe/product/{pid}/wmts/WMTSCapabilities.xml"></ows:Get>
+                    <ows:Get xlink:href="{task17_api_root}product/{pid}/wmts/WMTSCapabilities.xml"></ows:Get>
                 </ows:HTTP>
             </ows:DCP>
         </ows:Operation>
         <ows:Operation name="GetTile">
             <ows:DCP>
                 <ows:HTTP>
-                    <ows:Get xlink:href="http://{host}:{port}/pe/product/{pid}/wmts/"></ows:Get>
+                    <ows:Get xlink:href="{task17_api_root}product/{pid}/wmts/"></ows:Get>
                 </ows:HTTP>
             </ows:DCP>
         </ows:Operation>

@@ -99,5 +99,7 @@ public class WConfig {
     //2022-4-17 example http://localhost:15911/   POST some formdata
     public String omc_localhost_api  ;
 
+    //2022-4-25 "task17_api_root": "http://192.168.56.103:15900/pe/",
+    public String task17_api_root ;
 
 }

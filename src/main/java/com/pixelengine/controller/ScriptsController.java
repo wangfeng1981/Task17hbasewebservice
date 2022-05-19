@@ -1,5 +1,9 @@
 package com.pixelengine.controller;
+//update 2022-4-25 task17_api_root
+//2022-5-11
+//2022-5-19
 
+import com.google.gson.Gson;
 import com.pixelengine.*;
 import com.pixelengine.DataModel.*;
 import com.pixelengine.tools.FileDirTool;
@@ -15,6 +19,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Optional;
@@ -22,44 +28,106 @@ import java.util.Optional;
 @RestController
 public class ScriptsController {
 
+//    @ResponseBody
+//    @RequestMapping(value="/scripts/user/new/{uid}",method= RequestMethod.GET)
+//    @CrossOrigin(origins = "*")
+//    public ResponseEntity<byte[]> scriptnew(@PathVariable String uid , String type)
+//    {//deprecated 2022-5-10
+//
+//    }
+
+    //2022-5-10
     @ResponseBody
-    @RequestMapping(value="/scripts/user/new/{uid}",method= RequestMethod.GET)
+    @RequestMapping(value="/scripts/new2",method= RequestMethod.POST)
     @CrossOrigin(origins = "*")
-    public ResponseEntity<byte[]> scriptnew(@PathVariable String uid , String type)
+    public RestResult new2(String uid , String script)
     {
-        System.out.println("/scripts/user/new/{uid}");
-        int uid2 = Integer.parseInt(uid) ;
-        String scriptZero="";
-        if( type.compareTo("1")==0 )
-        {
-            scriptZero = "function main(){\n  return null;\n}" ;
-        }else
-        {
-            scriptZero = "function zlevelFunc()\n{\n  return 1;\n}\nfunction extentFunc()\n{\n  return [110.0,120.0,35.0,32.0];//left,right,top,bottom\n}\nfunction sharedobjectFunc()\n{\n  return {};\n}\nfunction mapFunc( sharedobj )\n{\n  return {key:\"somekey\", val:{data:1}} ;\n}\nfunction reduceFunc( sharedObj, key, obj1, obj2 )\n{\n  var sum=obj1.data+obj2.data;\n  return {data:sum};\n}\nfunction main( objCollection )\n{\n  var key0sum= objCollection[0].data;\n  return {data:key0sum};\n}";
+        System.out.println("/scripts/new2");
+
+        RestResult rr = new RestResult();
+        rr.setData(null);
+        rr.setState(0);
+        rr.setMessage("");
+
+        FileDirTool.FileNamerResult fnr = FileDirTool.buildDatetimeSubdirAndFilename(
+                WConfig.getSharedInstance().pedir,
+                "scripts/user" , "s" , ".js"
+        ) ;
+        if( fnr.state != 0 ){
+            rr.setMessage(fnr.message);
+            rr.setState(fnr.state);
+            return rr ;
         }
+
+        boolean wok = FileDirTool.writeToFile(fnr.data.absfilename,script) ;
+        if( wok==false ){
+            rr.setState(11);
+            rr.setMessage("Failed to write script file.");
+            return rr ;
+        }
+
+        int uid2 = Integer.parseInt(uid) ;
+
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
-        int newsid = rdb.rdbNewUserScript(uid2,scriptZero, Integer.parseInt(type)) ;
-        final HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        String outjson = "{\"sid\":" + newsid + ", \"type\":" +type+ "}" ;
-        return new ResponseEntity<byte[]>( outjson.getBytes(), headers, HttpStatus.OK);
+        int newsid = rdb.rdbNewUserScript(uid2,fnr.data.relfilename) ;
+
+        if( newsid < 0 ){
+            rr.setState(12);
+            rr.setMessage("Failed to insert to mysql.");
+            return rr ;
+        }
+
+        JScript sc = rdb.rdbGetScript( newsid ) ;
+        if( sc==null ){
+            rr.setState(13);
+            rr.setMessage("Failed to find script by "+newsid);
+            return rr;
+        }
+        rr.setData(sc);
+        rr.setState(0);
+        return rr;
     }
 
+
+    /// 用户脚本列表 2022-5-11
     @ResponseBody
-    @RequestMapping(value="/scripts/user/{uid}",method= RequestMethod.GET)
+    @RequestMapping(value="/scripts/userlist",method= RequestMethod.GET)
     @CrossOrigin(origins = "*")
-    public ResponseEntity<byte[]> scriptlist(@PathVariable String uid)
+    public RestResult scriptlist( String uid)
     {
-        System.out.println("/scripts/user/{uid}");
+        // return maximum 50 scripts from newest to oldest.
+        RestResult rr = new RestResult() ;
+
+        System.out.println("/scripts/userlist");
         int uid2 = Integer.parseInt(uid);
-
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
-        String outjson = rdb.rdbGetUserScriptListJson(uid2) ;
-
-        final HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        return new ResponseEntity<byte[]>( outjson.getBytes(), headers, HttpStatus.OK);
+        ArrayList<JScript> list = rdb.rdbGetUserScriptList(uid2) ;
+        if( list==null ){
+            rr.setState(1);
+            rr.setMessage("failed to get user script list.");
+            return rr ;
+        }
+        rr.setState(0);
+        rr.setData(list);
+        return rr;
     }
+
+
+//deprecated 2022-5-11
+//    @ResponseBody
+//    @RequestMapping(value="/scripts/user/{uid}",method= RequestMethod.GET)
+//    @CrossOrigin(origins = "*")
+//    public ResponseEntity<byte[]> scriptlist(@PathVariable String uid)
+//    {
+//        System.out.println("/scripts/user/{uid}");
+//        int uid2 = Integer.parseInt(uid);
+//        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+//        String outjson = rdb.rdbGetUserScriptListJson(uid2) ;
+//
+//        final HttpHeaders headers = new HttpHeaders();
+//        headers.setContentType(MediaType.APPLICATION_JSON);
+//        return new ResponseEntity<byte[]>( outjson.getBytes(), headers, HttpStatus.OK);
+//    }
 
 
     //获取js脚本中的内容 relPath 是相对路径 scrips/...
@@ -122,7 +190,12 @@ public class ScriptsController {
                 //port
                 xmlContent2 = xmlContent2.replace("{port}", WConfig.getSharedInstance().port);
                 //script-utime
-                xmlContent2 = xmlContent2.replace("{utime}",  String.valueOf(scriptObj.utime.getTime()) ) ;
+                xmlContent2 = xmlContent2.replace("{utime}",
+                        String.valueOf(Timestamp.valueOf( scriptObj.utime).getTime()/1000) ) ;
+
+                //task17_api_root
+                xmlContent2 = xmlContent2.replace("{task17_api_root}",  WConfig.getSharedInstance().task17_api_root  ) ;
+
                 //return xml
                 final HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.TEXT_XML);
@@ -140,6 +213,35 @@ public class ScriptsController {
             headers.setContentType(MediaType.TEXT_PLAIN);
             return new ResponseEntity<byte[]>(("scriptWMTSCaps exception "+ex.getMessage()).getBytes(), headers, HttpStatus.NOT_FOUND ) ;
         }
+    }
+
+
+    ///成功返回具体值，失败返回0
+    private int getStyleIdFromJsScript(String script)
+    {
+        int pos1 = script.indexOf("function setStyle()") ;
+        if( pos1>=0 ){
+            int pos2 = pos1 + "function setStyle()".length() ;
+            int pos3 = script.indexOf("}",pos2) ;
+            if( pos3>1 ){
+                int pos4 = pos3 - 1 ;
+                try{
+                    String returnStr = script.substring(pos2 , pos4) ;
+                    String r1 = returnStr.replace("{","") ;
+                    String r2 = r1.replace("return","") ;
+                    String r3 = r2.replace(";","") ;
+                    String r4 = r3.replace(" ","") ;
+                    r4 = r4.replace("\n","") ;
+                    r4 = r4.replace("\r","") ;
+                    int styleid = Integer.valueOf(r4) ;
+                    return styleid ;
+                }
+                catch (Exception ex){
+                    return 0 ;
+                }
+            }
+        }
+        return 0 ;
     }
 
 
@@ -177,7 +279,9 @@ public class ScriptsController {
         String styleId = lowerParams.get("styleid") ;
         String sduiJsonStr = lowerParams.get("sdui") ;// '','null','{}' are all treated as no sdui.
 
-        String jsText = ScriptsGetterTool.getSharedInstance().getScriptContent( Integer.valueOf(sid) , Long.valueOf(utimeStr)) ;
+        String jsText = ScriptsGetterTool.getSharedInstance().getScriptContent(
+                Integer.valueOf(sid)
+        ) ;
         /// String outputText = "sdui=" + sdui + "\n\n" + jsText;
         /// final HttpHeaders headers = new HttpHeaders();
         /// headers.setContentType(MediaType.TEXT_PLAIN);
@@ -190,6 +294,13 @@ public class ScriptsController {
             String styleText = "" ;
             if( styleId!=null && styleId!="" ){
                 styleText = rdb.rdbGetStyleText( Integer.parseInt(styleId) ) ;
+            }
+            if( styleText.equals("") || styleText==null ){
+                //从代码中第一个setStyle函数的return值加载styleid
+                int tempstyleid = getStyleIdFromJsScript(jsText) ;
+                if( tempstyleid>0 ){
+                    styleText = rdb.rdbGetStyleText( tempstyleid) ;
+                }
             }
 
             //2022-2-7
@@ -255,32 +366,203 @@ public class ScriptsController {
         }
     }
 
+
+
+    //2022-5-15
     @ResponseBody
-    @RequestMapping(value="/scripts/update/{sid}",method= RequestMethod.POST)
+    @RequestMapping(value="/scripts/update",method= RequestMethod.POST)
     @CrossOrigin(origins = "*")
-    public ResponseEntity<byte[]> scriptupdate(
-            @PathVariable String sid,
-            @RequestParam("script") Optional<String> script,
-            @RequestParam("title") Optional<String> title)
+    public RestResult update(
+            String sid,
+            String text,
+            String title)
     {
-        System.out.println("/scripts/update/{sid}");
+        RestResult rr = new RestResult() ;
+
+        System.out.println("/scripts/update");
         int sid2 = Integer.parseInt(sid);
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
-        if( script.isPresent() && title.isPresent() )
-        {
-            rdb.rdbUpdateUserScript(sid2,script.get(),title.get());
-        }else if( title.isPresent() )
-        {
-            rdb.rdbUpdateUserScript(sid2,null,title.get());
-        }else if( script.isPresent() )
-        {
-            rdb.rdbUpdateUserScript(sid2,script.get(),null);
+        JScript sc = rdb.rdbGetScript(sid2) ;
+        if( sc == null ){
+            rr.setState(1);
+            rr.setMessage("No script in db for "+sid);
+            return rr ;
         }
-        final HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        return new ResponseEntity<byte[]>( "{\"status\":0}".getBytes(), headers, HttpStatus.OK);
+
+        String filename = WConfig.getSharedInstance().pedir + sc.jsfile ;
+        boolean wok = FileDirTool.writeToTextFile(filename, text) ;
+        if( wok==false ) {
+            rr.setState(2);
+            rr.setMessage("write script failed.");
+            return rr ;
+        }
+        long dt = rdb.rdbUpdateUserScript(sid2,title) ;
+        ScriptsGetterTool.getSharedInstance().updateOneScriptCache(sid2);
+        rr.setState(0);
+        rr.setData(dt);
+        return rr;
     }
 
+
+    //2022-5-15 强制刷新全部脚本
+    @ResponseBody
+    @RequestMapping(value="/scripts/refreshcache",method= RequestMethod.POST)
+    @CrossOrigin(origins = "*")
+    public RestResult refreshCache(
+            String uname,
+            String pwd )
+    {
+        RestResult rr = new RestResult() ;
+        System.out.println("/scripts/refreshcache");
+        ScriptsGetterTool.getSharedInstance().updateAllScriptCache();
+        rr.setState(0);
+        rr.setData("succ");
+        return rr;
+    }
+
+
+    //2022-5-15 删除脚本
+    @ResponseBody
+    @RequestMapping(value="/scripts/delete",method= RequestMethod.POST)
+    @CrossOrigin(origins = "*")
+    public RestResult delete(
+            String sid )
+    {
+        RestResult rr = new RestResult() ;
+        System.out.println("/scripts/delete");
+        int sid2 = Integer.parseInt(sid);
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+        rdb.rdbDeleteUserScript(sid2) ;
+        rr.setState(0);
+        rr.setData("succ");
+        return rr;
+    }
+
+
+
+    //2022-5-19
+    // /pe/scripts/pixvals/...
+    @ResponseBody
+    @RequestMapping(value="/scripts/pixvals/",method= RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public RestResult getPixelValues(
+            String sid,
+            String lon,
+            String lat,
+            String datetime,
+            String sdui,
+            String utime )
+    {
+        System.out.println(String.format("getPixelValues sid %s, lon %s, lat %s, dt %s,sdui %s",
+                sid,lon,lat,
+                datetime,sdui));
+        RestResult result = new RestResult() ;
+        result.setMessage("");
+        result.setState(0);
+
+        double lon1 = Double.parseDouble(lon);
+        double lat1 = Double.parseDouble(lat);
+
+        int sid2 = Integer.parseInt(sid) ;
+        //get script text
+        String jsText = ScriptsGetterTool.getSharedInstance().getScriptContent(sid2) ;
+
+        //检查js脚本中是否有 sdui 的声明，然后在检查GET中的sdui参数，检查GET[sdui]是否为null或者空字符串或者{}空对象
+        String jsText2 = jsText ;
+        if( jsText.contains("sdui={") == true ){
+            if( sdui.compareTo("null") != 0
+                    && sdui.compareTo("") != 0
+                    && sdui.compareTo("{}")!=0
+            ){
+                String sduiJsonStr2 = "\nsdui=" + sdui + ";\n" ;
+                jsText2 = jsText.replace("function main(" , sduiJsonStr2 + "function main(") ;
+            }
+        }
+
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+        try{
+            //get max zoom
+            HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
+            String dsdtJsonStr = cv8.GetDatasetNameArray("com/pixelengine/HBasePixelEngineHelper",jsText2) ;
+            Gson gson = new Gson() ;
+            JDsNameArrayResult dsnameArrRes = gson.fromJson(dsdtJsonStr, JDsNameArrayResult.class);
+            if( dsnameArrRes==null ){
+                result.setState(11);
+                result.setMessage("get dsname from script failed (11).");
+                return result ;
+            }
+            if( dsnameArrRes.status!=0 ){
+                result.setState(12);
+                result.setMessage("get dsname from script failed (12).");
+                return result ;
+            }
+            if( dsnameArrRes.data.length == 0 ){
+                result.setState(13);
+                result.setMessage("get none dsname from script.");
+                return result ;
+            }
+            int minOfMaxZooms = 999;
+            for(int i = 0 ; i< dsnameArrRes.data.length;++i ){
+                JProduct pdt1 = rdb.rdbGetProductInfoByName(dsnameArrRes.data[i]) ;
+                if( pdt1==null ){
+                    result.setState(14);
+                    result.setMessage("get product info failed for pdtname:"+dsnameArrRes.data[i]);
+                    return result ;
+                }
+                if( pdt1.maxZoom < minOfMaxZooms) minOfMaxZooms = pdt1.maxZoom ;
+            }
+
+            if( lon1 < -180 || lon1 > 180 || lat1 < -90 || lat1 > 90){
+                ArrayList<String> arr = new ArrayList<>() ;
+                arr.add("Invalid longitude or latitude.") ;
+                result.setData(arr);
+                return result ;
+            }
+
+            JPixelValues pxvalues = JPixelValues.CreateByLongLat(
+                    lon1,
+                    lat1,
+                    minOfMaxZooms,
+                    256,
+                    256
+            ) ;
+
+            String extraStr = "{\"datetime\":"+datetime+"}" ;
+            TileComputeResult res1 = cv8.RunScriptForTileWithoutRenderWithExtra(
+                    "com/pixelengine/HBasePixelEngineHelper",
+                    jsText2,
+                    extraStr,
+                    pxvalues.tilez,
+                    pxvalues.tiley,
+                    pxvalues.tilex
+            ) ;
+
+            if( res1.status==0 )
+            {//ok
+                System.out.println("Info : tile compute ok.");
+
+                ArrayList<String> arr = new ArrayList<>() ;
+                for(int ib = 0; ib < res1.nbands; ++ ib )
+                {
+                    double val1 = res1.getValue(pxvalues.col,pxvalues.row,ib) ;
+                    arr.add("波段"+String.valueOf(ib+1) + ":" + String.valueOf(val1)) ;
+                }
+                result.setData(arr);
+                return result ;
+            }else
+            {
+                result.setState(0);
+                ArrayList<String> tarr = new ArrayList<>();
+                tarr.add("计算失败，可能像素不在有效范围内") ;
+                result.setData(tarr);
+                return result ;
+            }
+        }catch (Exception ex){
+            result.setState(1);
+            result.setMessage("some exception:"+ex.getMessage());
+            return result ;
+        }
+    }
 
 
 }

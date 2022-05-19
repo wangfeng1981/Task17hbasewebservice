@@ -29,6 +29,8 @@
   "shpgeojson2hsegtlv":"/home/hadoop/IdeaProjects/zonalstat_commands/shpgeojson2hegbinary/shpgeojson2hegbinary",
   "binaryfile2hbase":"/home/hadoop/IdeaProjects/Task24BinaryFile2HBase/out/artifacts/Task24BinaryFile2HBase_jar/Task24BinaryFile2HBase.jar",
 
+  "task17_api_root": "http://192.168.56.103:15900/pe/",
+
 
 
   "omc_comment":"omc前缀属性表示用于在线制图功能属性",

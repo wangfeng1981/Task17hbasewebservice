@@ -1,5 +1,6 @@
 package com.pixelengine.DataModel;
 //2022-01-01
+//2022-5-18
 public class JPixelValues {
     public double longitude,latitude;
     public int tilez,tiley,tilex,col,row;
@@ -13,8 +14,8 @@ public class JPixelValues {
         int tilexnum = (int) Math.pow(2.0,(double)z) ;
         double resox = 360.0 / tilexnum / tilewid;
         double resoy = 180.0 / (tilexnum/2.0) / tilehei ;
-        int fully = (int)((90.0-pv.latitude)/resoy+0.5) ;
-        int fullx = (int)((pv.longitude+180.0)/resox+0.5) ;
+        int fully = (int)((90.0-pv.latitude)/resoy) ;
+        int fullx = (int)((pv.longitude+180.0)/resox) ;
         pv.tiley = (int)(fully/tilehei) ;
         pv.tilex = (int)(fullx/tilewid) ;
         pv.col = fullx%tilewid;

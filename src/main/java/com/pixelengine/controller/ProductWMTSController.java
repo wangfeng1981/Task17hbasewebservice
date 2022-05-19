@@ -1,10 +1,13 @@
 package com.pixelengine.controller;
 //实现系统预定义产品的wmts服务
 //updated 2022-4-17
+//updated 2022-4-25 use task17_api_root
+//2022-5-19
 
 import com.pixelengine.*;
 import com.pixelengine.DataModel.*;
 import com.pixelengine.TileComputeResult;
+import com.pixelengine.tools.ScriptsGetterTool;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 
@@ -74,9 +78,16 @@ public class ProductWMTSController {
         //styleid
         xmlContent2 = xmlContent2.replace("{styleid}", String.valueOf(pdt.styleid) );
 
+        //task17_api_root
+        xmlContent2 = xmlContent2.replace("{task17_api_root}", WConfig.getSharedInstance().task17_api_root );
+
+
         //return xml
         return new ResponseEntity<byte[]>(xmlContent2.getBytes(), headers, HttpStatus.OK);
     }
+
+
+
 
     //获取瓦片数据的具体接口 getTile /product/{pid}/wmts/WMTSCapabilities.xml
     @ResponseBody
@@ -232,72 +243,76 @@ public class ProductWMTSController {
     // /pe/product/123/pixvals/...
     // /pe/uproduct/123/pixvals/...
     @ResponseBody
-    @RequestMapping(value="/product/{pid}/pixvals/",method= RequestMethod.GET)
+    @RequestMapping(value="/product/pixvals/",method= RequestMethod.GET)
     @CrossOrigin(origins = "*")
     public RestResult getPixelValues(
-            @PathVariable String pid,
-            String lon,String lat,String datetime )
+            String pid,
+            String lon,
+            String lat,
+            String datetime )
     {
         System.out.println(String.format("getPixelValues lon %s, lat %s, dt %s",lon,lat,datetime));
         RestResult result = new RestResult() ;
         result.setMessage("");
         result.setState(0);
 
-        double inlon = Double.parseDouble(lon);
-        double inlat = Double.parseDouble(lat);
+        double lon1 = Double.parseDouble(lon);
+        double lat1 = Double.parseDouble(lat);
 
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
         try{
             JProduct pdt = rdb.rdbGetProductForAPI( Integer.parseInt(pid)  ) ;
-            if( pdt!=null && pdt.name.equals("")==false &&
-                    inlon>=-180.0 && inlon<=180.0 && inlat>=-90.0 && inlat<=90.0)
-            {
-                int tilez = pdt.maxZoom;
-                JPixelValues pxvalues = JPixelValues.CreateByLongLat(
-                        inlon,
-                        inlat,
-                        tilez,
-                        pdt.tileWid,
-                        pdt.tileHei
-                ) ;
-                System.out.println("from long,lat -> tile(z,y,x),col,row:"
-                        +"(" +pxvalues.tilez
-                        +"," +pxvalues.tiley
-                        +"," +pxvalues.tilex
-                        +"),"+pxvalues.col
-                        + "," + pxvalues.row
-                ) ;
-                String scriptContent = scriptContentTemplate.replace("{{{name}}}",pdt.name)
-                        .replace("{{{dt}}}" , datetime) ;
-                HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
-                TileComputeResult res1 = cv8.RunScriptForTileWithoutRender(
-                        "com/pixelengine/HBasePixelEngineHelper",
-                        scriptContent, Long.parseLong(datetime) ,
-                        tilez,pxvalues.tiley,pxvalues.tilex) ;
-                if( res1.status==0 )
-                {//ok
-                    System.out.println("Info : tile compute ok.");
-                    pxvalues.values = new double[res1.nbands] ;
-                    for(int ib = 0; ib < res1.nbands; ++ ib )
-                    {
-                        pxvalues.values[ib] = res1.getValue(pxvalues.col,pxvalues.row,ib) ;
-                    }
-                    result.setData(pxvalues);
-                    return result;
-                }else
+            if( pdt==null ){
+                ArrayList<String> arr = new ArrayList<>() ;
+                arr.add("Invalid pid.") ;
+                result.setData(arr);
+                return result ;
+            }
+
+            if( lon1 < -180 || lon1 > 180 || lat1 < -90 || lat1 > 90){
+                ArrayList<String> arr = new ArrayList<>() ;
+                arr.add("Invalid longitude or latitude.") ;
+                result.setData(arr);
+                return result ;
+            }
+
+            int tilez = pdt.maxZoom;
+            JPixelValues pxvalues = JPixelValues.CreateByLongLat(
+                    lon1,
+                    lat1,
+                    tilez,
+                    pdt.tileWid,
+                    pdt.tileHei
+            ) ;
+
+            String scriptContent = scriptContentTemplate.replace("{{{name}}}",pdt.name)
+                    .replace("{{{dt}}}" , datetime) ;
+            HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
+            TileComputeResult res1 = cv8.RunScriptForTileWithoutRender(
+                    "com/pixelengine/HBasePixelEngineHelper",
+                    scriptContent, Long.parseLong(datetime) ,
+                    tilez,pxvalues.tiley,pxvalues.tilex) ;
+            if( res1.status==0 )
+            {//ok
+                System.out.println("Info : tile compute ok.");
+
+                ArrayList<String> arr = new ArrayList<>() ;
+                for(int ib = 0; ib < res1.nbands; ++ ib )
                 {
-                    result.setState(3);
-                    result.setMessage("bad compute in v8.");
-                    return result ;
+                    double val1 = res1.getValue(pxvalues.col,pxvalues.row,ib) ;
+                    arr.add("波段"+String.valueOf(ib+1) + ":" + String.valueOf(val1)) ;
                 }
-            }else{
-                result.setState(2);
-                result.setMessage("no product or invalid longitude/latitude.");
+                result.setData(arr);
+                return result ;
+            }else
+            {
+                result.setState(3);
+                result.setMessage("bad compute in v8.");
                 return result ;
             }
         }catch (Exception ex){
             result.setState(1);
-            result.setMessage("mysql query or some other exception:"+ex.getMessage());
+            result.setMessage("some exception:"+ex.getMessage());
             return result ;
         }
     }

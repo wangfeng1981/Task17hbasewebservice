@@ -15,6 +15,9 @@ package com.pixelengine;
 //update 2022-4-9 new offtask not write utime; getOfftask
 //udpate 2022-4-17 omc.
 //update 2022-4-18 omc.
+//update 2022-5-10 new script
+//update 2022-5-11
+//udpate 2022-5-15
 /////////////////////////////////////////////////////////
 
 
@@ -56,7 +59,7 @@ public class JRDBHelperForWebservice {
 
     public static String getCurrentDatetimeStr(){
         LocalDateTime myDateObj = LocalDateTime.now();
-        DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+        DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String formattedDate = myDateObj.format(myFormatObj);
         return formattedDate;
     }
@@ -346,19 +349,22 @@ public class JRDBHelperForWebservice {
         }
     }
 
-    public int rdbNewUserScript( int uid, String script0,int type){
+
+    //2022-5-10
+    public int rdbNewUserScript( int uid,String scriptRelPath ){
         try
         {
-            long dt0 = this.getCurrentDatetime();
-            String query = " insert into tbscript (title, scriptcontent, updatetime, uid, type)"
+            String dtstr = this.getCurrentDatetimeStr();
+            String title = "新建脚本 " + dtstr ;
+            String query = " insert into tbscript (title, jsfile, utime, uid, state)"
                     + " values (?, ?, ?, ?, ?)";
             // create the mysql insert preparedstatement
             PreparedStatement preparedStmt = JRDBHelperForWebservice.getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-            preparedStmt.setString (1, "no-title");
-            preparedStmt.setString (2, script0);
-            preparedStmt.setLong   (3, dt0);
+            preparedStmt.setString (1, title);
+            preparedStmt.setString (2, scriptRelPath);
+            preparedStmt.setString   (3, dtstr);
             preparedStmt.setInt    (4, uid);
-            preparedStmt.setInt    (5, type);
+            preparedStmt.setInt    (5, 0);
             // execute the preparedstatement
             preparedStmt.executeUpdate();
             ResultSet rs = preparedStmt.getGeneratedKeys();
@@ -366,18 +372,11 @@ public class JRDBHelperForWebservice {
             if(rs.next())
             {
                 last_inserted_id = rs.getInt(1);
-                //update title
-                String newtitle = "script-" + last_inserted_id;
-                String query2 = "update tbscript set title = ? where sid = ?";
-                PreparedStatement preparedStmt2 = JRDBHelperForWebservice.getConnection().prepareStatement(query2);
-                preparedStmt2.setString   (1, newtitle);
-                preparedStmt2.setInt      (2, last_inserted_id);
-                preparedStmt2.executeUpdate();
             }
             return last_inserted_id;
         }catch (Exception ex )
         {
-            System.out.println("Error : rdbNewRenderTask exception , " + ex.getMessage() ) ;
+            System.out.println("Error : rdbNewUserScript exception , " + ex.getMessage() ) ;
             return -1 ;
         }
     }
@@ -398,7 +397,7 @@ public class JRDBHelperForWebservice {
                 jscript.uid = rs.getInt("uid");
                 jscript.title = rs.getString("title");
                 jscript.scriptContent = "";
-                jscript.utime = rs.getDate("utime");
+                jscript.utime = rs.getString("utime");
                 jscript.state = rs.getInt("state");
                 jscript.jsfile = rs.getString("jsfile");
 
@@ -419,6 +418,34 @@ public class JRDBHelperForWebservice {
     }
 
 
+    //2022-5-11
+    public ArrayList<JScript> rdbGetUserScriptList(int uid)
+    {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * "
+                    +" FROM tbscript WHERE uid="  + uid
+                    +" Order by utime DESC LIMIT 50") ;
+            ArrayList<JScript> list =new ArrayList<>() ;
+            while (rs.next()) {
+                JScript jscript = new JScript();
+                jscript.sid = rs.getInt("sid");
+                jscript.uid = rs.getInt("uid");
+                jscript.title = rs.getString("title");
+                jscript.scriptContent = "";
+                jscript.utime = rs.getString("utime");
+                jscript.state = rs.getInt("state");
+                jscript.jsfile = rs.getString("jsfile");
+                list.add(jscript) ;
+            }
+            return list;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return null ;
+        }
+    }
+
+
     //updated 2022-2-5 wf
     public JScript rdbGetUserScript(int sid)
     {
@@ -432,7 +459,7 @@ public class JRDBHelperForWebservice {
                 jscript.uid = rs.getInt("uid");
                 jscript.title = rs.getString("title");
                 jscript.scriptContent ="";
-                jscript.utime = rs.getDate("utime");
+                jscript.utime = rs.getString("utime");
                 jscript.state = rs.getInt("state");
                 jscript.jsfile = rs.getString("jsfile");
                 return jscript;
@@ -457,7 +484,7 @@ public class JRDBHelperForWebservice {
                 jscript.uid = rs.getInt("uid");
                 jscript.title = rs.getString("title");
                 jscript.scriptContent = "";
-                jscript.utime = rs.getDate("utime");
+                jscript.utime = rs.getString("utime");//2022-5-11
                 jscript.state = rs.getInt("state");
                 jscript.jsfile = rs.getString("jsfile") ;
                 return jscript;
@@ -490,44 +517,22 @@ public class JRDBHelperForWebservice {
         }
     }
 
-    public void rdbUpdateUserScript( int sid, String script, String title ){
-        if( script != null || title != null )
-        {
-            try
-            {
-                long dt0 = this.getCurrentDatetime();
+    public long rdbUpdateUserScript( int sid,String title ){
 
-                if( script!=null && title != null )
-                {
-                    String query2 = "update tbscript set title = ?, scriptcontent = ? , updatetime = ?  where sid = ?";
-                    PreparedStatement preparedStmt2 = JRDBHelperForWebservice.getConnection().prepareStatement(query2);
-                    preparedStmt2.setString   (1, title);
-                    preparedStmt2.setString   (2, script);
-                    preparedStmt2.setLong     (3, dt0);
-                    preparedStmt2.setInt      (4, sid);
-                    preparedStmt2.executeUpdate();
-                }
-                else if( script!=null )
-                {
-                    String query2 = "update tbscript set scriptcontent = ? , updatetime = ?  where sid = ?";
-                    PreparedStatement preparedStmt2 = JRDBHelperForWebservice.getConnection().prepareStatement(query2);
-                    preparedStmt2.setString   (1, script);
-                    preparedStmt2.setLong     (2, dt0);
-                    preparedStmt2.setInt      (3, sid);
-                    preparedStmt2.executeUpdate();
-                }else
-                {
-                    String query2 = "update tbscript set title = ? , updatetime = ?  where sid = ?";
-                    PreparedStatement preparedStmt2 = JRDBHelperForWebservice.getConnection().prepareStatement(query2);
-                    preparedStmt2.setString   (1, title);
-                    preparedStmt2.setLong     (2, dt0);
-                    preparedStmt2.setInt      (3, sid);
-                    preparedStmt2.executeUpdate();
-                }
-            }catch (Exception ex )
-            {
-                System.out.println("Error : rdbNewRenderTask exception , " + ex.getMessage() ) ;
-            }
+        try
+        {
+            String dt0 = getCurrentDatetimeStr() ;
+            String query2 = "update tbscript set title = ?, utime = ?  where sid = ?";
+            PreparedStatement preparedStmt2 = JRDBHelperForWebservice.getConnection().prepareStatement(query2);
+            preparedStmt2.setString   (1, title);
+            preparedStmt2.setString   (2, dt0);
+            preparedStmt2.setInt      (3, sid);
+            preparedStmt2.executeUpdate();
+            return Timestamp.valueOf( dt0).getTime()/1000 ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbUpdateUserScript exception , " + ex.getMessage() ) ;
+            return 0 ;
         }
     }
 
@@ -2297,5 +2302,20 @@ public class JRDBHelperForWebservice {
     }
 
 
+    //delete user script 2022-5-15
+    public boolean rdbDeleteUserScript( int sid  ){
+        try{
+            //update  DELETE FROM table_name [WHERE Clause]
+            String query2 = "DELETE FROM tbscript where uid>0 AND sid = ?";
+            PreparedStatement preparedStmt2 = JRDBHelperForWebservice.getConnection().prepareStatement(query2);
+            preparedStmt2.setInt      (1, sid);
+            preparedStmt2.executeUpdate();
+            return true ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbDeletePreloadlist exception , " + ex.getMessage() ) ;
+            return false ;
+        }
+    }
 
 }
