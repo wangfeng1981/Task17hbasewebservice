@@ -38,7 +38,7 @@
                 <ows:LowerCorner>-180 -90</ows:LowerCorner>
                 <ows:UpperCorner>180 90</ows:UpperCorner>
             </ows:WGS84BoundingBox>
-            <ows:Identifier>scirpt_{sid}</ows:Identifier>
+            <ows:Identifier>script_{sid}</ows:Identifier>
             <Style isDefault="true">
                 <ows:Title>default</ows:Title><ows:Identifier>default</ows:Identifier>
             </Style>

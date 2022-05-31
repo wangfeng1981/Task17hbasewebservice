@@ -2,6 +2,7 @@ package com.pixelengine.controller;
 /// 在线作图java这边相关接口，主要是mysql相关操作 2022-4-17
 /// 2022-4-17 created
 /// 2022-4-25
+// 2022-5-25
 
 import com.google.gson.Gson;
 import com.pixelengine.DataModel.*;
@@ -16,7 +17,9 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.tomcat.jni.FileInfo;
 import org.geotools.data.shapefile.ShapefileDataStore;
+import org.jcodings.util.Hash;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -143,9 +146,9 @@ public class OmcController {
 
         }else if( isid > 0 ){
             //http://192.168.56.103:15900/pe/scripts/1/wmts/WMTSCapabilities.xml
-            //layer scirpt_{sid}
+            //layer script_{sid}
             capurl = WConfig.getSharedInstance().task17_api_root+"scripts/"+sid+"/wmts/WMTSCapabilities.xml" ;
-            wmsLayer = "scirpt_"+sid ;
+            wmsLayer = "script_"+sid ;
 
             JScript script1 = rdb.rdbGetScript(isid) ;
             if(script1==null) {
@@ -493,6 +496,243 @@ public class OmcController {
         rr.setMessage("");
         rr.setData("delcnt:"+numdel);
         return rr ;
+    }
+
+
+    // make thumb png file for rel qgs file 2022-5-26
+    private boolean makeQgsThumbFile( String relqgsfile )
+    {
+        String thumbfile = relqgsfile + ".thumb.png" ;
+        HashMap<String,String> map1 = new HashMap<>();
+        map1.put("file",relqgsfile);
+        map1.put("outfile",thumbfile) ;
+        Gson gson = new Gson();
+        String jsondata = gson.toJson( map1 , HashMap.class);
+        String omcApi = WConfig.getSharedInstance().omc_localhost_api ;
+        HttpTool http2 = new HttpTool() ;
+        int ret2 = http2.omcRpc(omcApi , "layout.makethumb" , jsondata) ;
+        if( ret2==0 ){
+            return true ;
+        }else{
+            return false;
+        }
+    }
+
+
+
+    // 模板文件列表
+    // [ {catid:1,catname:'', data:[...]}, {catid:2,catname:'', data:[...]} ,...]
+    @CrossOrigin(origins = "*")
+    @RequestMapping("/temlist")
+    @ResponseBody
+    public RestResult getTemList(String uid ) {
+        RestResult rr = new RestResult();
+        rr.setState(0);
+        rr.setMessage("");
+
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+        ArrayList<JGeneralCategory> catlist = rdb.rdbGetGeneralCategoryList(3,1) ;
+        if( catlist==null ){
+            rr.setState(1);
+            rr.setMessage("get category list failed.");
+            return rr ;
+        }
+
+        for(int i = 0 ; i<catlist.size();++i )
+        {
+            int catid1 = catlist.get(i).catid ;
+            ArrayList<OmcFile> filelist = rdb.rdbGetOmcFileListWithType2(0 , 4 , catid1 ) ;
+            catlist.get(i).data = filelist.toArray(new Object[0]) ;
+            //检查是否有同名xxx.qgs.thumb.png缩略图文件，如果没有生成一个
+            for(int j = 0 ; j<catlist.get(i).data.length;++ j )
+            {
+                OmcFile omcfile1 = (OmcFile)catlist.get(i).data[j] ;
+                String qgsfile = omcfile1.file ;
+                String thumbfile = qgsfile + ".thumb.png" ;
+                String absThumbfile = WConfig.getSharedInstance().pedir + thumbfile ;
+                File file1 = new File( absThumbfile ) ;
+                if( file1.exists() ==false ){
+                    //make a .thumb.png
+                    boolean thumbok = makeQgsThumbFile(qgsfile) ;
+                    if( thumbok==true ){
+                        System.out.println("make thumb ok for " + qgsfile);
+                    }
+                }
+            }
+        }
+        rr.setState(0);
+        rr.setData(catlist);
+        return rr ;
+
+    }
+
+
+
+    //create a new qgs project from template.
+    @CrossOrigin(origins = "*")
+    @RequestMapping("/newfromtem")
+    @ResponseBody
+    public RestResult newFromTemplate(
+            String uid,
+            String pid,
+            String sid,
+            String datetime,
+            String sdui,
+            String roiid,
+            String styleid,
+            String temfile,      // relfilepath_of_template
+            String isautozoom,   //0-no zoom, 1-zoom, this field only for use template
+            String left,  //for isAutoZoom=1
+            String right, //for isAutoZoom=1
+            String top,   //for isAutoZoom=1
+            String bottom //for isAutoZoom=1
+    )
+    {
+        RestResult rr = new RestResult() ;
+        String capurl = "" ;
+        String wmsLayer = "" ;
+
+        if( temfile==null || temfile.isEmpty() ){
+            rr.setState(1);
+            rr.setMessage("empty temfile.");
+            return rr ;
+        }
+
+        String omcApi = WConfig.getSharedInstance().omc_localhost_api ;
+
+        //新新建一个qgs项目
+        String relQgsfile = "" ;
+        {
+            HttpTool http1 = new HttpTool() ;
+            int ret1 = http1.omcRpc(omcApi , "project.newfromtem" , "{\"temfile\":\""+temfile+"\"}" ) ;
+            if( ret1!=0 ){
+                rr.setState(11);
+                rr.setMessage(http1.getError());
+                return rr ;
+            }
+            relQgsfile = ((Map)http1.getResult().get("data")).get("file").toString() ;
+        }
+
+        //isautozoom==1 自动缩放到经纬度范围
+        System.out.println("isautozoom:" + isautozoom) ;
+        if( isautozoom.equals("1") ){
+            HttpTool http1 = new HttpTool() ;
+            int ret1 = http1.omcRpc(omcApi , "project.zoom" ,
+                    "{\"file\":\"" + relQgsfile + "\","
+                            + "\"left\":"+left+","
+                            + "\"right\":" + right+","
+                            + "\"top\":" + top+","
+                            + "\"bottom\":" + bottom
+                            + "}" ) ;
+            if( ret1!=0 ){
+                rr.setState(11);
+                rr.setMessage(http1.getError());
+                return rr ;
+            }
+        }
+
+        int ipid = Integer.parseInt(pid) ;
+        int isid = Integer.parseInt(sid) ;
+        WConfig c = WConfig.getSharedInstance() ;
+        int maxZoom = 0 ;
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+        if( ipid > 0 ){
+            //http://192.168.56.103:15900/pe/product/1/wmts/WMTSCapabilities.xml
+            //layer layer_{pid}
+            capurl = WConfig.getSharedInstance().task17_api_root+ "product/"+pid+"/wmts/WMTSCapabilities.xml" ;
+            wmsLayer = "layer_"+pid ;
+
+            JProduct pdt1 = rdb.rdbGetProductForAPI(ipid) ;
+            if( pdt1==null ){
+                rr.setState(2); rr.setMessage("can not find product info by "+pid);
+                return rr ;
+            }
+            maxZoom = pdt1.maxZoom ;
+
+        }else if( isid > 0 ){
+            //http://192.168.56.103:15900/pe/scripts/1/wmts/WMTSCapabilities.xml
+            //layer script_{sid}
+            capurl = WConfig.getSharedInstance().task17_api_root+"scripts/"+sid+"/wmts/WMTSCapabilities.xml" ;
+            wmsLayer = "script_"+sid ;
+
+            JScript script1 = rdb.rdbGetScript(isid) ;
+            if(script1==null) {
+                rr.setState(2); rr.setMessage("no script in db for sid "+sid);
+                return rr ;
+            }
+            String absJsFile = c.pedir + script1.jsfile ;
+            try{
+                String scriptText = FileDirTool.readFileAsString(absJsFile) ;
+                HBasePeHelperCppConnector cc = new HBasePeHelperCppConnector() ;
+                String jsontext = cc.GetDatasetNameArray("com/pixelengine/HBasePixelEngineHelper" ,scriptText ) ;
+                Gson gson = new Gson() ;
+                JDsNameArrayResult dsArrResult = gson.fromJson( jsontext , JDsNameArrayResult.class ) ;
+                if( dsArrResult.data.length  == 0 ){
+                    throw new Exception("can not parse dataset name from script text("+sid+").") ;
+                }else{
+                    JProduct pdt2 = rdb.rdbGetProductInfoByName(dsArrResult.data[0]) ;
+                    if( pdt2==null ) {
+                        rr.setState(2); rr.setMessage("can not find product info by dsname:'"+dsArrResult.data[0]+"'.");
+                        return rr ;
+                    }
+                    maxZoom = pdt2.maxZoom ;
+                }
+            }catch (Exception ex){
+                rr.setState(2); rr.setMessage(ex.getMessage());
+                return rr ;
+            }
+        }else{
+            rr.setState(1);
+            rr.setMessage("pid and sid both invalid.");
+            return rr ;
+        }
+
+        String tms = "ms_" + String.valueOf(maxZoom) ;
+        Map<String,String> map2 = new HashMap<>() ;
+        map2.put("file" , relQgsfile) ;
+        map2.put("capurl" , capurl) ;
+        map2.put("tms" , tms) ;
+        map2.put("layers", wmsLayer) ;
+        map2.put("styleid" , styleid) ;
+        map2.put("datetime" , datetime ) ;
+        map2.put("sdui" , sdui) ;
+        map2.put("roiid" , roiid) ;
+
+        {
+            Gson gson2 = new Gson () ;
+            String jsondata2 = gson2.toJson(map2,Map.class) ;
+            HttpTool http2 = new HttpTool() ;
+            int ret2 = http2.omcRpc(omcApi , "project.addwms" , jsondata2) ;
+            if( ret2==0 ){
+                //写入数据库
+                String currdt = rdb.getCurrentDatetimeStr() ;
+                int ret3 = rdb.insertNewOmcFile(1,0,relQgsfile, Integer.valueOf(uid) , currdt ) ;
+                if( ret3>=0 ){
+                    rr.setState(0);
+                    rr.setData( relQgsfile );
+                    return rr ;
+                }else{
+                    rr.setState(30);
+                    rr.setMessage("qgsfile failed to insert into db.");
+                    return rr ;
+                }
+
+            }else{
+                rr.setState(ret2);
+                rr.setMessage( http2.getError());
+                return rr ;
+            }
+        }
+//        {
+//            "file":"omc_out/20220417/122550-4499.qgs",
+//                "capurl":"http://192.168.56.103:15900/pe/product/1/wmts/WMTSCapabilities.xml",
+//                "tms":"ms_5",
+//                "layers":"layer_1",
+//                "styleid":2,
+//                "datetime":20200600000000,
+//                "sdui":"null",
+//                "roiid":"sys:1"
+//        }
     }
 
 }

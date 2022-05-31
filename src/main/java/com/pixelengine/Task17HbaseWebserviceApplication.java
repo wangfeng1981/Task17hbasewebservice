@@ -84,6 +84,12 @@ public class Task17HbaseWebserviceApplication {
 		// bugfixed for sdui matching in script wmts.
 
 		System.out.println("v2.24.1.r 2022-5-19") ;//release
+		System.out.println("v2.24.2.0 2022-5-20 try wmts legend api.");
+		System.out.println("v2.24.3.0 2022-5-24. update tbcategory related codes.");
+		//v2.24.3.0
+		// update related codes of tbcategory for newly add itype field 2022-5-24
+		System.out.println("v2.24.3.1 2022-5-27 newfromtem.");
+		System.out.println("v2.24.4.0 2022-5-31 style detail has filename.");
 
 
 		if( args.length != 1 )

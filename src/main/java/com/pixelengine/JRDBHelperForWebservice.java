@@ -18,6 +18,8 @@ package com.pixelengine;
 //update 2022-5-10 new script
 //update 2022-5-11
 //udpate 2022-5-15
+//udpate 2022-5-24
+//2022-5-26
 /////////////////////////////////////////////////////////
 
 
@@ -89,13 +91,14 @@ public class JRDBHelperForWebservice {
     }
 
     //获取全部可见的分类，不包括产品,2021-11-28
+    //2022-5-24 updated
     public ArrayList<JCategory> rdbGetCategories()
     {
         try {
             ArrayList<JCategory> result = new ArrayList<>() ;
 
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
-            String sqlstr = "SELECT * FROM tbcategory WHERE visible=1 ORDER BY iorder ASC";
+            String sqlstr = "SELECT * FROM tbcategory WHERE itype=1 AND visible=1 ORDER BY iorder ASC";
             ResultSet rs = stmt.executeQuery(sqlstr) ;
             while (rs.next()) {
                 JCategory r1 = new JCategory();
@@ -840,8 +843,8 @@ public class JRDBHelperForWebservice {
                 styleobj.styleContent =  rspd.getString("styleContent") ;
                 styleobj.description =  rspd.getString("description");
                 styleobj.userid =  rspd.getInt("userid");
-                styleobj.createtime =  rspd.getTime("createtime") ;
-                styleobj.updatetime = rspd.getTime("updatetime");
+                styleobj.createtime =  rspd.getString("createtime") ;
+                styleobj.updatetime = rspd.getString("updatetime");
             }
             return styleobj ;
         }catch(Exception ex){
@@ -2317,5 +2320,69 @@ public class JRDBHelperForWebservice {
             return false ;
         }
     }
+
+
+
+    /// 2022-5-26
+    public ArrayList<JGeneralCategory> rdbGetGeneralCategoryList(int itype,int visible)
+    {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * "
+                    +" FROM tbcategory WHERE itype="+String.valueOf(itype)
+                    +" AND visible=" + String.valueOf(visible)
+                    +" ORDER BY iorder ASC "
+                    +" LIMIT 100 ") ;
+            ArrayList<JGeneralCategory> retlist = new ArrayList<>() ;
+            while (rs.next()) {
+                JGeneralCategory o1 = new JGeneralCategory() ;
+                o1.catid = rs.getInt(1) ;
+                o1.catname = rs.getString(2) ;
+                o1.visible = rs.getInt(3) ;
+                o1.iorder =rs.getInt(4) ;
+                o1.itype = rs.getInt(5) ;
+                retlist.add(o1) ;
+            }
+            return retlist;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return null;
+        }
+    }
+
+
+    /// 2022-5-26
+    public ArrayList<OmcFile> rdbGetOmcFileListWithType2(int uid,int type,int type2)
+    {
+        try {
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * "
+                    +" FROM tbomcfiles WHERE uid="+uid
+                    +" AND type=" + type
+                    +" AND type2=" + type2
+                    +" ORDER BY omcid DESC "
+                    +" LIMIT 100 ") ;
+            ArrayList<OmcFile> retlist = new ArrayList<>() ;
+            while (rs.next()) {
+                OmcFile ot = new OmcFile() ;
+                ot.omcid = rs.getInt(1) ;
+                ot.type = rs.getInt(2) ;
+                ot.type2 = rs.getInt(3) ;
+                ot.file = rs.getString(4) ;
+                ot.uid = rs.getInt(5) ;
+                ot.name = rs.getString(6) ;
+                ot.ctime = rs.getString(7) ;
+                retlist.add(ot) ;
+            }
+            return retlist;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage()) ;
+            return null;
+        }
+    }
+
+
+
+
 
 }
