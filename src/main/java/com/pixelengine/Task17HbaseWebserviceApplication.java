@@ -90,6 +90,8 @@ public class Task17HbaseWebserviceApplication {
 		// update related codes of tbcategory for newly add itype field 2022-5-24
 		System.out.println("v2.24.3.1 2022-5-27 newfromtem.");
 		System.out.println("v2.24.4.0 2022-5-31 style detail has filename.");
+		System.out.println("v2.24.4.1 update HBasePixelEngineHelper, add some debug infos," +
+				" later it runs good, I need remove those debug outputs. 2022-6-6");
 
 
 		if( args.length != 1 )
