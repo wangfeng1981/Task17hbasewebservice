@@ -82,20 +82,33 @@ public class StyleController {
         }
     }
 
+    //update 2022-6-12
     @PostMapping(value="/edit")
     @CrossOrigin(origins = "*")
     public RestResult styleEdit(String styleid,
                                 String stylecontent,
                                 String description )
     {
-        StyleDTO style1 = styleDao.getOne( Long.parseLong(styleid)) ;
-        style1.setDescription(description);
-        style1.setStyleContent(stylecontent);
-        StyleDTO newStyle = styleDao.save(style1) ;
-        RestResult result = new RestResult() ;
-        result.setState(0);
-        result.setData(newStyle);
-        return result;
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+        boolean isok = rdb.rdbUpdateStyle(Integer.valueOf(styleid),
+                stylecontent,
+                description) ;
+        if( isok ==true ){
+            JStyleDbObject styleobj = rdb.rdbGetStyle2(Integer.parseInt(styleid));
+            styleobj.filename = generateStyleFile(
+                    String.valueOf( styleobj.styleid ) ,
+                    styleobj.styleContent,
+                    styleobj.updatetime) ;
+            RestResult result = new RestResult() ;
+            result.setState(0);
+            result.setData(styleobj);
+            return result ;
+        }else{
+            RestResult result = new RestResult() ;
+            result.setState(1);
+            result.setMessage("Failed to update style.");
+            return result ;
+        }
     }
 
 

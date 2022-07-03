@@ -375,6 +375,86 @@ public class ScriptsController {
 
 
 
+    //2022-7-3  /scripts/wmtstclog
+    @ResponseBody
+    @RequestMapping(value="/scripts/wmtstclog",method= RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public RestResult getWmtsTcLog(
+            String sid,
+            String datetime,
+            String utime,
+            String styleid,
+            String sdui
+    ) {
+
+        System.out.println("ScriptsController.getWmtsTcLog sid:"+sid);
+        RestResult rr = new RestResult() ;
+        String jsText = ScriptsGetterTool.getSharedInstance().getScriptContent(
+                Integer.valueOf(sid)
+        ) ;
+
+        try{
+            JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+            //get render style content
+            String styleText = "" ;
+            if( styleid!=null && styleid!="" ){
+                styleText = rdb.rdbGetStyleText( Integer.parseInt(styleid) ) ;
+            }
+            if( styleText==null  || styleText.equals("")  ){
+                //从代码中第一个setStyle函数的return值加载styleid
+                int tempstyleid = getStyleIdFromJsScript(jsText) ;
+                if( tempstyleid>0 ){
+                    styleText = rdb.rdbGetStyleText( tempstyleid) ;
+                }
+            }
+
+            //2022-2-7
+            //检查js脚本中是否有 sdui 的声明，然后在检查GET中的sdui参数，检查GET[sdui]是否为null或者空字符串或者{}空对象
+            // 前面描述的GET[sdui]均是无效的sdui，不要在js代码中附加这个sdui对象，
+            // 反之，如果GET[sdui]有效的化，就把sdui={...} 写在 function main函数前面 ，后续使用AST分析进行精准替换
+            String jsText2 = jsText ;
+            if( hasSduiDeclearation(jsText) ){
+                if( sdui.compareTo("null") != 0
+                        && sdui.compareTo("") != 0
+                        && sdui.compareTo("{}")!=0
+                ){
+                    String sduiJsonStr2 = "\nsdui=" + sdui + ";\n" ;
+                    jsText2 = jsText.replace("function main(" , sduiJsonStr2 + "function main(") ;
+                }
+            }
+            String extraStr = "{\"datetime\":"+datetime+"}" ;
+            HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
+            TileComputeResult res1 = cv8.RunScriptForTileWithRenderWithExtra(
+                    "com/pixelengine/HBasePixelEngineHelper",
+                    jsText2,
+                    styleText,
+                    extraStr,
+                    0,
+                    0,
+                    0
+            ) ;
+            if( res1.status==0 )
+            {//ok
+                System.out.println("Info : tile compute ok.");
+                rr.setState(0);
+                rr.setMessage(res1.log);
+                return rr;
+            }else
+            {
+                rr.setState(1);
+                rr.setMessage(res1.log);
+                return rr ;
+            }
+
+        }catch (Exception ex){
+            rr.setMessage(ex.getMessage());
+            rr.setState(11);
+            return rr;
+        }
+    }
+
+
+
     //2022-5-15
     @ResponseBody
     @RequestMapping(value="/scripts/update",method= RequestMethod.POST)

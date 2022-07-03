@@ -92,7 +92,8 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.24.4.0 2022-5-31 style detail has filename.");
 		System.out.println("v2.24.4.1 update HBasePixelEngineHelper, add some debug infos," +
 				" later it runs good, I need remove those debug outputs. 2022-6-6");
-
+		System.out.println("v2.24.5.0 update styleEdit with updatetime.") ;//not commited
+		System.out.println("v2.24.6.2 helper add getNearestDatetime;product and script wmts add wmtstclog api. 2022-7-3") ;//
 
 		if( args.length != 1 )
 		{
@@ -110,7 +111,7 @@ public class Task17HbaseWebserviceApplication {
 
 		//show pixelengine core version
 		HBasePeHelperCppConnector cc = new HBasePeHelperCppConnector();
-		System.out.println("pe core version: " + cc.GetVersion() );
+		System.out.println("PixelEngine Versions: " + cc.GetVersion() );
 
 
 		//try to init v8 2022-1-31 使用空脚本初始化调用一次v8以免后面瓦片计算导致task17崩溃

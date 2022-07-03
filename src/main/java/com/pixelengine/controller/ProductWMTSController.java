@@ -179,7 +179,7 @@ public class ProductWMTSController {
                         "com/pixelengine/HBasePixelEngineHelper",
                         scriptContent,
                         pdtStyle,
-                        "{}",
+                        "{\"datetime\":"+dtstr+"}", //2022-7-3
                         Integer.parseInt(zstr),
                         Integer.parseInt(ystr),
                         Integer.parseInt(xstr)) ;
@@ -211,33 +211,90 @@ public class ProductWMTSController {
             return new ResponseEntity<byte[]>( "product wmts exception".getBytes(), headers, HttpStatus.NOT_FOUND);
         }
 
+    }
 
-        /// 读取placeholder png文件， 将xyz文本写入图片直接返回，目前先不通过hbase拿数据，不通过v8计算。
-//        try{
-//            InputStream instream = this.getClass().getResourceAsStream("/placeholder.png");
-//            BufferedImage image = ImageIO.read(instream);
-//            Graphics g = image.getGraphics();
-//            g.setFont(g.getFont().deriveFont(12f));
-//            g.setColor(Color.black);
-//            String xyzStr = "x:"+xstr+",y:"+ystr+",z:"+zstr ;
-//            g.drawString(xyzStr, 0, 20);
-//            g.dispose();
-//            //ImageIO.write(image, "png", new File("test.png"));
-//            ByteArrayOutputStream bytestream = new ByteArrayOutputStream();
-//            ImageOutputStream imgoutput = ImageIO.createImageOutputStream(bytestream);
-//            ImageIO.write(image , "png" ,imgoutput ) ;
-//            final HttpHeaders headers = new HttpHeaders();
-//            headers.setContentType(MediaType.IMAGE_PNG);
-//            return new ResponseEntity<byte[]>(bytestream.toByteArray(), headers, HttpStatus.OK);
-//        }catch (Exception ex ) {
-//            String img = this.getClass().getResource("/placeholder.png").getPath();
-//            System.out.println("read img:" + img);
-//            System.out.println(ex.getMessage());
-//            final HttpHeaders headers = new HttpHeaders();
-//            headers.setContentType(MediaType.TEXT_PLAIN);
-//            return new ResponseEntity<byte[]>("bad wmts placeholder image".getBytes(), headers, HttpStatus.NOT_FOUND);
-//
-//        }
+
+
+    //获取0,0,0瓦片计算的log 信息 2022-7-3
+    @ResponseBody
+    @RequestMapping(value="/product/wmtstclog",method= RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public RestResult getTcLog(String pid,String datetime, String styleid, String roiid) {
+        RestResult rr = new RestResult() ;
+
+        System.out.println("ProductWMTSController.wmtstclog");
+        System.out.println("pid:"+pid);
+
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+        //从数据库通过pid获取产品信息
+        try{
+            JProduct pdt = rdb.rdbGetProductForAPI( Integer.parseInt(pid)  ) ;
+
+            //get render style content
+            String pdtStyle = "" ;
+            if( styleid==null  || styleid.equals("") || styleid.equals("default") ){
+                pdtStyle = rdb.rdbGetStyleText( pdt.styleid) ;
+            }else{
+                pdtStyle = rdb.rdbGetStyleText( Integer.parseInt(styleid) ) ;
+            }
+            System.out.println("style ok") ;
+
+            long dtlongvalue = 0 ;
+            try{
+                dtlongvalue = Long.parseLong(datetime) ;
+            }catch (Exception ex){
+                //bad long
+                dtlongvalue = 0 ;
+            }
+
+            boolean useRoiClip = true ;
+            if( roiid==null || roiid.equals("") || roiid.equals("null") ){
+                useRoiClip = false ;
+            }
+
+            if( pdt.name.equals("") == false )
+            {
+                HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
+                String scriptContent = scriptContentTemplate.replace("{{{name}}}", pdt.name) ;
+                if( useRoiClip==true ){//2022-4-17
+                    scriptContent=scriptContentWithRoiTemplate.replace("{{{name}}}",pdt.name);
+                    scriptContent=scriptContent.replace("{{{roiid}}}", roiid);
+                    String nodataStr = String.valueOf( pdt.bandList.get(0).noData ) ;
+                    if( nodataStr.equals("") )nodataStr="0";
+                    scriptContent=scriptContent.replace("{{{nodata}}}", nodataStr);
+                }
+                scriptContent = scriptContent.replace("{{{dt}}}" , datetime ) ;
+                TileComputeResult res1 = cv8.RunScriptForTileWithRenderWithExtra(
+                        "com/pixelengine/HBasePixelEngineHelper",
+                        scriptContent,
+                        pdtStyle,
+                        "{\"datetime\":"+datetime+"}",
+                        0,
+                        0,
+                        0) ;
+                if( res1.status==0 )
+                {//ok
+                    System.out.println("Info : tile compute ok.");
+                    rr.setState(0);
+                    rr.setMessage(res1.log);
+                    return rr ;
+                }else
+                {
+                    rr.setState(1);
+                    rr.setMessage(res1.log);
+                    return rr ;
+                }
+            }else
+            {
+                rr.setState(11);
+                rr.setMessage("invalid pid.");
+                return rr ;
+            }
+        }catch (Exception ex){
+            rr.setState(12);
+            rr.setMessage(ex.getMessage());
+            return rr ;
+        }
     }
 
 

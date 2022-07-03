@@ -20,6 +20,8 @@ package com.pixelengine;
 //udpate 2022-5-15
 //udpate 2022-5-24
 //2022-5-26
+//2022-6-12 updateStyle
+//2022-7-3 rdbGetGreaterNearestHCol
 /////////////////////////////////////////////////////////
 
 
@@ -1142,6 +1144,30 @@ public class JRDBHelperForWebservice {
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
             String sqlstr = String.format("SELECT * FROM tbproductdataitem "
                             +"WHERE pid=%d AND hcol<=%d Order by hcol DESC LIMIT 1",
+                    pid,hcol ) ;
+            ResultSet rs = stmt.executeQuery(sqlstr );
+            if (rs.next()){
+                JProductDataItem di = new JProductDataItem() ;
+                di.fid = rs.getInt("fid");
+                di.pid = rs.getInt("pid") ;
+                di.hcol = rs.getLong("hcol") ;
+                di.convertShowValRealVal(timeType);
+                return di;
+            }else{
+                return null;
+            }
+        }catch (SQLException ex){
+            return null;
+        }
+    }
+
+    //输入hcol，在dataitem表中找到大于hcol的最近的值 2022-7-3
+    public JProductDataItem rdbGetGreaterNearestHCol(int pid,Long hcol,int timeType)
+    {
+        try{
+            Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
+            String sqlstr = String.format("SELECT * FROM tbproductdataitem "
+                            +"WHERE pid=%d AND hcol>%d Order by hcol ASC LIMIT 1",
                     pid,hcol ) ;
             ResultSet rs = stmt.executeQuery(sqlstr );
             if (rs.next()){
@@ -2381,6 +2407,26 @@ public class JRDBHelperForWebservice {
         }
     }
 
+    //2022-6-12 update style
+    public boolean rdbUpdateStyle( int styleid,String content,String desc ){
+        try
+        {
+            String dt0 = getCurrentDatetimeStr() ;
+            String query2 = "update tbstyle set  styleContent = ?, description = ?, updatetime = ? " +
+                    " where styleid = ?";
+            PreparedStatement preparedStmt2 = JRDBHelperForWebservice.getConnection().prepareStatement(query2);
+            preparedStmt2.setString   (1, content);
+            preparedStmt2.setString   (2, desc);
+            preparedStmt2.setString      (3, dt0);
+            preparedStmt2.setInt(4 , styleid);
+            preparedStmt2.executeUpdate();
+            return true;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbUpdateStyle exception , " + ex.getMessage() ) ;
+            return false;
+        }
+    }
 
 
 
