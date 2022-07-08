@@ -1,4 +1,6 @@
 package com.pixelengine.controller;
+//2022-7-8
+
 
 import com.pixelengine.DataModel.Area;
 import com.pixelengine.DataModel.JProduct;
@@ -28,7 +30,7 @@ public class DatetimeController {
             rr.setState(1);
             rr.setMessage("invalid product id.");
         }else{
-            JProductDataItem di = rdb.rdbGetLowerEqualNearestHCol(pid,datetime,pdt.timeType) ;
+            JProductDataItem di = rdb.rdbGetLowerEqualNearestDt0(pid,datetime,pdt.timeType) ;
             if( di==null ){
                 rr.setState(2);
                 rr.setMessage("not datetime lower equal than " + datetime);
@@ -55,7 +57,7 @@ public class DatetimeController {
             rr.setState(1);
             rr.setMessage("invalid product name.");
         }else{
-            JProductDataItem di = rdb.rdbGetLowerEqualNearestHCol(pdt.pid,datetime,pdt.timeType) ;
+            JProductDataItem di = rdb.rdbGetLowerEqualNearestDt0(pdt.pid,datetime,pdt.timeType) ;
             if( di==null ){
                 rr.setState(2);
                 rr.setMessage("not datetime lower equal than " + datetime);

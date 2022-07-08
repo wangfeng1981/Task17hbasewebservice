@@ -8,6 +8,7 @@ package com.pixelengine;
 //update 2022-4-3 0800
 //update 2022-6-6 1027 add debug infos output for finding bugs in getDataCollection
 //update 2022-7-3 add getNearestDatetime with return DatetimeDisplay Object.
+//update 2022-7-8 update DatetimeDisplay
 //
 /////////////////////////////////////////////////////////
 
@@ -944,6 +945,7 @@ public class HBasePixelEngineHelper {
     }
 
     //2022-7-3
+    //2022-7-8
     public DatetimeDisplay getNearestDatetime(
             String dsName,
             long currdt ,
@@ -958,19 +960,23 @@ public class HBasePixelEngineHelper {
                 throw new Exception("bad dsname '" + dsName +"'") ;
             }
             if( isbefore == 1 ){
-                JProductDataItem di = rdb.rdbGetLowerEqualNearestHCol(pdt.pid , currdt , pdt.timeType) ;
+                JProductDataItem di = rdb.rdbGetLowerEqualNearestDt0(pdt.pid , currdt , pdt.timeType) ;
                 if( di==null ){
                     throw new Exception("no datetime before") ;
                 }
                 dd.dt = di.hcol;
+                dd.dt0 = di.dt0 ;
+                dd.dt1 = di.dt1 ;
                 dd.display = di.showVal ;
             }else{
                 //after
-                JProductDataItem di = rdb.rdbGetGreaterNearestHCol(pdt.pid , currdt , pdt.timeType) ;
+                JProductDataItem di = rdb.rdbGetGreaterNearestDt0(pdt.pid , currdt , pdt.timeType) ;
                 if( di==null ){
                     throw new Exception("no datetime after") ;
                 }
                 dd.dt = di.hcol;
+                dd.dt0 = di.dt0 ;
+                dd.dt1 = di.dt1 ;
                 dd.display = di.showVal ;
             }
             return dd ;

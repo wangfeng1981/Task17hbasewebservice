@@ -22,6 +22,7 @@ package com.pixelengine;
 //2022-5-26
 //2022-6-12 updateStyle
 //2022-7-3 rdbGetGreaterNearestHCol
+//2022-7-8 dateitem add dt0 dt1
 /////////////////////////////////////////////////////////
 
 
@@ -1138,19 +1139,22 @@ public class JRDBHelperForWebservice {
     }
 
     //输入hcol，在dataitem表中找到小于等于hcol的最近的值
-    public JProductDataItem rdbGetLowerEqualNearestHCol(int pid,Long hcol,int timeType)
+    //2022-7-8 use dt0 replace hcol
+    public JProductDataItem rdbGetLowerEqualNearestDt0(int pid,Long indt,int timeType)
     {
         try{
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
             String sqlstr = String.format("SELECT * FROM tbproductdataitem "
-                            +"WHERE pid=%d AND hcol<=%d Order by hcol DESC LIMIT 1",
-                    pid,hcol ) ;
+                            +"WHERE pid=%d AND dt0<=%d Order by dt0 DESC LIMIT 1",
+                    pid,indt ) ;
             ResultSet rs = stmt.executeQuery(sqlstr );
             if (rs.next()){
                 JProductDataItem di = new JProductDataItem() ;
                 di.fid = rs.getInt("fid");
                 di.pid = rs.getInt("pid") ;
                 di.hcol = rs.getLong("hcol") ;
+                di.dt0 = rs.getLong("dt0") ;
+                di.dt1 = rs.getLong("dt1") ;
                 di.convertShowValRealVal(timeType);
                 return di;
             }else{
@@ -1162,19 +1166,22 @@ public class JRDBHelperForWebservice {
     }
 
     //输入hcol，在dataitem表中找到大于hcol的最近的值 2022-7-3
-    public JProductDataItem rdbGetGreaterNearestHCol(int pid,Long hcol,int timeType)
+    //2022-7-8
+    public JProductDataItem rdbGetGreaterNearestDt0(int pid,Long indt,int timeType)
     {
         try{
             Statement stmt = JRDBHelperForWebservice.getConnection().createStatement();
             String sqlstr = String.format("SELECT * FROM tbproductdataitem "
-                            +"WHERE pid=%d AND hcol>%d Order by hcol ASC LIMIT 1",
-                    pid,hcol ) ;
+                            +"WHERE pid=%d AND dt0>%d Order by dt0 ASC LIMIT 1",
+                    pid, indt ) ;
             ResultSet rs = stmt.executeQuery(sqlstr );
             if (rs.next()){
                 JProductDataItem di = new JProductDataItem() ;
                 di.fid = rs.getInt("fid");
                 di.pid = rs.getInt("pid") ;
                 di.hcol = rs.getLong("hcol") ;
+                di.dt0 = rs.getLong("dt0") ;
+                di.dt1 = rs.getLong("dt1") ;
                 di.convertShowValRealVal(timeType);
                 return di;
             }else{

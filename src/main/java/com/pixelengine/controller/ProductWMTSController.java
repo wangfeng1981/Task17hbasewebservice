@@ -3,6 +3,7 @@ package com.pixelengine.controller;
 //updated 2022-4-17
 //updated 2022-4-25 use task17_api_root
 //2022-5-19
+//2022-7-8
 
 import com.pixelengine.*;
 import com.pixelengine.DataModel.*;
@@ -49,7 +50,7 @@ public class ProductWMTSController {
         //从数据库查询zlevel数值 数据库中tbProduct.maxZoom write to zlevel.
         JProduct pdt  = rdb.rdbGetProductForAPI(Integer.parseInt(pid));
         Long currentDateTime = JRDBHelperForWebservice.sgetCurrentDatetime();
-        JProductDataItem dataItem = rdb.rdbGetLowerEqualNearestHCol(pdt.pid,currentDateTime,pdt.timeType);
+        JProductDataItem dataItem = rdb.rdbGetLowerEqualNearestDt0(pdt.pid,currentDateTime,pdt.timeType);
 
         final HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.TEXT_XML);

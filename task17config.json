@@ -1,6 +1,6 @@
 {
   "zookeeper":"vb1",
-  "sparkmaster":"spark://vb1:7077",
+  "sparkmaster":"spark://localhost:7077",
   "connstr":"jdbc:mysql://192.168.56.101:3306/rsbig?useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC" ,
   "user":"bigdata",
   "pwd":"bigdata",
