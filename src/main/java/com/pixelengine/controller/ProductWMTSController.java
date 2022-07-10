@@ -4,6 +4,7 @@ package com.pixelengine.controller;
 //updated 2022-4-25 use task17_api_root
 //2022-5-19
 //2022-7-8
+//2022-7-10
 
 import com.pixelengine.*;
 import com.pixelengine.DataModel.*;
@@ -29,6 +30,14 @@ public class ProductWMTSController {
     private String scriptContentTemplate = "function main(){"
             +"var ds=pe.Dataset('{{{name}}}', {{{dt}}} );"
             +"return ds; } " ;
+    private String scriptContentTemplate2 = "function main(){"
+            +"let nearestdt=pe.NearestDatetimeBefore('{{{name}}}',pe.extraData.datetime) ;"
+            +"if(typeof nearestdt==='undefined'){pe.log('[ERROR]该日期没有数据[/ERROR]'); return null;}"
+            +"if( nearestdt.dt0<=pe.extraData.datetime && pe.extraData.datetime<nearestdt.dt1){pe.log('[INFO]' + nearestdt.display + '[/INFO]');}"
+            +"else {pe.log('[WARN]最近一期' + nearestdt.display + '[/WARN]');} "
+            +"var ds=pe.Dataset('{{{name}}}', nearestdt.dt );"
+            +"return ds; } " ;
+
     private String scriptContentWithRoiTemplate = "function main(){"
             +"var ds=pe.Dataset('{{{name}}}', {{{dt}}} );"
             +"return ds.clip2('{{{roiid}}}',{{{nodata}}}); } " ;
@@ -166,7 +175,7 @@ public class ProductWMTSController {
             if( pdt.name.equals("") == false )
             {
                 HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
-                String scriptContent = scriptContentTemplate.replace("{{{name}}}", pdt.name) ;
+                String scriptContent = scriptContentTemplate2.replace("{{{name}}}", pdt.name) ;
                 if( useRoiClip==true ){//2022-4-17
                     scriptContent=scriptContentWithRoiTemplate.replace("{{{name}}}",pdt.name);
                     scriptContent=scriptContent.replace("{{{roiid}}}", roiid);
@@ -256,7 +265,7 @@ public class ProductWMTSController {
             if( pdt.name.equals("") == false )
             {
                 HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
-                String scriptContent = scriptContentTemplate.replace("{{{name}}}", pdt.name) ;
+                String scriptContent = scriptContentTemplate2.replace("{{{name}}}", pdt.name) ;
                 if( useRoiClip==true ){//2022-4-17
                     scriptContent=scriptContentWithRoiTemplate.replace("{{{name}}}",pdt.name);
                     scriptContent=scriptContent.replace("{{{roiid}}}", roiid);
@@ -344,7 +353,7 @@ public class ProductWMTSController {
                     pdt.tileHei
             ) ;
 
-            String scriptContent = scriptContentTemplate.replace("{{{name}}}",pdt.name)
+            String scriptContent = scriptContentTemplate2.replace("{{{name}}}",pdt.name)
                     .replace("{{{dt}}}" , datetime) ;
             HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
             TileComputeResult res1 = cv8.RunScriptForTileWithoutRender(

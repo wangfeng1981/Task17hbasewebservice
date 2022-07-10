@@ -94,7 +94,11 @@ public class Task17HbaseWebserviceApplication {
 				" later it runs good, I need remove those debug outputs. 2022-6-6");
 		System.out.println("v2.24.5.0 update styleEdit with updatetime.") ;//not commited
 		System.out.println("v2.24.6.2 helper add getNearestDatetime;product and script wmts add wmtstclog api. 2022-7-3") ;//
-		System.out.println("v2.24.7.0 use dt0 and dt1 for data item. 2022-7-8") ;//
+
+		//2022-7-10 v2.24.7.2
+		System.out.println("v2.24.7.2 use dt0 and dt1 for data item. 2022-7-10") ;//
+
+
 
 		if( args.length != 1 )
 		{
