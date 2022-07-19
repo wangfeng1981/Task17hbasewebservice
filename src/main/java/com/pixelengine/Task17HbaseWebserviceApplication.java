@@ -98,6 +98,7 @@ public class Task17HbaseWebserviceApplication {
 		//2022-7-10 v2.24.7.2
 		System.out.println("v2.24.7.2 use dt0 and dt1 for data item. 2022-7-10") ;//
 		System.out.println("v2.24.8.0 writeProductDataItem add dt0 and dt1. 2022-7-13") ;
+		System.out.println("v2.25.0.2 add pgm api. 2022-7-19") ;
 
 
 		if( args.length != 1 )

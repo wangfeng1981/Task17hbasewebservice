@@ -670,4 +670,61 @@ public class ScriptsController {
     }
 
 
+    //2022-7-17
+    // /pe/scripts/pgminfo/?sid=123&datetime=20220717000000
+    @ResponseBody
+    @RequestMapping(value="/scripts/pgminfo/",method= RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public RestResult getPgmInfo(
+            String sid,
+            String datetime
+    )
+    {
+        System.out.println( "getPgmInfo ");
+        RestResult result = new RestResult() ;
+        result.setMessage("");
+        result.setState(0);
+        int sid2 = Integer.parseInt(sid) ;
+        //get script text
+        String jsText = ScriptsGetterTool.getSharedInstance().getScriptContent(sid2) ;
+        if( jsText==null || jsText.compareTo("")==0){
+            result.setState(90);
+            result.setMessage("empty script");
+            return result ;
+        }
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+        try{
+            //get max zoom
+            HBasePeHelperCppConnector cv8 = new HBasePeHelperCppConnector();
+
+            String extraStr = "{\"datetime\":"+datetime+"}" ;
+            String resText = cv8.RunScriptForTextResultWithExtra(
+                    "com/pixelengine/HBasePixelEngineHelper",
+                    jsText,
+                    extraStr
+            ) ;
+
+            if( resText==null ){
+                result.setState(11);
+                result.setMessage("null result text");
+            }
+            else if( resText.equals("") || resText.equals("null")  ){
+                result.setState(12);
+                result.setMessage("empty result text");
+            }else if (  resText.equals("not_string")){
+                result.setState(13);
+                result.setMessage("no string result");
+            }else {
+                result.setState(0);
+                result.setMessage("");
+                result.setData( resText );
+            }
+            return result ;
+        }catch (Exception ex){
+            result.setState(1);
+            result.setMessage("some exception:"+ex.getMessage());
+            return result ;
+        }
+    }
+
 }

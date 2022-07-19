@@ -11,7 +11,7 @@ package com.pixelengine;
 //update 2022-3-27 1029 增加tlv对瓦片计算统计值功能，不依赖v8和js
 //update 2022-4-4 这个类名称已经写在C++程序里了，所以这里这个参数没啥用 com/pixelengine/HBasePixelEngineHelper
 //update 2022-4-17
-//
+//update 2022-7-17
 /////////////////////////////////////////////////////////
 
 //Java离线计算与C++接口。
@@ -39,6 +39,8 @@ public class HBasePeHelperCppConnector {
     public native TileComputeResultWithRunAfterInfo RunScriptForTileWithoutRenderWithExtraWithRunAfterInfo(
             String javaHelperClassName, String script, String extraJsonText , int z , int y , int x) ;
 
+    //2022-7-17
+    public native String RunScriptForTextResultWithExtra(String javaHelperClassName, String script,String extraJsonText ) ;
 
 
     /// 通过检查返回空字符串 “”
