@@ -100,6 +100,8 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.24.8.0 writeProductDataItem add dt0 and dt1. 2022-7-13") ;
 		System.out.println("v2.25.0.2 add pgm api. 2022-7-19") ;
 		System.out.println("v2.25.1.2 pe script update for getPixels. 2022-7-21") ;
+		System.out.println("v2.25.2.2 omc script for datasetcollection[s] bugfixed, " +
+				"all done in c++ lib and java code do nothing maybe 2022-7-26") ;
 
 
 		if( args.length != 1 )

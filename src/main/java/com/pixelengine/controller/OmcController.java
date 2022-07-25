@@ -3,6 +3,7 @@ package com.pixelengine.controller;
 /// 2022-4-17 created
 /// 2022-4-25
 // 2022-5-25
+//2022-7-26
 
 import com.google.gson.Gson;
 import com.pixelengine.DataModel.*;
@@ -668,7 +669,7 @@ public class OmcController {
                 Gson gson = new Gson() ;
                 JDsNameArrayResult dsArrResult = gson.fromJson( jsontext , JDsNameArrayResult.class ) ;
                 if( dsArrResult.data.length  == 0 ){
-                    throw new Exception("can not parse dataset name from script text("+sid+").") ;
+                    throw new Exception("can not parse dataset name from script text(sid:"+sid+").") ;
                 }else{
                     JProduct pdt2 = rdb.rdbGetProductInfoByName(dsArrResult.data[0]) ;
                     if( pdt2==null ) {
