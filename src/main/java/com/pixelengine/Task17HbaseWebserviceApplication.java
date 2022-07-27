@@ -102,7 +102,7 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.25.1.2 pe script update for getPixels. 2022-7-21") ;
 		System.out.println("v2.25.2.2 omc script for datasetcollection[s] bugfixed, " +
 				"all done in c++ lib and java code do nothing maybe 2022-7-26") ;
-
+		System.out.println("v2.25.3.0 export pe bugfix, stat pe stat bugfix. 2022-7-27") ;
 
 		if( args.length != 1 )
 		{

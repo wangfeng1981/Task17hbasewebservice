@@ -2,7 +2,7 @@ package com.pixelengine.controller;
 //离线任务数据导出
 //update 2022-4-5
 //update 2022-4-9 use pid replace pe in New2 mode
-
+//2022-7-27
 
 import com.google.gson.Gson;
 import com.pixelengine.DAO.ZonalStatDAO;
@@ -198,11 +198,8 @@ public class ExportController {
                 result.setState(9);
                 result.setMessage("no product for pid "+pid);
             }
-            String sysPeScript =
-                    "function main(){ "
-                    +"let ds=pe.Dataset('" + pdt.name+ "',"+ datetime + ");"
-                    +"return ds;"
-                    +"}" ;
+            String sysPeScript = JSharedScriptTemplates.scriptTemplate_name;
+            sysPeScript=sysPeScript.replace("{{{name}}}",pdt.name);//2022-7-27
             //write into temp js file
             String tempRelJsFilepath = "export/" + yyyyMMddStr + "/" + newFileNameNoExtension + "_pe.js" ;
             String tempJsFilepath = exportYmdDir + newFileNameNoExtension + "_pe.js" ;//absolute path
