@@ -103,6 +103,9 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.25.2.2 omc script for datasetcollection[s] bugfixed, " +
 				"all done in c++ lib and java code do nothing maybe 2022-7-26") ;
 		System.out.println("v2.25.3.0 export pe bugfix, stat pe stat bugfix. 2022-7-27") ;
+		System.out.println("v2.26.1.1 new 3-level product categories, " +
+				"and search api; " +
+				"add product refreshcache. 2022-8-5") ;//commited
 
 		if( args.length != 1 )
 		{

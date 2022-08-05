@@ -15,30 +15,179 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 //update 2022-4-9
+//2022-7-31 categories2
+//2022-8-3 displayid
+//2022-8-5 refreshcache
 
 //获取全部产品信息
 @RestController
 public class ProductController {
+    final public static String MyProductCatDisplayId  = "myproduct";
+    final public static String MyScriptCatDisplayId  = "myscript";
+    final public static String SearchCatDisplayId = "search";
 
-//    @ResponseBody
-//    @RequestMapping(value="/product/all",method=RequestMethod.GET)
-//    @CrossOrigin(origins = "*")
-//    public RestResult productAll() throws IOException {
-//        RestResult rr = new RestResult() ;
-//        rr.setState(0);
-//        rr.setMessage("");
-//
-//        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
-//
-//        try{
-//            ArrayList<JProduct> productlist = rdb.rdbGetProducts() ;
-//            rr.setData(productlist);
-//        }catch (Exception ex){
-//            rr.setState(1);
-//            rr.setMessage("exception");
-//        }
-//        return rr;
-//    }
+    private int getIndexOfLvl1(JProductCategory2 cat2,int lvl1pk ){
+        for(int i = 0 ; i<cat2.level1Array.size();++i ){
+            if( cat2.level1Array.get(i).meta.pk==lvl1pk){
+                return i ;
+            }
+        }
+        return -1 ;
+    }
+
+    //按分类获取全部产品 2022-7-31
+    @ResponseBody
+    @RequestMapping(value="/product/categories2",method=RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public RestResult allCategoryProducts2(String uid) {
+        RestResult rr = new RestResult() ;
+        rr.setState(0);
+        rr.setMessage("");
+        try {
+            JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+            JProductCategory2 cate2Object = new JProductCategory2() ;
+
+            ArrayList<JMeta> level1array = rdb.getMetaByKey("CATLVL1");
+            ArrayList<JMeta> level2array = rdb.getMetaByKey("CATLVL2");
+            for(int i1 = 0 ; i1 < level1array.size();++i1 ){
+                JProductCategory2.CateLevel1 lvl1 = new JProductCategory2.CateLevel1();
+                lvl1.meta = level1array.get(i1) ;
+                lvl1.displayid = String.valueOf(lvl1.meta.pk) ;
+                cate2Object.level1Array.add(lvl1) ;
+            }
+            for(int i2 = 0;i2<level2array.size();++i2){
+                int ilvl1  = getIndexOfLvl1(cate2Object , level2array.get(i2).theid ) ;
+                if( ilvl1>=0 ){
+                    JProductCategory2.CateLevel2 lvl2= new JProductCategory2.CateLevel2();
+                    lvl2.meta = level2array.get(i2) ;
+                    lvl2.displayid = String.valueOf(lvl2.meta.pk) ;
+                    String key2 = "CATLVL3_" + String.valueOf(lvl2.meta.pk) ;
+                    ArrayList<JMeta> level3pdtarray  =  rdb.getMetaByKey(key2) ;
+                    for(int i3=0;i3<level3pdtarray.size();++i3){
+                        JProductDisplay display1 =
+                                rdb.rdbGetProductDisplayInfoByDisplayId( level3pdtarray.get(i3).theid );
+                        if (display1.pid > 0 && display1.type.equals("pe") ) {
+                            JProduct pinfo = rdb.rdbGetOneProductLayerInfoById(display1.pid);
+                            pinfo.displayid = display1.type + String.valueOf(display1.dpid);
+                            lvl2.productArray.add(pinfo) ;
+                        } else {
+                            JProduct emptyProduct = new JProduct();
+                            emptyProduct.productDisplay = display1;
+                            emptyProduct.displayid = display1.type + String.valueOf(display1.dpid);
+                            lvl2.productArray.add(emptyProduct);
+                        }
+                    }
+                    cate2Object.level1Array.get(ilvl1).level2Array.add(lvl2) ;
+                }
+            }
+
+            //my products
+            {
+                JProductCategory2.CateLevel1 l1 = new JProductCategory2.CateLevel1();
+                l1.meta = new JMeta() ;
+                l1.displayid = MyProductCatDisplayId;
+                l1.meta.pk = 0 ;
+                l1.meta.theid = 0 ;
+                l1.meta.metakey = "CATLVL1" ;
+                l1.meta.metavali = 0 ;
+                l1.meta.metavalstr = "我的" ;
+
+                JProductCategory2.CateLevel2 lvl2 = new JProductCategory2.CateLevel2();
+                lvl2.meta = new JMeta();
+                lvl2.displayid = MyScriptCatDisplayId ;
+                lvl2.meta.pk=0;
+                lvl2.meta.metavalstr = "我的脚本" ;
+                lvl2.meta.metavali = 0 ;
+                lvl2.meta.theid = 0 ;
+                lvl2.meta.metakey = "CATLVL2" ;
+
+                //MyScript products
+                if( Integer.valueOf(uid)>0 ){
+                    ArrayList<JScript> list = rdb.rdbGetUserScriptList(Integer.valueOf(uid)) ;
+                    if( list!=null ){
+                        for(int iscript = 0 ; iscript < list.size(); ++ iscript){
+                            JProduct pdt1 = list.get(iscript).convert2UsJProductWithDisplay();
+                            pdt1.displayid = "us" + String.valueOf(list.get(iscript).sid) ;
+                            lvl2.productArray.add(pdt1) ;
+                        }
+                    }
+                }
+
+                l1.level2Array.add(lvl2) ;
+                cate2Object.level1Array.add(l1) ;
+            }
+
+            //search , yes is empty now
+            {
+                JProductCategory2.CateLevel1 l1 = new JProductCategory2.CateLevel1();
+                l1.meta = new JMeta() ;
+                l1.displayid = SearchCatDisplayId ;
+                l1.meta.pk = 0 ;
+                l1.meta.theid = 0 ;
+                l1.meta.metakey = "CATLVL1" ;
+                l1.meta.metavali = 0 ;
+                l1.meta.metavalstr = "搜索" ;
+
+                JProductCategory2.CateLevel2 lvl2 = new JProductCategory2.CateLevel2();
+                lvl2.meta = new JMeta();
+                lvl2.displayid = SearchCatDisplayId ;
+                lvl2.meta.pk=0;
+                lvl2.meta.metavalstr = "搜索" ;
+                lvl2.meta.metavali = 0 ;
+                lvl2.meta.theid = 0 ;
+                lvl2.meta.metakey = "CATLVL2" ;
+
+                l1.level2Array.add(lvl2) ;
+                cate2Object.level1Array.add(l1) ;
+            }
+
+
+            rr.setData(cate2Object);
+            return rr ;
+        }catch (Exception ex){
+            rr.setState(1);
+            rr.setMessage("Exception:"+ex.getMessage());
+            return rr ;
+        }
+    }
+
+
+
+    //search product and myscript by key, the key str is as whole one key.
+    @ResponseBody
+    @RequestMapping(value="/product/search",method=RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public RestResult search( String key, String uid) {
+        RestResult rr = new RestResult();
+        rr.setState(0);
+        rr.setMessage("");
+        try {
+            JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+            ArrayList<Integer> searchDpidArr = rdb.searchProductDisplay(key) ;
+            ArrayList<JProduct> pdtArr = new ArrayList<>();
+            for(int i = 0 ; i<searchDpidArr.size();++i ){
+                JProductDisplay display1 =
+                        rdb.rdbGetProductDisplayInfoByDisplayId( searchDpidArr.get(i) );
+                if (display1.pid > 0 && display1.type.equals("pe") ) {
+                    JProduct pinfo = rdb.rdbGetOneProductLayerInfoById(display1.pid);
+                    pinfo.displayid = pinfo.productDisplay.type + String.valueOf(display1.dpid);
+                    pdtArr.add(pinfo) ;
+                } else {
+                    JProduct emptyProduct = new JProduct();
+                    emptyProduct.productDisplay = display1;
+                    pdtArr.add(emptyProduct);
+                }
+            }
+            rr.setData(pdtArr);
+            return rr;
+        }catch (Exception ex){
+            rr.setState(1);
+            rr.setMessage("failed:"+ex.getMessage());
+            return rr;
+        }
+    }
+
+
 
     //按分类获取全部产品2021-11-28
     @ResponseBody
@@ -250,5 +399,19 @@ public class ProductController {
             rr.setMessage("failed, ProductController.oneProductInfo exception:"+ex.getMessage());
             return rr;
         }
+    }
+
+
+    //刷新产品信息 2022-8-5
+    @ResponseBody
+    @RequestMapping(value="/product/refreshcache",method=RequestMethod.POST)
+    @CrossOrigin(origins = "*")
+    public RestResult refreshcache(String uname,String pwd) {
+        JRDBHelperForWebservice.clearProductPool();
+        RestResult rr = new RestResult() ;
+        rr.setState(0);
+        rr.setMessage("");
+        rr.setData("refresh ok.");
+        return rr ;
     }
 }
