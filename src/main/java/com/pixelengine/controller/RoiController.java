@@ -75,6 +75,23 @@ public class RoiController {
     }
 
 
+    //search sys and user roi , each give 20.
+    @CrossOrigin(origins = "*")
+    @RequestMapping("/seach")
+    @ResponseBody
+    public RestResult searchByKey(String key,String uid) {
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+        ArrayList<JRoi2> sysrois = rdb.searchSystemRoi(key,20);
+        ArrayList<JRoi2> userrois = rdb.searchUserRoi(Integer.valueOf(uid),key,20) ;
+        sysrois.addAll(userrois);
+        RestResult result = new RestResult();
+        result.setState(0);
+        result.setMessage("");
+        result.setData(sysrois);
+        return result ;
+    }
+
+
 
     //将文件写入上传文件对象file写入系统指定路径fileAbsPath
     public boolean writeUploadFileToFile(MultipartFile file,String fileAbsPath ){

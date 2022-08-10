@@ -26,6 +26,7 @@ package com.pixelengine;
 //2022-7-13 writeProductDataItem with dt0 dt1
 //2022-7-31
 //2022-8-5
+//2022-8-10
 /////////////////////////////////////////////////////////
 
 
@@ -1643,6 +1644,59 @@ public class JRDBHelperForWebservice {
         }
     }
 
+
+    //search system roi 2022-8-10
+    public ArrayList<JRoi2> searchSystemRoi( String key ,int cnt) {
+        try{
+            //
+            String query2 = "SELECT * FROM tbroisys WHERE name like \"%"+key+"%\" Order by rid ASC LIMIT "+String.valueOf(cnt) ;
+            Statement stmt2 = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt2.executeQuery(query2 );
+            ArrayList<JRoi2> res = new ArrayList<>() ;
+            while (rs.next()) {
+                JRoi2 roi2 = new JRoi2();
+                roi2.rid = rs.getInt(1) ;
+                roi2.rcid = rs.getInt(2);
+                roi2.name = rs.getString(3);
+                roi2.name2 = rs.getString(4);
+                roi2.geojson = rs.getString(5) ;
+                res.add(roi2);
+            }
+            return res ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbGetSysRoiItemes exception , " + ex.getMessage() ) ;
+            return null ;
+        }
+    }
+
+    //search user roi 2022-8-10
+    public ArrayList<JRoi2> searchUserRoi(int uid, String key ,int cnt) {
+        try{
+            //
+            String query2 = "SELECT * FROM tbroiuser WHERE name like \"%"+key+"%\" AND uid="+String.valueOf(uid)+" Order by rid ASC LIMIT "+String.valueOf(cnt) ;
+            Statement stmt2 = JRDBHelperForWebservice.getConnection().createStatement();
+            ResultSet rs = stmt2.executeQuery(query2 );
+            ArrayList<JRoi2> res = new ArrayList<>() ;
+            while (rs.next()) {
+                JRoi2 roi2 = new JRoi2();
+                roi2.rid = rs.getInt(1) ;
+                roi2.name = rs.getString(2);
+                roi2.shp = rs.getString(3) ;
+                roi2.geojson = rs.getString(4) ;
+                roi2.uid = rs.getInt(5) ;//column 5
+                roi2.ctime = rs.getDate(6) ;
+                roi2.name2 = rs.getDate(6).toString();
+                res.add(roi2);
+            }
+            return res ;
+        }catch (Exception ex )
+        {
+            System.out.println("Error : rdbGetSysRoiItemes exception , " + ex.getMessage() ) ;
+            return null ;
+        }
+    }
+
     //获取系统ROI数量
     public int rdbGetSysRoiItemesCount(int catid) {
         try{
@@ -1703,6 +1757,7 @@ public class JRDBHelperForWebservice {
                 roi2.geojson = rs.getString(4) ;
                 roi2.uid = rs.getInt(5) ;//column 5
                 roi2.ctime = rs.getDate(6) ;
+                roi2.name2 = rs.getDate(6).toString();
                 return  roi2;
             }
             return null ;

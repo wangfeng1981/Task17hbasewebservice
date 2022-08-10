@@ -106,6 +106,7 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.26.1.1 new 3-level product categories, " +
 				"and search api; " +
 				"add product refreshcache. 2022-8-5") ;//commited
+		System.out.println("v2.27.0.0 search roi. 2022-8-10") ;//
 
 		if( args.length != 1 )
 		{
