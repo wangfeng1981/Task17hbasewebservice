@@ -108,7 +108,7 @@ public class Task17HbaseWebserviceApplication {
 				"add product refreshcache. 2022-8-5") ;//commited
 
 		//add userscripts in product v2.27.0.1
-		System.out.println("v2.27.0.1 search roi. 2022-8-10") ;//
+		System.out.println("v2.27.0.1 search roi. 2022-8-10") ;//commited
 
 		if( args.length != 1 )
 		{
