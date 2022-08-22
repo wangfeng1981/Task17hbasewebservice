@@ -152,6 +152,42 @@ public class ProductController {
     }
 
 
+    //get user scripts products 2022-8-11
+    @ResponseBody
+    @RequestMapping(value="/product/userscripts",method=RequestMethod.GET)
+    @CrossOrigin(origins = "*")
+    public RestResult getUserScripts(String uid) {
+        RestResult rr = new RestResult() ;
+        rr.setState(0);
+        rr.setMessage("");
+        try {
+            JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+            //MyScript products
+            if( Integer.valueOf(uid)>0 ){
+                ArrayList<JScript> list = rdb.rdbGetUserScriptList(Integer.valueOf(uid)) ;
+                if( list!=null ){
+                    ArrayList<JProduct> pdtArr = new ArrayList<>();
+                    for(int iscript = 0 ; iscript < list.size(); ++ iscript){
+                        JProduct pdt1 = list.get(iscript).convert2UsJProductWithDisplay();
+                        pdt1.displayid = "us" + String.valueOf(list.get(iscript).sid) ;
+                        pdtArr.add(pdt1) ;
+                    }
+                    rr.setData(pdtArr);
+                }else{
+                    rr.setData(new ArrayList<JProduct>());
+                }
+            }else{
+                rr.setData(new ArrayList<JProduct>());
+            }
+            return rr ;
+        }catch (Exception ex){
+            rr.setState(1);
+            rr.setMessage("Exception:"+ex.getMessage());
+            return rr ;
+        }
+    }
+
+
 
     //search product and myscript by key, the key str is as whole one key.
     @ResponseBody
