@@ -110,6 +110,12 @@ public class Task17HbaseWebserviceApplication {
 		//add userscripts in product v2.27.0.1
 		System.out.println("v2.27.0.1 search roi. 2022-8-10") ;//commited
 
+		//1.add RunScriptFunctionForTileResult
+		//2.add GOTS for product display
+		//3.add RunScriptFunctionForTextResultOrNothing
+		//4.task17config.json add pe_gots_worker and others
+		System.out.println("v2.28.0.3d RunScriptFunctionForTileResult 2022-9-8") ;
+
 		if( args.length != 1 )
 		{
 			System.out.println("Error : args.length not 1.");

@@ -25,6 +25,7 @@
   "offtask_cppspark_0mq_service":"" , 
   "offtask_sparkv8tilecompute_jar": "/home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar" ,
   "sparksubmit": "/usr/local/spark/bin/spark-submit",
+  "offtask_pe_gots_worker":"/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/pe_codeblock_project/pe_gots_worker/bin/Release/pe_gots_worker",
 
   "shpgeojson2hsegtlv":"/home/hadoop/IdeaProjects/zonalstat_commands/shpgeojson2hegbinary/shpgeojson2hegbinary",
   "binaryfile2hbase":"/home/hadoop/IdeaProjects/Task24BinaryFile2HBase/out/artifacts/Task24BinaryFile2HBase_jar/Task24BinaryFile2HBase.jar",

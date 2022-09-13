@@ -24,7 +24,13 @@ public class OfftaskCollector extends Thread {
                 System.out.println("collector receive worker result of ofid:"+workerResult.ofid);
                 System.out.println("update db");
                 JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
-                rdb.updateOfftaskByWorkerResult(workerResult) ;
+                if( workerResult.status==1 ){
+                    //runninng
+                    rdb.updateOfftaskState(workerResult.ofid,workerResult.status) ;
+                }else{
+                    rdb.updateOfftaskByWorkerResult(workerResult) ;
+                }
+
             }
 
         }catch (Exception ex ){

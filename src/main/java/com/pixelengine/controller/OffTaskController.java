@@ -2,7 +2,7 @@ package com.pixelengine.controller;
 //这个还没想好怎么改 2021-4-1 这个不再使用，请使用ZonalStatController，或者参考ZonalStatController修改。
 //2022-4-5 使用该Controller 作为新版 离线任务 区域统计，序列分析，数据合成 接口
 //2022-4-9 实现离线任务与数据的删除功能
-
+//2022-9-9 GOTS
 
 import com.google.gson.Gson;
 import com.pixelengine.DTO.ZonalStatDTO;
@@ -643,7 +643,9 @@ public class OffTaskController {
                     }
                 }
 
-            }catch(Exception ex)
+            }
+
+            catch(Exception ex)
             {
                 result.setState(9);
                 result.setMessage("Error : failed to parse order json for mypid:" + orderfile );
@@ -675,6 +677,14 @@ public class OffTaskController {
 
             clean = true ;
         }
+        else if( offtask1.mode==6 )
+        {
+            File file1 = new File(orderfile) ;
+            file1.delete() ;
+            File file2 = new File(resultfile) ;
+            file2.delete() ;
+            clean = true ;
+        }
         else{
             result.setState(9);
             result.setMessage("unknown offtask mode for " + offtask1.mode );
@@ -693,6 +703,155 @@ public class OffTaskController {
         result.setData(ofid);
 
         return result ;
+    }
+
+
+    public static String getScriptTextBySid(int sid){
+        JRDBHelperForWebservice rdb =new JRDBHelperForWebservice();
+        JScript sc = rdb.rdbGetScript( sid ) ;
+        if( sc==null ){
+            return null ;
+        }else
+        {
+            return ScriptsController.sgetScriptContent( sc.jsfile) ;
+        }
+    }
+
+
+    public static String insertSduiObject(String scriptText0,String sduiObj)
+    {
+        if( sduiObj==null || sduiObj.equals("") || sduiObj.equals("null") || sduiObj.equals("{}") )
+        {
+            return scriptText0 ;
+        }
+        String[] sduiDeclArr = new String[]{
+                "let sdui =",
+                "let sdui=",
+                "var sdui =",
+                "var sdui="
+        };
+        for(int i = 0 ; i<sduiDeclArr.length;++i )
+        {
+            int index0 = scriptText0.indexOf( sduiDeclArr[i] ) ;
+            if( index0>=0 )
+            {
+                int index1 = scriptText0.indexOf(";", index0+1) ;
+                if( index1>=0 )
+                {
+                    String part0 = scriptText0.substring(0, index1+1) ;
+                    String part1 = scriptText0.substring(index1+1  ) ;
+                    String scriptText1 = part0 + "\nsdui="+ sduiObj + ";" + part1 ;
+                    return scriptText1 ;
+                }
+            }
+        }
+        return scriptText0 ;
+    }
+
+
+    //新建GOTS
+    @CrossOrigin(origins = "*")
+    @PostMapping("/gots/new")
+    @ResponseBody
+    public RestResult gotsNew(
+            String uid,
+            String gotssid,
+            String sdui,
+            String dt
+    ) {
+        System.out.println("gotsNew");
+        RestResult result = new RestResult();
+
+        //write into file
+        Date date = new Date();
+        SimpleDateFormat datetimeFormat1 = new SimpleDateFormat("yyyyMMdd");
+        String yyyyMMddStr = datetimeFormat1.format(date);
+        SimpleDateFormat datetimeFormat2 = new SimpleDateFormat("HHmmss");
+        String hhmmssStr = datetimeFormat2.format(date);
+        String randStr = String.format("%04d",new Random().nextInt(9999)) ;
+        String newFileNameNoExtension = "gots-" + hhmmssStr+"-"+randStr ;//se for serial analyse
+
+        String outdir = WConfig.getSharedInstance().pedir + "/offtask/" ;
+        boolean dirok1 = FileDirTool.checkDirExistsOrCreate(outdir) ;
+        if( dirok1==false ){
+            result.setState(9);
+            result.setMessage("bad  outdir.");
+            return result ;
+        }
+
+        String outYmdDir = WConfig.getSharedInstance().pedir + "/offtask/"+yyyyMMddStr+"/" ;
+        boolean dirok2 = FileDirTool.checkDirExistsOrCreate(outYmdDir) ;
+        if( dirok2==false ){
+            result.setState(9);
+            result.setMessage("bad outYmdDir.");
+            return result ;
+        }
+        //pe.extraData={};
+        //pe.extraData.datetime=dt;
+        //pe.extraData.jsfile=absOrderJsFilepath;
+        //pe.extraData.resultfile=absResultFilepath;
+        //pe.extraData.pedir=task17config.pedir
+        String absOrderJsFilepath = outYmdDir + newFileNameNoExtension + ".js" ;
+        String absResultFilepath = outYmdDir + newFileNameNoExtension + "-result.json" ;
+        String orderJsRelFilepath = "offtask/" + yyyyMMddStr + "/" + newFileNameNoExtension + ".js" ;
+        String resultRelFilepath = "offtask/" + yyyyMMddStr + "/" + newFileNameNoExtension + "-result.json" ;
+        String peExtraDataCode="pe.extraData={};\n" ;
+        peExtraDataCode+="pe.extraData.datetime="+dt+";\n" ;
+        peExtraDataCode+="pe.extraData.jsfile='"+absOrderJsFilepath+"';\n" ;
+        peExtraDataCode+="pe.extraData.resultfile='"+absResultFilepath+"';\n" ;
+        peExtraDataCode+="pe.extraData.pedir='"+WConfig.getSharedInstance().pedir+"';\n" ;
+
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+
+        String scriptText0 = OffTaskController.getScriptTextBySid(Integer.parseInt(gotssid)) ;
+        if( scriptText0==null ){
+            result.setState(10);
+            result.setMessage("null script text.");
+            return result ;
+        }
+        if( scriptText0.equals("") ){
+            result.setState(11);
+            result.setMessage("empty script text.");
+            return result ;
+        }
+
+        //insert extraData and  sdui object
+        String scriptText1 =
+                peExtraDataCode+
+                OffTaskController.insertSduiObject(scriptText0 , sdui) ;
+
+        if( FileDirTool.writeToTextFile(absOrderJsFilepath,scriptText1) ==false ) {
+            result.setState(12);
+            result.setMessage("bad writing jsfile.");
+            return result ;
+        }
+
+        //写入离线任务到mysql
+        int mode = 6 ;//0-zonalstat 1-skSerial 2-lsSerial 4-tcHbase 5-export 6-gots
+        int ofid =  rdb.rdbNewOffTask(  Integer.parseInt(uid) , mode , orderJsRelFilepath,
+                resultRelFilepath ) ;
+        if( ofid>0 ){
+            //这里添加zeromq调用 这里传递两个值 一个order主键和order json文件的相对路径
+            JOfftaskOrderMsg msg=new JOfftaskOrderMsg() ;
+            msg.ofid = ofid ;
+            msg.mode = mode ;
+            msg.orderRelFilepath = orderJsRelFilepath ;
+            boolean sendok = JOfftaskOrderSender.getSharedInstance().send(msg);
+            if( sendok==false){
+                result.setState(13);
+                result.setMessage("0mq failed to send.");
+                return result ;
+            }
+            result.setState(0);
+            result.setMessage("");
+            result.setData("{\"ofid\":" + String.valueOf(ofid) + "}");
+            return result ;
+        }
+        else{
+            result.setState(14);
+            result.setMessage("mysql failed to insert.");
+            return result ;
+        }
     }
 
 }

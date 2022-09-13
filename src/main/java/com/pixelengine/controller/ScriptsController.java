@@ -129,19 +129,24 @@ public class ScriptsController {
 //        return new ResponseEntity<byte[]>( outjson.getBytes(), headers, HttpStatus.OK);
 //    }
 
-
     //获取js脚本中的内容 relPath 是相对路径 scrips/...
-    private String getScriptContent( String relPath )
+    public static String sgetScriptContent( String relPath )
     {
         String fullpath = WConfig.getSharedInstance().pedir + relPath ;
         String data = "";
         try{
             data = new String(Files.readAllBytes(Paths.get(fullpath)));
         }catch (Exception ex){
-            System.out.println("getScriptContent exception:"+ex.getMessage());
+            System.out.println("sgetScriptContent exception:"+ex.getMessage());
             return null ;
         }
         return data;
+    }
+
+    //获取js脚本中的内容 relPath 是相对路径 scrips/...
+    private String getScriptContent( String relPath )
+    {
+        return ScriptsController.sgetScriptContent(relPath);
     }
 
 

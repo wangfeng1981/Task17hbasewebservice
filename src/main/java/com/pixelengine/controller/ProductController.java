@@ -69,11 +69,19 @@ public class ProductController {
                         if (display1.pid > 0 && display1.type.equals("pe") ) {
                             JProduct pinfo = rdb.rdbGetOneProductLayerInfoById(display1.pid);
                             pinfo.displayid = display1.type + String.valueOf(display1.dpid);
+
+                            //GOTS for product display
+                            pinfo.gots = rdb.rdbGetProductDisplayGotsMetas(display1.dpid) ;
+
                             lvl2.productArray.add(pinfo) ;
                         } else {
                             JProduct emptyProduct = new JProduct();
                             emptyProduct.productDisplay = display1;
                             emptyProduct.displayid = display1.type + String.valueOf(display1.dpid);
+
+                            //GOTS for product display
+                            emptyProduct.gots = rdb.rdbGetProductDisplayGotsMetas(display1.dpid) ;
+
                             lvl2.productArray.add(emptyProduct);
                         }
                     }
@@ -207,10 +215,14 @@ public class ProductController {
                 if (display1.pid > 0 && display1.type.equals("pe") ) {
                     JProduct pinfo = rdb.rdbGetOneProductLayerInfoById(display1.pid);
                     pinfo.displayid = pinfo.productDisplay.type + String.valueOf(display1.dpid);
+                    //GOTS for product display
+                    pinfo.gots = rdb.rdbGetProductDisplayGotsMetas(display1.dpid) ;
                     pdtArr.add(pinfo) ;
                 } else {
                     JProduct emptyProduct = new JProduct();
                     emptyProduct.productDisplay = display1;
+                    //GOTS for product display
+                    emptyProduct.gots = rdb.rdbGetProductDisplayGotsMetas(display1.dpid) ;
                     pdtArr.add(emptyProduct);
                 }
             }
