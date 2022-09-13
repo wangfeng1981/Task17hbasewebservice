@@ -791,6 +791,7 @@ public class OffTaskController {
         //pe.extraData.jsfile=absOrderJsFilepath;
         //pe.extraData.resultfile=absResultFilepath;
         //pe.extraData.pedir=task17config.pedir
+        //pe.extraData.http_pedir=task17config.http_pedir
         String absOrderJsFilepath = outYmdDir + newFileNameNoExtension + ".js" ;
         String absResultFilepath = outYmdDir + newFileNameNoExtension + "-result.json" ;
         String orderJsRelFilepath = "offtask/" + yyyyMMddStr + "/" + newFileNameNoExtension + ".js" ;
@@ -800,6 +801,7 @@ public class OffTaskController {
         peExtraDataCode+="pe.extraData.jsfile='"+absOrderJsFilepath+"';\n" ;
         peExtraDataCode+="pe.extraData.resultfile='"+absResultFilepath+"';\n" ;
         peExtraDataCode+="pe.extraData.pedir='"+WConfig.getSharedInstance().pedir+"';\n" ;
+        peExtraDataCode+="pe.extraData.http_pedir='"+WConfig.getSharedInstance().http_pedir+"';\n" ;
 
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
 

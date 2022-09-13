@@ -106,7 +106,6 @@ public class Task17HbaseWebserviceApplication {
 		System.out.println("v2.26.1.1 new 3-level product categories, " +
 				"and search api; " +
 				"add product refreshcache. 2022-8-5") ;//commited
-
 		//add userscripts in product v2.27.0.1
 		System.out.println("v2.27.0.1 search roi. 2022-8-10") ;//commited
 
@@ -114,7 +113,7 @@ public class Task17HbaseWebserviceApplication {
 		//2.add GOTS for product display
 		//3.add RunScriptFunctionForTextResultOrNothing
 		//4.task17config.json add pe_gots_worker and others
-		System.out.println("v2.28.0.3d RunScriptFunctionForTileResult 2022-9-8") ;
+		System.out.println("v2.28.0.5d RunScriptFunctionForTileResult 2022-9-13") ;
 
 		if( args.length != 1 )
 		{

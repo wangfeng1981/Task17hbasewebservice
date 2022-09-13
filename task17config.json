@@ -10,6 +10,7 @@
   "host": "192.168.56.103",
   "port": "15900" ,
   "pedir": "/var/www/html/pe/" , 
+  "http_pedir":"http://192.168.56.103:15980/",
   "userhtable":"sparkv8out", 
   "userhfami":"tiles",
   "userhpidblen":4,

@@ -94,6 +94,7 @@ public class WConfig {
     public String omc_zmqport ;// "15922" ,
 
     public String pedir ;//nginx-pedir /var/www/html/pe/
+    public String http_pedir;//http://192.168.56.103:15980/
     public String port ;//task17 "15900"
     public String productwmts ; //productwmts-template.xml
     public String pwd;//mysql pwd
