@@ -432,7 +432,7 @@ public class RoiController {
             return result ;
         }
 
-        if( name.length()>20 ) name = name.substring(0,20) ;
+        if( name.length()>40 ) name = name.substring(0,40) ;
         String absfilepath = roiUserYmdDirPathStr + newFileName + ".geojson" ;
         try{
             //将geojson对象写入文件
@@ -463,7 +463,7 @@ public class RoiController {
                     throw new Exception("failed to write hseg.tlv into HBase.");
 
                     //这里需要删除mysql中的记录，以后有时间在加 2022-3-6
-                    //...
+                    //... why delete mysql record, i forget, 2022-9-15
                 }else{
                     //写入Hbase成功以后应该删除tlv文件，以后有时间在加 2022-3-6
                     //...

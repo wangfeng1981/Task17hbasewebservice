@@ -5,8 +5,8 @@ package com.pixelengine.controller;
 //2022-7-27
 
 import com.google.gson.Gson;
-import com.pixelengine.DAO.ZonalStatDAO;
-import com.pixelengine.DTO.ZonalStatDTO;
+import com.pixelengine.DataModel.JZonalStat2;
+//import com.pixelengine.DTO.ZonalStatDTO;
 import com.pixelengine.DataModel.*;
 import com.pixelengine.JRDBHelperForWebservice;
 import com.pixelengine.DataModel.JScript;
@@ -23,8 +23,7 @@ import java.util.Random;
 
 @RestController
 public class ExportController {
-    @Autowired
-    ZonalStatDAO dao ;
+
 
     @ResponseBody
     @RequestMapping(value="/offtask/export/new",method= RequestMethod.POST)
@@ -39,68 +38,11 @@ public class ExportController {
             String bottom
     ) {//不再维护 2022-2-13 请使用new2
         System.out.println("/offtask/export/new") ;
+        RestResult result=new RestResult();
+        result.setState(1);
+        result.setMessage("deprecated");
+        return result ;
 
-        RestResult result = new RestResult() ;
-        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
-
-        JProduct product = rdb.rdbGetProductForAPI( Integer.parseInt(pid)) ;
-        if( product==null )
-        {
-            result.setState(1);
-            result.setMessage("no product for pid:" + pid);
-            return result ;
-        }
-        else
-        {
-            JExportParams ep = new JExportParams() ;
-            ep.inpid = Integer.parseInt(pid) ;
-
-            String useTag = product.name ;
-            JProductDisplay pdtDisplay = rdb.rdbGetProductDisplayInfo(ep.inpid) ;
-            if( pdtDisplay != null && pdtDisplay.productname.compareTo("")!=0 )
-            {
-                useTag = pdtDisplay.productname ;
-            }
-
-            ep.dt = Long.parseLong(dt) ;
-            ep.htable = product.hbaseTable.hTableName ;
-            ep.hfami = product.hbaseTable.hFamily ;
-            ep.hpid = product.bandList.get(0).hPid ;
-            ep.hpidblen = product.hbaseTable.hPidByteNum ;
-            ep.yxblen = product.hbaseTable.hYXByteNum ;
-            ep.left = Double.valueOf(left) ;
-            ep.right = Double.valueOf(right) ;
-            ep.top = Double.valueOf(top) ;
-            ep.bottom = Double.valueOf(bottom) ;
-            ep.level = product.maxZoom ;
-            ep.filldata = (int) product.bandList.get(0).noData;
-            String[] outdirArr = FileDirTool.checkAndMakeCurrentYearDateDir(WConfig.getSharedInstance().pedir,"export");
-            ep.outfilename = outdirArr[0] + "export-u" + userid + "-" + FileDirTool.dateTimeString() + ".tif" ;
-            ep.outfilenamedb = outdirArr[1] + "export-u" + userid + "-" + FileDirTool.dateTimeString() + ".tif" ;
-            ep.zookeeper = WConfig.getSharedInstance().zookeeper ;
-            ep.datatype = product.dataType ;
-
-            Gson gson = new Gson() ;
-            String paramsJsonText = gson.toJson(ep , JExportParams.class) ;
-
-            ZonalStatDTO task =new ZonalStatDTO() ;
-            task.setContent(paramsJsonText);
-            task.setCreatetime( new Date());
-            task.setUpdatetime( new Date());
-            task.setMessage("");
-            task.setResult("");
-            task.setStatus(0);
-            task.setTag(useTag);
-            task.setUid(Long.parseLong(userid));
-            task.setMode(5);//0-zs , 1-sk , 2-ls , 4-composite , 5-export
-            ZonalStatDTO newtask = dao.save(task) ;
-
-            result.setState(0);
-            result.setMessage("");
-            result.setData(newtask);
-
-            return result ;
-        }
     }
 
 
@@ -239,7 +181,13 @@ public class ExportController {
             msg.ofid = ofid ;
             msg.mode = 5 ;//2022-4-5
             msg.orderRelFilepath = orderJsonRelFilepath ;
-            JOfftaskOrderSender.getSharedInstance().send(msg);
+            boolean sendok = JOfftaskOrderSender.getSharedInstance().send(msg);
+            if(sendok==false){
+                rdb.updateOfftaskState(ofid,3);
+                result.setState(13);
+                result.setMessage("0mq failed to send.");
+                return result ;
+            }
             result.setState(0);
             result.setMessage("");
             result.setData("{\"ofid\":" + String.valueOf(ofid) + "}");

@@ -5,7 +5,8 @@ package com.pixelengine.controller;
 //2022-9-9 GOTS
 
 import com.google.gson.Gson;
-import com.pixelengine.DTO.ZonalStatDTO;
+import com.pixelengine.DataModel.JZonalStat2;
+//import com.pixelengine.DTO.ZonalStatDTO;
 import com.pixelengine.DataModel.*;
 import com.pixelengine.HBasePixelEngineHelper;
 import com.pixelengine.JRDBHelperForWebservice;
@@ -104,13 +105,14 @@ public class OffTaskController {
         JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
         //在tbproduct新建一个记录
         String uuidDsname = UUID.randomUUID().toString() ;
-        System.out.println("debug uuidDsname:"+uuidDsname);
         int newpdtid = rdb.rdbNewEmptyUserProduct(uuidDsname,Integer.valueOf(uid));
         if( newpdtid<=0 ){
             result.setState(9);
             result.setMessage("bad new product id.");
             return result ;
         }
+        String newDsName="user/"+uid+"/"+String.valueOf(newpdtid);
+        rdb.updateProductName(newpdtid,newDsName);
 
         //构造ROI数据
         String roiStr = "" ;
@@ -175,7 +177,13 @@ public class OffTaskController {
             msg.ofid = ofid ;
             msg.mode = 4 ;
             msg.orderRelFilepath = orderJsonRelFilepath ;
-            JOfftaskOrderSender.getSharedInstance().send(msg);
+            boolean sendok = JOfftaskOrderSender.getSharedInstance().send(msg);
+            if( sendok==false){
+                rdb.updateOfftaskState(ofid,3);//failed.
+                result.setState(13);
+                result.setMessage("0mq failed to send.");
+                return result ;
+            }
             result.setState(0);
             result.setMessage("");
             result.setData("{\"ofid\":" + String.valueOf(ofid) + "}");
@@ -317,7 +325,13 @@ public class OffTaskController {
             msg.ofid = ofid ;
             msg.mode = mode ;
             msg.orderRelFilepath = orderJsonRelFilepath ;
-            JOfftaskOrderSender.getSharedInstance().send(msg);
+            boolean sendok = JOfftaskOrderSender.getSharedInstance().send(msg);
+            if( sendok==false){
+                rdb.updateOfftaskState(ofid,3);//failed.
+                result.setState(13);
+                result.setMessage("0mq failed to send.");
+                return result ;
+            }
             result.setState(0);
             result.setMessage("");
             result.setData("{\"ofid\":" + String.valueOf(ofid) + "}");
@@ -479,7 +493,13 @@ public class OffTaskController {
             msg.ofid = ofid ;
             msg.mode = mode ;
             msg.orderRelFilepath = orderJsonRelFilepath ;
-            JOfftaskOrderSender.getSharedInstance().send(msg);
+            boolean sendok = JOfftaskOrderSender.getSharedInstance().send(msg);
+            if( sendok==false){
+                rdb.updateOfftaskState(ofid,3);//failed.
+                result.setState(13);
+                result.setMessage("0mq failed to send.");
+                return result ;
+            }
             result.setState(0);
             result.setMessage("");
             result.setData("{\"ofid\":" + String.valueOf(ofid) + "}");
@@ -840,6 +860,7 @@ public class OffTaskController {
             msg.orderRelFilepath = orderJsRelFilepath ;
             boolean sendok = JOfftaskOrderSender.getSharedInstance().send(msg);
             if( sendok==false){
+                rdb.updateOfftaskState(ofid,3);//failed.
                 result.setState(13);
                 result.setMessage("0mq failed to send.");
                 return result ;

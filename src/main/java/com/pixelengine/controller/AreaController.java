@@ -1,7 +1,7 @@
 package com.pixelengine.controller;
 
 
-import com.pixelengine.DTO.RegionDTO;
+import com.pixelengine.DataModel.JRegion2;
 import com.pixelengine.DataModel.Area;
 import com.pixelengine.DataModel.JProductDataItem;
 import com.pixelengine.DataModel.ROI;

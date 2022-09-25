@@ -113,7 +113,10 @@ public class Task17HbaseWebserviceApplication {
 		//2.add GOTS for product display
 		//3.add RunScriptFunctionForTextResultOrNothing
 		//4.task17config.json add pe_gots_worker and others
-		System.out.println("v2.28.0.5d RunScriptFunctionForTileResult 2022-9-13") ;
+		//5.omc template list
+		//6.omc newfromtem2
+		//7.datetime formate
+		System.out.println("v2.28.0.13") ;
 
 		if( args.length != 1 )
 		{

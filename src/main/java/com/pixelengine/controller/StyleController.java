@@ -1,8 +1,9 @@
 package com.pixelengine.controller;
+//2022-9-14
 
-
-import com.pixelengine.DAO.StyleDAO;
-import com.pixelengine.DTO.StyleDTO;
+//import com.pixelengine.DAO.StyleDAO;
+//import com.pixelengine.DTO.StyleDTO;
+import com.pixelengine.DataModel.JStyleDbObject;
 import com.pixelengine.DataModel.JStyleDbObject;
 import com.pixelengine.DataModel.RestResult;
 import com.pixelengine.DataModel.WConfig;
@@ -19,44 +20,25 @@ import org.springframework.web.bind.annotation.*;
 import org.yaml.snakeyaml.tokens.DirectiveToken;
 
 import java.io.File;
-import java.util.Calendar;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.sql.Timestamp;//2022-5-31
 
 @RestController
 @RequestMapping(value="/style")
 @CrossOrigin(origins = "*")
 public class StyleController {
-    @Autowired
-    StyleDAO styleDao ;
 
 
+    //deprecated. use styleNewOld.
     @PostMapping(value="/new2")
     @CrossOrigin(origins = "*")
     public RestResult styleNew(@RequestHeader("token") String token,
                                String stylecontent , String description )
     {
         RestResult result = new RestResult() ;
-        JUser tempUser = JUser.getUserByToken(token) ;
-        if( tempUser == null ){
-            result.setData(1);
-            result.setMessage("没有用户登录信息");
-            return result ;
-        }else{
-            StyleDTO s1 = new StyleDTO() ;
-            s1.setStyleContent(stylecontent);
-            s1.setDescription(description);
-            s1.setUserid(  (long)tempUser.uid );
-            s1.setCreatetime(Calendar.getInstance().getTime());
-            s1.setUpdatetime(Calendar.getInstance().getTime());
-            StyleDTO newStyle = styleDao.save(s1) ;
-
-            result.setState(0);
-            result.setData(newStyle);
-            return result;
-        }
+        result.setData(1);
+        result.setMessage("没有用户登录信息,deprecated.");
+        return result ;
     }
 
     @PostMapping(value="/new")
@@ -66,20 +48,14 @@ public class StyleController {
                                String stylecontent , String description )
     {
         RestResult result = new RestResult() ;
-
-        {
-            StyleDTO s1 = new StyleDTO() ;
-            s1.setStyleContent(stylecontent);
-            s1.setDescription(description);
-            s1.setUserid(  Long.valueOf(userid) );
-            s1.setCreatetime(Calendar.getInstance().getTime());
-            s1.setUpdatetime(Calendar.getInstance().getTime());
-            StyleDTO newStyle = styleDao.save(s1) ;
-
-            result.setState(0);
-            result.setData(newStyle);
-            return result;
-        }
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice() ;
+        JStyleDbObject s1 =  rdb.rdbNewStyle(
+                Integer.valueOf(userid),
+                stylecontent,
+                description) ;
+        result.setState(0);
+        result.setData(s1);
+        return result;
     }
 
     //update 2022-6-12
@@ -162,20 +138,24 @@ public class StyleController {
     @CrossOrigin(origins = "*")
     public RestResult styleRemove(@PathVariable("styleid") String styleid)
     {
-        styleDao.deleteById( Long.parseLong(styleid));
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+        rdb.rdbDeleteStyle( Integer.valueOf(styleid) ) ;
+
         RestResult result = new RestResult() ;
         result.setState(0);
         return result;
     }
 
+
     @GetMapping(value="/list/{userid}")
     @CrossOrigin(origins = "*")
     public RestResult styleList(@PathVariable("userid") String userid)
     {
-        List<StyleDTO> allstyle = styleDao.findAllByUserid( Long.parseLong(userid)) ;
+        JRDBHelperForWebservice rdb = new JRDBHelperForWebservice();
+        ArrayList<JStyleDbObject> rlist = rdb.rdbStyleListByUid( Integer.valueOf(userid)) ;
         RestResult result = new RestResult() ;
         result.setState(0);
-        result.setData(allstyle);
+        result.setData(rlist);
         return result;
     }
 
